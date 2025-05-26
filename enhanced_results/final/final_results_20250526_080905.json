@@ -1,0 +1,19 @@
+{
+  "top_models": [
+    "AutoARIMA",
+    "NHITS",
+    "NBEATS"
+  ],
+  "top_mae_scores": [
+    5721.720503019554,
+    6253.600817857141,
+    7455.838541547618
+  ],
+  "ensemble_weights": [
+    0.37280563272687856,
+    0.34109782420450097,
+    0.2860965430686204
+  ],
+  "total_models_tested": 3,
+  "pipeline_timestamp": "20250526_080905"
+}

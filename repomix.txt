@@ -1,0 +1,1 @@
+repomix --ignore "**/*.csv,**/*.json,**/*.ipynb,**/__pycache__/,**/lightning_logs/**" --style markdown --compress

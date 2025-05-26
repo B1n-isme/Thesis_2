@@ -1,0 +1,27 @@
+============================================================
+🎯 BITCOIN FORECASTING PIPELINE SUMMARY
+============================================================
+Execution Time: 20250525_045356
+Mode: Fast
+HPO: Skipped
+
+📊 DATA INFORMATION:
+  • Total samples: 2,922
+  • Training samples: 2,887
+  • Test samples: 35
+  • Features: 77
+  • Horizon: 7 days
+
+🏆 MODEL COMPARISON:
+  • Execution time: 226.7 seconds
+  • Models compared: 5
+  • Best model: LSTM
+  • Best MAE: 5403.9234
+
+🎯 RECOMMENDATIONS:
+  • Review top-performing models for deployment
+  • Consider ensemble methods for improved performance
+  • Monitor model performance over time
+  • Retrain periodically with new data
+
+============================================================

@@ -1,0 +1,2 @@
+input_size,learning_rate,scaler_type,max_steps,batch_size,windows_batch_size,val_check_steps,random_seed,n_pool_kernel_size,n_freq_downsample,h,loss,valid_loss,model_name,best_valid_loss,training_iteration
+28,0.0001,standard,1500,64,128,50,7,"[16, 8, 1]","[1, 1, 1]",7,MAE(),MAE(),AutoNHITS,0.3002004325389862,30

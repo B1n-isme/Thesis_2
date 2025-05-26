@@ -1,0 +1,90 @@
+"""
+Configuration settings.
+"""
+import os
+import torch
+from neuralforecast.losses.pytorch import MAE, MSE, RMSE, MQLoss, DistributionLoss
+
+# === Data Configuration ===
+DATA_PATH = 'data/final/dataset.parquet'
+DATE_COLUMN = 'Date'
+DATE_RENAMED = 'ds'
+TARGET_COLUMN = 'btc_close'
+TARGET_RENAMED = 'y'
+UNIQUE_ID_VALUE = 'Bitcoin'
+
+# === Forecasting Configuration ===
+HORIZON = 7
+LEVELS = [80, 90]
+TEST_LENGTH_MULTIPLIER = 5
+SEED = 42
+
+# === Model Configuration ===
+FREQUENCY = 'D'
+SCALER_TYPE = ['standard']  # List for tune.choice()
+LOCAL_SCALER_TYPE = 'standard'  # String for direct use
+
+# === Cross-validation Configuration ===
+CV_N_WINDOWS = 5
+CV_STEP_SIZE = HORIZON
+
+# === Hyperparameter Tuning Configuration ===
+NUM_SAMPLES_PER_MODEL = 1
+TUNING_RESULTS_DIR = 'tuning_results'
+BEST_HYPERPARAMETERS_CSV = 'tuning_results/best_hyperparameters.csv'
+
+# === Search Algorithm Configuration ===
+DEFAULT_SEARCH_ALGORITHM = 'optuna'  # Default search algorithm
+SEARCH_ALGORITHM_MAX_CONCURRENT = 4  # Max concurrent trials
+SEARCH_ALGORITHM_REPEAT_TRIALS = None  # Number of repeated evaluations (None = no repeat)
+FAST_SEARCH_ALGORITHM = 'hyperopt'  # Algorithm to use in fast mode
+
+# === Ray Configuration ===
+RAY_ADDRESS = 'local'
+RAY_NUM_CPUS = os.cpu_count()
+RAY_NUM_GPUS = torch.cuda.device_count() if torch.cuda.is_available() else 0
+
+# === Loss function mapping ===
+LOSS_MAP = {
+    'MAE': MAE(),
+    'MAE()': MAE(),
+    'MQLoss': MQLoss(),
+    'MQLoss()': MQLoss(),
+    'RMSE': RMSE(),
+    'RMSE()': RMSE(),
+    'MSE': MSE(),
+    'MSE()': MSE()
+}
+
+# === Columns to exclude when processing best hyperparameters ===
+EXCLUDE_HYPERPARAMETER_KEYS = [
+    'model_name', 
+    'loss', 
+    'valid_loss', 
+    'best_valid_loss', 
+    'training_iteration'
+]
+
+# === JSON parseable hyperparameter keys ===
+JSON_PARSEABLE_KEYS = [
+    'n_pool_kernel_size', 
+    'n_freq_downsample', 
+    'n_blocks', 
+    'mlp_units'
+]
+
+# === Output Directories ===
+RESULTS_DIR: str = 'enhanced_results'
+HPO_DIR: str = f"{RESULTS_DIR}/hpo"
+CV_DIR: str = f"{RESULTS_DIR}/cv"
+FINAL_DIR: str = f"{RESULTS_DIR}/final"
+MODELS_DIR: str = f"{RESULTS_DIR}/models"
+
+def __post_init__(self):
+        """Set default values that depend on other attributes."""
+        # Create output directories
+        os.makedirs(self.results_dir, exist_ok=True)
+        os.makedirs(self.hpo_dir, exist_ok=True)
+        os.makedirs(self.cv_dir, exist_ok=True)
+        os.makedirs(self.final_dir, exist_ok=True)
+        os.makedirs(self.models_dir, exist_ok=True)
