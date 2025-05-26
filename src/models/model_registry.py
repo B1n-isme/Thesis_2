@@ -10,9 +10,9 @@ from typing import List, Dict, Tuple, Optional, Any
 import numpy as np
 
 # Import from modular structure
-from src.models.statsforecast.models import get_statistical_models
-from src.models.neuralforecast.models import get_neural_models
-from src.models.neuralforecast.auto_models import get_auto_models, get_loss_functions
+from src.models.statsforecast.models import get_statistical_models as _get_statistical_models
+from src.models.neuralforecast.models import get_neural_models as _get_neural_models
+from src.models.neuralforecast.auto_models import get_auto_models as _get_auto_models, get_loss_functions as _get_loss_functions
 
 # Framework imports for loss functions
 from neuralforecast.losses.pytorch import MAE, MSE, RMSE, MAPE, SMAPE
@@ -40,7 +40,7 @@ class ModelRegistry:
         Returns:
             List of statistical model instances
         """
-        return get_statistical_models(season_length)
+        return _get_statistical_models(season_length)
     
     @staticmethod
     def get_neural_models(horizon: int, hist_exog_list: Optional[List[str]] = None) -> List[Any]:
@@ -54,26 +54,23 @@ class ModelRegistry:
         Returns:
             List of neural model instances
         """
-        from src.models.neuralforecast.models import get_neural_models as _get_neural_models
         return _get_neural_models(horizon, hist_exog_list)
     
     @staticmethod
-    def get_auto_models(horizon: int, loss_fn=None, num_samples: int = 10,
+    def get_auto_models(horizon: int, num_samples: int = 10,
                        hist_exog_list: Optional[List[str]] = None) -> List[Any]:
         """
         Get auto models for hyperparameter optimization.
         
         Args:
             horizon: Forecast horizon
-            loss_fn: Loss function (default MAE)
             num_samples: Number of hyperparameter samples per model
             hist_exog_list: List of historical exogenous features
             
         Returns:
             List of auto model instances for HPO
         """
-        from src.models.neuralforecast.auto_models import get_auto_models as _get_auto_models
-        return _get_auto_models(horizon, loss_fn, num_samples, hist_exog_list)
+        return _get_auto_models(horizon, num_samples, hist_exog_list)
     
     @staticmethod
     def get_loss_functions() -> Dict[str, Any]:
@@ -83,7 +80,6 @@ class ModelRegistry:
         Returns:
             Dictionary mapping loss names to loss function instances
         """
-        from src.models.neuralforecast.auto_models import get_loss_functions as _get_loss_functions
         return _get_loss_functions()
     
     @staticmethod
@@ -94,11 +90,10 @@ class ModelRegistry:
         Returns:
             Dictionary with model counts by category
         """
-        from src.models.neuralforecast.models import get_neural_models as _get_neural_models
-        from src.models.neuralforecast.auto_models import get_auto_models as _get_auto_models, get_loss_functions as _get_loss_functions
+        
         
         return {
-            'statistical_models': len(get_statistical_models()),
+            'statistical_models': len(_get_statistical_models()),
             'neural_models': len(_get_neural_models(HORIZON)),
             'auto_models': len(_get_auto_models(HORIZON)),
             'loss_functions': len(_get_loss_functions()),

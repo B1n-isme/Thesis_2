@@ -28,7 +28,7 @@ def load_and_prepare_data():
 
 
 def split_data(df, horizon, test_length_multiplier):
-    """Split data into development and final holdout test sets."""
+    """Split data into train and test sets."""
     
     test_length = horizon * test_length_multiplier
     

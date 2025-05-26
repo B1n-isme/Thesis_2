@@ -22,8 +22,6 @@ import numpy as np
 import warnings
 from typing import Dict, List, Tuple, Optional
 import time
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 # Add src to Python path
 sys.path.append('src')
@@ -55,7 +53,7 @@ class BitcoinForecastingPipeline:
         """
         self.skip_hpo = skip_hpo
         self.results = {}
-        self.timestamp = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%Y%m%d_%H%M%S")
+        self.timestamp = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").strftime("%Y%m%d_%H%M%S")
         
         # Create results directories
         self._setup_directories()
@@ -216,6 +214,7 @@ class BitcoinForecastingPipeline:
             # Use optimized configurations from HPO
             print("Using optimized neural model configurations from HPO...")
             # TODO: Implement loading best configs into regular models
+            
             neural_models = ModelRegistry.get_neural_models(HORIZON)  # Fallback for now
         else:
             # Use default configurations

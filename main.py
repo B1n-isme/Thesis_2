@@ -12,6 +12,7 @@ This script coordinates the entire forecasting workflow:
 Usage:
     python forecasting_pipeline_main.py [--skip-hpo]
 """
+import torch
 import argparse
 from datetime import datetime
 from utilsforecast.plotting import plot_series

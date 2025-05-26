@@ -39,7 +39,7 @@ def setup_environment(seed=42, ray_config=None):
     
     ray.init(**ray_config)
     
-    print(f"Pipeline execution started at: {datetime.now()} (Ho Chi Minh City Time)")
+    print(f"Pipeline execution started at: {pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").strftime("%Y%m%d_%H%M%S")} (Ho Chi Minh City Time)")
 
 
 def print_data_info(df, train_df, test_df):

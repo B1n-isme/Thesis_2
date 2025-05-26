@@ -7,19 +7,12 @@ from neuralforecast import NeuralForecast
 from utilsforecast.plotting import plot_series
 from neuralforecast.losses.pytorch import MAE
 from config.base import *
-from config.base import CV_N_WINDOWS, LEVELS
 from src.models.model_registry import ModelRegistry
 import json
 
 
-def run_hyperparameter_optimization(train_df, horizon=None, loss_fn=None, num_samples=None):
+def run_hyperparameter_optimization(train_df, horizon=None, num_samples=None):
     """Run hyperparameter optimization using AutoModels."""
-    if horizon is None:
-        horizon = HORIZON
-    if loss_fn is None:
-        loss_fn = MAE()
-    if num_samples is None:
-        num_samples = NUM_SAMPLES_PER_MODEL
     
     print(f"\nStarting Hyperparameter Optimization with AutoModels...")
     print(f"Samples per model: {num_samples}")
@@ -27,7 +20,6 @@ def run_hyperparameter_optimization(train_df, horizon=None, loss_fn=None, num_sa
     # Get auto models for HPO using the model registry
     automodels = ModelRegistry.get_auto_models(
         horizon=horizon,
-        loss_fn=loss_fn,
         num_samples=num_samples
     )
     
@@ -141,15 +133,14 @@ def save_best_configurations(all_best_configs, output_dir=None):
         return None
 
 
-def run_complete_hpo_pipeline(train_df, horizon=None, loss_fn=None, num_samples=None):
+def run_complete_hpo_pipeline(train_df, horizon=None, num_samples=None):
     """Run the complete hyperparameter optimization pipeline."""
     try:
         print("Step 1: Running hyperparameter optimization...")
         # Run HPO
         cv_df, nf_hpo = run_hyperparameter_optimization(
             train_df, 
-            horizon=horizon, 
-            loss_fn=loss_fn, 
+            horizon=horizon,
             num_samples=num_samples
         )
         print("Step 1 completed successfully.")

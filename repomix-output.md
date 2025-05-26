@@ -291,7 +291,7 @@ essential_models = ['RandomForest', 'LightGBM', 'Ridge']
 
 ## File: src/models/neuralforecast/auto_cfg.py
 ```python
-def get_bitcoin_optimized_configs(h)
+def neural_auto_model_cfg(h)
 ⋮----
 """
     Get model configurations optimized for Bitcoin price forecasting.
@@ -320,7 +320,7 @@ def get_auto_models(horizon: int, loss_fn=MAE(), num_samples_per_model: int = 10
 """
     Get set of auto models for Bitcoin forecasting.
     """
-configs = get_bitcoin_optimized_configs(horizon)
+configs = neural_auto_model_cfg(horizon)
 ⋮----
 models = [
 ⋮----

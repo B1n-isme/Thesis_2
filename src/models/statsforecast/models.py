@@ -45,11 +45,3 @@ def get_statistical_models(season_length: int = 7) -> List[Any]:
     ]
     
     return all_models
-
-
-# Backward compatibility
-def get_bitcoin_optimized_models(season_length: int = 7):
-    """
-    Backward compatibility function.
-    """
-    return get_statistical_models(season_length)

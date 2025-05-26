@@ -268,7 +268,7 @@ class ModelComparison:
     
     def save_results(self, all_results: pd.DataFrame, successful_results: pd.DataFrame):
         """Save comparison results."""
-        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").strftime("%Y%m%d_%H%M%S")
         
         # Save all results
         all_results.to_csv(self.results_dir / f"all_results_{timestamp}.csv", index=False)
@@ -300,20 +300,16 @@ class ModelComparison:
         return results_df.head(top_n)['model_name'].tolist()
 
 # Usage example
-def run_comprehensive_model_selection(train_df, horizon: int = 7):
+def run_comprehensive_model_selection(train_df, horizon: int = 7, season_length: int = 7):
     """Run comprehensive model selection pipeline."""
     
     # Import model functions
-    from src.models.neuralforecast.models import get_neural_models
-    from src.models.neuralforecast.auto_models import (
-        get_auto_models, get_loss_functions
-    )
-    from src.models.statsforecast.models import get_bitcoin_optimized_models
+    from src.models.model_registry import ModelRegistry
     
     # Get models
-    neural_models = get_auto_models(horizon, num_samples_per_model=5)  # Reduced for faster testing
-    deterministic_models = get_neural_models(horizon)
-    stat_models = get_bitcoin_optimized_models()
+    neural_models = ModelRegistry.get_auto_models(horizon, num_samples_per_model=5)  # Reduced for faster testing
+    deterministic_models = ModelRegistry.get_neural_models(horizon)
+    stat_models = ModelRegistry.get_statistical_models(season_length)
     
     # Initialize comparison
     comparison = ModelComparison()
