@@ -1,7 +1,7 @@
 ============================================================
 🎯 BITCOIN FORECASTING PIPELINE SUMMARY
 ============================================================
-Execution Time: 20250526_080905
+Execution Time: 2025-05-28 07:46:47
 HPO: Skipped
 
 📊 DATA INFORMATION:
@@ -12,10 +12,11 @@ HPO: Skipped
   • Horizon: 7 days
 
 🏆 MODEL COMPARISON:
-  • Execution time: 225.0 seconds
-  • Models compared: 3
+  • Execution time: 275.7 seconds
+  • CV models evaluated: 2
+  • Final models evaluated: 2
   • Best model: AutoARIMA
-  • Best MAE: 5721.7205
+  • Best test MAE: 5821.6465
 
 🎯 RECOMMENDATIONS:
   • Review top-performing models for deployment

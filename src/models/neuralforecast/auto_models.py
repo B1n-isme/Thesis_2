@@ -5,7 +5,8 @@ from ray.tune.search.hyperopt import HyperOptSearch
 import torch
 from neuralforecast.auto import AutoNHITS, AutoNBEATS, AutoTFT, AutoLSTM, AutoGRU
 from neuralforecast.losses.pytorch import MAE, MSE, RMSE, MAPE, SMAPE
-
+from ray.tune import CLIReporter
+from ray.tune.logger import LoggerCallback
 
 from config.base import SCALER_TYPE
 from config.search_algo import get_search_algorithm_class
@@ -13,9 +14,6 @@ from src.models.neuralforecast.auto_cfg import (
     neural_auto_model_cfg,
     neural_auto_model_cfg_legacy,
 )
-
-torch.set_float32_matmul_precision("high")
-
 
 def get_auto_models(
     h: int, num_samples: int = 10, hist_exog_list: Optional[List[str]] = None
@@ -41,14 +39,24 @@ def get_auto_models(
         "loss": MAE(),
         "search_alg": search_alg,
         "num_samples": num_samples,
-        "verbose": True,
+        "verbose": False,
     }
 
+    # base_auto_config = {
+    #     "input_size": tune.choice([h * 2, h * 3, h * 4, h * 6]),
+    #     "learning_rate": tune.choice([1e-4, 1e-3, 5e-3]),
+    #     "scaler_type": tune.choice(SCALER_TYPE),
+    #     "max_steps": tune.choice([500, 1000, 1500]),
+    #     "batch_size": tune.choice([16, 32, 64]),
+    #     "windows_batch_size": tune.choice([128, 256, 512]),
+    #     "val_check_steps": 50,
+    #     "random_seed": tune.randint(1, 20),
+    # }
     base_auto_config = {
         "input_size": tune.choice([h * 2, h * 3, h * 4, h * 6]),
         "learning_rate": tune.choice([1e-4, 1e-3, 5e-3]),
         "scaler_type": tune.choice(SCALER_TYPE),
-        "max_steps": tune.choice([500, 1000, 1500]),
+        "max_steps": tune.choice([50, 100]),
         "batch_size": tune.choice([16, 32, 64]),
         "windows_batch_size": tune.choice([128, 256, 512]),
         "val_check_steps": 50,
@@ -64,25 +72,10 @@ def get_auto_models(
     models = [
         # Primary auto models for HPO
         AutoNHITS(**init_config, config=configs["nhits"]),
-        # AutoNBEATS(config=configs['nbeats'], **base_auto_config),
-        # AutoLSTM(config=configs['lstm'], **base_auto_config),
-        # AutoTFT(config=configs['tft'], **base_auto_config)
+        # AutoNBEATS(**init_config, config=configs["nbeats"]),
+        # AutoLSTM(**init_config, config=configs["lstm"]),
+        # AutoTFT(**init_config, config=configs["tft"]),
     ]
 
     return models
 
-
-
-
-# Multiple loss functions for different aspects of Bitcoin forecasting
-def get_loss_functions():
-    """
-    Different loss functions for different forecasting objectives.
-    """
-    return {
-        "mae": MAE(),  # Robust to outliers
-        "mse": MSE(),  # Penalizes large errors
-        "rmse": RMSE(),  # Scale-dependent, interpretable
-        "mape": MAPE(),  # Percentage errors
-        "smape": SMAPE(),  # Symmetric percentage errors
-    }

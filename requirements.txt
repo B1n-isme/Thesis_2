@@ -17,3 +17,5 @@ torchvision
 ray
 HEBO
 ConfigSpace
+plotly
+kaleido

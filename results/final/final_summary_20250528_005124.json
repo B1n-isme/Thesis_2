@@ -1,0 +1,9 @@
+{
+  "timestamp": "20250528_005124",
+  "evaluation_type": "final_fit_predict",
+  "total_models": 2,
+  "successful_models": 2,
+  "failed_models": 0,
+  "best_model": "AutoARIMA",
+  "best_test_mae": 5821.646466483697
+}

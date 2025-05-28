@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import ray
 from datetime import datetime
+import os
+import warnings
 
 
 def seed_everything(seed=42):
@@ -26,20 +28,25 @@ def setup_environment(seed=42, ray_config=None):
     seed_everything(seed)
     
     # Setup logging
+    warnings.filterwarnings('ignore')
     logging.getLogger("lightning.pytorch").setLevel(logging.ERROR)
+    logging.getLogger("ray").setLevel(logging.ERROR)
+    logging.getLogger("ray.tune").setLevel(logging.ERROR)
     torch.set_float32_matmul_precision('high')
-    
+
     # Initialize Ray
     if ray_config is None:
         ray_config = {
             'address': 'local',
-            'num_cpus': torch.cuda.device_count(),
-            'num_gpus': torch.cuda.device_count()
+            'log_to_driver': False,
+            'logging_level': logging.ERROR,
+            'num_cpus': os.cpu_count(),
+            'num_gpus': torch.cuda.device_count() if torch.cuda.is_available() else 0
         }
     
     ray.init(**ray_config)
     
-    print(f"Pipeline execution started at: {pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").strftime("%Y%m%d_%H%M%S")} (Ho Chi Minh City Time)")
+    print(f"Pipeline execution started at: {pd.Timestamp.now(tz='Asia/Ho_Chi_Minh').strftime('%Y-%m-%d %H:%M:%S')} (Ho Chi Minh City Time)")
 
 
 def print_data_info(df, train_df, test_df):

@@ -19,6 +19,9 @@ LEVELS = [80, 90]
 TEST_LENGTH_MULTIPLIER = 5
 SEED = 42
 
+# === Rolling Forecast Configuration ===
+ENABLE_ROLLING_FORECAST = True  # Enable rolling forecast for neural models when horizon < test_length
+
 # === Model Configuration ===
 FREQUENCY = 'D'
 SCALER_TYPE = ['standard']  # List for tune.choice()
@@ -30,8 +33,7 @@ CV_STEP_SIZE = HORIZON
 
 # === Hyperparameter Tuning Configuration ===
 NUM_SAMPLES_PER_MODEL = 1
-TUNING_RESULTS_DIR = 'tuning_results'
-BEST_HYPERPARAMETERS_CSV = 'tuning_results/best_hyperparameters.csv'
+
 
 # === Search Algorithm Configuration ===
 DEFAULT_SEARCH_ALGORITHM = 'optuna'  # Default search algorithm
@@ -74,17 +76,18 @@ JSON_PARSEABLE_KEYS = [
 ]
 
 # === Output Directories ===
-RESULTS_DIR: str = 'enhanced_results'
+RESULTS_DIR: str = 'results'
 HPO_DIR: str = f"{RESULTS_DIR}/hpo"
-CV_DIR: str = f"{RESULTS_DIR}/cv"
+PLOT_DIR: str = f"{RESULTS_DIR}/plot"
 FINAL_DIR: str = f"{RESULTS_DIR}/final"
 MODELS_DIR: str = f"{RESULTS_DIR}/models"
+BEST_HYPERPARAMETERS_CSV = f"{RESULTS_DIR}/best_hyperparameters.json"
 
 def __post_init__(self):
         """Set default values that depend on other attributes."""
         # Create output directories
         os.makedirs(self.results_dir, exist_ok=True)
         os.makedirs(self.hpo_dir, exist_ok=True)
-        os.makedirs(self.cv_dir, exist_ok=True)
+        os.makedirs(self.PLOT_DIR, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
         os.makedirs(self.models_dir, exist_ok=True)

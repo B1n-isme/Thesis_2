@@ -42,8 +42,8 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
     # TFT config - only model-specific parameters
     tft_config = {
         "hidden_size": tune.choice([32, 64, 128]),
-        "lstm_layers": tune.choice([1, 2]),
-        "num_attention_heads": tune.choice([2, 4, 8]),
+        "n_rnn_layers": tune.choice([1, 2]),
+        "n_head": tune.choice([2, 4, 8]),
     }
 
     return {
@@ -100,8 +100,8 @@ def neural_auto_model_cfg_legacy(h: int) -> Dict[str, Dict]:
     tft_config = {
         "input_size": tune.choice([h * 4, h * 6, h * 8]),
         "hidden_size": tune.choice([64, 128, 256]),
-        "lstm_layers": tune.choice([1, 2]),
-        "attention_heads": tune.choice([4, 8]),
+        "n_rnn_layers": tune.choice([1, 2]),
+        "n_head": tune.choice([4, 8]),
         # 'dropout': tune.choice([0.1, 0.2, 0.3]),
         "learning_rate": tune.choice([1e-4, 5e-4, 1e-3]),
         "max_steps": tune.choice([1000, 1500, 2000]),

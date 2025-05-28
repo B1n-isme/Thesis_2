@@ -1,8 +1,0 @@
-{
-  "timestamp": "20250525_041249",
-  "total_models": 6,
-  "successful_models": 5,
-  "failed_models": 1,
-  "best_model": "AutoETS",
-  "best_mae": 1843.252865757787
-}

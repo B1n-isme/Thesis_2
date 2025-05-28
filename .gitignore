@@ -1,4 +1,6 @@
-data/
+data/processed/
+data/raw/
 lightning_logs/
 __pycache__/
 .venv/
+.DS_Store
