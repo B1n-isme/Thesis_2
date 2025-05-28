@@ -5,7 +5,7 @@ from sklearn.svm import SVR
 import lightgbm as lgb
 import xgboost as xgb
 
-def get_mlforecast_models(self, model_names: List[str] = None) -> List[Tuple[str, Any]]:
+def get_ml_models(self, model_names: List[str] = None) -> List[Tuple[str, Any]]:
         """
         Get MLForecast models with different algorithms.
         

@@ -9,3 +9,5 @@
 - max_steps: num of train iterations (num_epoch)
 - val_check_steps: freq in making validate -> smaller is better since spot quick early stopping but can be computation overhead
     -> these 2 often go with early_stop_patience_steps
+
+Include prediction interval to account for uncertainty

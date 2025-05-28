@@ -11,6 +11,8 @@ from pathlib import Path
 import traceback
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 from datetime import datetime
 
 from neuralforecast import NeuralForecast
@@ -363,7 +365,7 @@ class FinalFitPredictor:
             print("Creating unified forecast comparison plot...")
             
             # Take last 100 values from train_df for continuity
-            train_tail = train_df.tail(100).copy()
+            train_tail = train_df.tail(50).copy()
             
             # Set up the plot
             plt.figure(figsize=(16, 10))
@@ -390,11 +392,12 @@ class FinalFitPredictor:
                     label='Actual (Test Period)', alpha=0.9, zorder=11)
             
             # Define colors for different models
-            colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+            num_models = len(self.all_forecasts)
+            cmap = cm.get_cmap('tab20', num_models)
             
             # Plot forecasts from all models using eval_df data
             for i, (model_name, forecast_data) in enumerate(self.all_forecasts.items()):
-                color = colors[i % len(colors)]
+                color = cmap(i)
                 
                 # Use eval_df data if available, otherwise fall back to forecast data
                 if 'eval_df' in forecast_data and not forecast_data['eval_df'].empty:
@@ -445,7 +448,8 @@ class FinalFitPredictor:
             
             # Format x-axis dates
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-            plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(test_df)//8)))
+            # plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(test_df)//8)))
+            plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
             plt.xticks(rotation=45, fontsize=10)
             plt.yticks(fontsize=10)
             
@@ -467,7 +471,7 @@ class FinalFitPredictor:
             if self.all_forecasts:
                 info_text = f"Models Compared: {len(self.all_forecasts)}\n"
                 info_text += f"Test Period: {len(test_df)} days\n"
-                info_text += f"Train Context: {len(train_tail)} days\n"
+                # info_text += f"Train Context: {len(train_tail)} days\n"
                 
                 # Add rolling forecast info
                 rolling_models = [name for name, data in self.all_forecasts.items() 

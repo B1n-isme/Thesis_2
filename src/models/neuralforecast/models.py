@@ -48,7 +48,7 @@ def get_neural_models(
         hyperparameters_json_path = BEST_HYPERPARAMETERS_CSV
         
     # Use the correct import from the refactored HPO system
-    from src.pipelines.hyperparameter_tuning import load_best_hyperparameters
+    from pipelines.hpo_neural import load_best_hyperparameters
     
     best_hyperparams_map = load_best_hyperparameters(hyperparameters_json_path)
     if best_hyperparams_map:

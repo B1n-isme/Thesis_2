@@ -19,3 +19,4 @@ HEBO
 ConfigSpace
 plotly
 kaleido
+window-ops
