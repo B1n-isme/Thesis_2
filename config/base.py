@@ -91,3 +91,4 @@ def __post_init__(self):
         os.makedirs(self.PLOT_DIR, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
         os.makedirs(self.models_dir, exist_ok=True)
+

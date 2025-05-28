@@ -85,11 +85,11 @@ class FinalFitPredictor:
         
         print(f"Fitting and predicting {len(models)} neural models...")
         
-        # Debug: Show data structure
-        print(f"  Train data columns: {list(train_df.columns)}")
-        print(f"  Test data columns: {list(test_df.columns)}")
-        print(f"  Train data shape: {train_df.shape}")
-        print(f"  Test data shape: {test_df.shape}")
+        # # Debug: Show data structure
+        # print(f"  Train data columns: {list(train_df.columns)}")
+        # print(f"  Test data columns: {list(test_df.columns)}")
+        # print(f"  Train data shape: {train_df.shape}")
+        # print(f"  Test data shape: {test_df.shape}")
         
         # Determine if rolling forecast is needed
         test_length = len(test_df)
@@ -501,9 +501,9 @@ class FinalFitPredictor:
         """Fit all models and generate final predictions with unified plotting."""
         
         print("=== Starting Final Fit-Predict Model Evaluation ===")
-        print(f"Train data shape: {train_df.shape}")
-        print(f"Test data shape: {test_df.shape}")
-        print(f"Horizon: {horizon}")
+        # print(f"Train data shape: {train_df.shape}")
+        # print(f"Test data shape: {test_df.shape}")
+        # print(f"Horizon: {horizon}")
         print(f"Neural models: {len(neural_models) if neural_models else 0}")
         print(f"Statistical models: {len(stat_models) if stat_models else 0}")
         print(f"Plots will be saved to: {self.plot_dir}")

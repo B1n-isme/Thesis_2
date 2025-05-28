@@ -32,7 +32,7 @@ def split_data(df, horizon, test_length_multiplier):
     
     test_length = horizon * test_length_multiplier
     
-    print(f"Forecast horizon (h) set to: {horizon} days")
+    # print(f"Forecast horizon (h) set to: {horizon} days")
     
     # Validate data length
     if len(df) <= test_length:

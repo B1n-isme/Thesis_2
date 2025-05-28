@@ -267,10 +267,10 @@ class BitcoinForecastingPipeline:
             print("Using default neural model configurations...")
             neural_models = ModelRegistry.get_neural_models(HORIZON, hist_exog_list)
         
-        print(f"   • Train data: {len(train_df):,} samples")
-        print(f"   • Test data: {len(df_test):,} samples")
-        print(f"   • Neural models: {len(neural_models)}")
-        print(f"   • Statistical models: {len(stat_models)}")
+        # print(f"   • Train data: {len(train_df):,} samples")
+        # print(f"   • Test data: {len(df_test):,} samples")
+        # print(f"   • Neural models: {len(neural_models)}")
+        # print(f"   • Statistical models: {len(stat_models)}")
         
         # Step 3a: Cross-validation for model selection
         print("\n--- Step 3a: Cross-Validation Model Selection ---")

@@ -40,6 +40,7 @@ def get_auto_models(
         "search_alg": search_alg,
         "num_samples": num_samples,
         "verbose": False,
+        "early_stop_patience_steps": 10
     }
 
     # base_auto_config = {

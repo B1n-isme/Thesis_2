@@ -4,11 +4,18 @@ Enhanced model configurations optimized for Bitcoin forecasting.
 from typing import List, Optional, Any, Dict
 from neuralforecast.models import NHITS, NBEATS, TFT, LSTM, GRU, RNN, TCN, DeepAR
 from neuralforecast.losses.pytorch import MAE
+from lightning.pytorch.callbacks import RichProgressBar
 from config.base import LOCAL_SCALER_TYPE, BEST_HYPERPARAMETERS_CSV
 import numpy as np
 import pandas as pd
 import os
 import json
+
+trainer_kwargs = {
+    'accelerator': 'gpu',
+    'logger': False,
+    'callbacks': RichProgressBar()
+}
 
 
 def get_neural_models(
@@ -28,12 +35,13 @@ def get_neural_models(
     Returns:
         List of configured neural model instances
     """
-    print(f"Getting neural models with horizon={h}")
-    print(f"Exogenous features: {len(hist_exog_list)}")
-    print(f"Hyperparameters path: {hyperparameters_json_path}")
     
     # Define model configurations with their default parameters
     model_configs = _get_default_model_configs(h, hist_exog_list)
+    
+    print(f"Getting neural models with horizon= {h}")
+    print(f"Exogenous features: {len(hist_exog_list)}")
+    print(f"Hyperparameters path: {hyperparameters_json_path}")
     
     # Load and apply hyperparameters if JSON path is provided
     if hyperparameters_json_path is None:
@@ -76,6 +84,7 @@ def _get_default_model_configs(h: int, hist_exog_list: Optional[List[str]] = Non
         'windows_batch_size': 256,
         'scaler_type': LOCAL_SCALER_TYPE,
         'random_seed': 42,    # Add for reproducibility
+        'trainer_kwargs': trainer_kwargs
     }
     
     # Include exogenous features if available
@@ -164,24 +173,16 @@ def _apply_hyperparameters(
     print(f"Available HPO configurations: {list(best_hyperparams_map.keys())}")
     
     for model_name, config in model_configs.items():
-        # Try different naming conventions for the model in JSON
         # The HPO system saves models with 'Auto' prefix
-        possible_json_keys = [
-            f'Auto{model_name}',  # AutoNHITS, AutoNBEATS, etc. (most likely)
-            model_name,           # NHITS, NBEATS, etc.
-            f'{model_name}Auto',  # Alternative naming
-            f'Auto{model_name}_Mock'  # For mock versions if they exist
-        ]
-        
+        json_key = f'Auto{model_name}'
+
         loaded_hpo_params = None
         matched_key = None
-        
+
         # Find the matching hyperparameters in the JSON
-        for json_key in possible_json_keys:
-            if json_key in best_hyperparams_map:
-                loaded_hpo_params = best_hyperparams_map[json_key].copy()  # Copy to avoid modifying original
-                matched_key = json_key
-                break
+        if json_key in best_hyperparams_map:
+            loaded_hpo_params = best_hyperparams_map[json_key].copy()  # Copy to avoid modifying original
+            matched_key = json_key
         
         if loaded_hpo_params:
             print(f"\n=== Applying HPO parameters for {model_name} (found as '{matched_key}') ===")
@@ -216,7 +217,7 @@ def _apply_hyperparameters(
             
         else:
             print(f"\n=== No HPO configuration found for {model_name} ===")
-            print(f"  Tried keys: {possible_json_keys}")
+            print(f"  Tried keys: {json_key}")
             print(f"  Available keys: {list(best_hyperparams_map.keys())}")
             print(f"  Using default configuration for {model_name}")
     
