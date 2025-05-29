@@ -10,4 +10,11 @@
 - val_check_steps: freq in making validate -> smaller is better since spot quick early stopping but can be computation overhead
     -> these 2 often go with early_stop_patience_steps
 
+# Point Forecast -> Probabilistic Forecast
 Include prediction interval to account for uncertainty
+
+- refactor all_forecasts_dict in model_forecasting.py to visualize mean in 1 plot to compare and interval for independent plots
+
+# supress ray tune logging in library
+import logging
+logging.getLogger("ray.tune").setLevel(logging.WARNING)

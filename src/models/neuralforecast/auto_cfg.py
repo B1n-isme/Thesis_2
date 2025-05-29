@@ -14,7 +14,7 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
         Common parameters are handled in base_auto_config.
     """
 
-    # NHITS config - only model-specific parameters
+    # NHITS config 
     nhits_config = {
         "n_pool_kernel_size": tune.choice(
             [[2, 2, 2], [16, 8, 1]]
@@ -24,7 +24,7 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
         ),  # Interpolation expressivity ratios
     }
 
-    # NBEATS config - only model-specific parameters
+    # NBEATS config 
     nbeats_config = {
         # 'stack_types': tune.choice([
         #     ['trend', 'seasonality'],
@@ -33,13 +33,13 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
         # ]),
     }
 
-    # LSTM config - only model-specific parameters
+    # LSTM config 
     lstm_config = {
         "encoder_n_layers": tune.choice([1, 2, 3]),
         "encoder_hidden_size": tune.choice([64, 128, 256]),
     }
 
-    # TFT config - only model-specific parameters
+    # TFT config 
     tft_config = {
         "hidden_size": tune.choice([32, 64, 128]),
         "n_rnn_layers": tune.choice([1, 2]),

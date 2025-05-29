@@ -7,8 +7,9 @@ import numpy as np
 from typing import List, Dict
 
 # Configuration and local imports
-from config.base import FREQUENCY, LOCAL_SCALER_TYPE, CV_N_WINDOWS, CV_STEP_SIZE, HORIZON
+from config.base import *
 from neuralforecast import NeuralForecast
+from neuralforecast.utils import PredictionIntervals
 from statsforecast import StatsForecast
 
 # Import utilsforecast for cross-validation evaluation
@@ -32,7 +33,10 @@ def perform_cross_validation(auto_models: List, stat_models: List, train_df: pd.
                     df=train_df,
                     n_windows=CV_N_WINDOWS,
                     step_size=CV_STEP_SIZE,
-                    verbose=False
+                    refit=True,
+                    verbose=False,
+                    prediction_intervals=PredictionIntervals(),
+                    level= LEVELS
                 )
                 if cv_df.empty:
                     raise ValueError("Cross-validation returned empty results")
@@ -55,7 +59,7 @@ def perform_cross_validation(auto_models: List, stat_models: List, train_df: pd.
                     'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
                 })
                 
-    # Cross-validate Statistical Models
+    # Cross-validate Auto Statistical Models
     if stat_models:
         print(f"Cross-validating {len(stat_models)} statistical models...")
         df_stat = train_df[['unique_id', 'ds', 'y']].copy()
@@ -65,7 +69,13 @@ def perform_cross_validation(auto_models: List, stat_models: List, train_df: pd.
             start_time = time.time()
             try:
                 sf = StatsForecast(models=[model], freq=FREQUENCY, verbose=True)
-                cv_df = sf.cross_validation(df=df_stat, h=HORIZON, n_windows=CV_N_WINDOWS, step_size=CV_STEP_SIZE)
+                cv_df = sf.cross_validation(
+                    df=df_stat, 
+                    h=HORIZON, 
+                    n_windows=CV_N_WINDOWS, 
+                    step_size=CV_STEP_SIZE,
+                    refit=True
+                )
                 if cv_df.empty:
                     raise ValueError("Cross-validation returned empty results")
                 metrics = calculate_cv_metrics_with_utilsforecast(cv_df, model_name)

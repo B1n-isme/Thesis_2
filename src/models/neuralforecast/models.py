@@ -4,9 +4,6 @@ from typing import List, Optional, Any, Dict
 # Third-party imports
 import ray
 from ray import tune
-from ray.tune import CLIReporter
-from ray.tune.logger import LoggerCallback
-from ray.tune.search.hyperopt import HyperOptSearch
 import torch
 from neuralforecast.auto import (
     AutoNHITS,
@@ -20,9 +17,9 @@ from neuralforecast.losses.pytorch import (
     MSE,
     RMSE,
     MAPE,
-    SMAPE
+    SMAPE,
+    DistributionLoss
 )
-from lightning.pytorch.callbacks import RichProgressBar
 
 # Local imports
 from config.base import SCALER_TYPE, DEFAULT_SEARCH_ALGORITHM
@@ -53,11 +50,12 @@ def get_neural_models(
 
     init_config = {
         "h": horizon,
-        "loss": MAE(),
+        # "loss": MAE(),
+        "loss": DistributionLoss("Normal", level=[90]),
         "search_alg": search_alg,
         "num_samples": num_samples,
         "verbose": False,
-        "refit_with_val": True,
+        "refit_with_val": False,
     }
 
     base_auto_config = {
@@ -67,13 +65,12 @@ def get_neural_models(
         "max_steps": tune.choice([50, 100]),
         "batch_size": tune.choice([16, 32, 64]),
         "windows_batch_size": tune.choice([128, 256, 512]),
-        "val_check_steps": 50,
+        "val_check_steps": 50, 
         "random_seed": tune.randint(1, 20),
         "early_stop_patience_steps": 10,
-        # trainer_kwargs
+        # trainer_kwargs values
         'accelerator': 'gpu',
         'logger': False,
-        # 'callbacks': [RichProgressBar()]
     }
 
     if hist_exog_list:
