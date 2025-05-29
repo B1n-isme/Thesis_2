@@ -1,0 +1,48 @@
+================================================================================
+🚀 BITCOIN AUTO MODELS PIPELINE - SUMMARY REPORT
+================================================================================
+Execution Time: 2025-05-28 23:16:46
+Pipeline: Direct Auto Models Workflow (No Separate HPO)
+
+📊 DATA INFORMATION
+----------------------------------------
+Training Samples: 2,887
+Test Samples: 35
+Forecast Horizon: 7 days
+Exogenous Features: 77
+
+🤖 AUTO MODELS WORKFLOW
+----------------------------------------
+Total Execution Time: 317.2 seconds
+Auto Neural Models: 1
+Statistical Models: 1
+Total Models: 2
+
+🏆 MODEL PERFORMANCE SUMMARY
+----------------------------------------
+Top 5 Models (by Test MAE):
+
+1. AutoNHITS [AUTO] (neuralforecast)
+   Test MAE: 5230.9382 | RMSE: 6017.3311
+
+2. AutoARIMA (statsforecast)
+   Test MAE: 5821.6465 | RMSE: 6722.8161
+
+Performance Statistics:
+Best Test MAE: 5230.9382
+Best Test RMSE: 6017.3311
+Average Test MAE: 5526.2923
+Average Test RMSE: 6370.0736
+
+📈 SUCCESS METRICS
+----------------------------------------
+Total Models Evaluated: 2
+Successful Models: 2
+Success Rate: 100.0%
+
+Successful Models by Framework:
+• Neural Models: 1
+• Statistical Models: 1
+• Auto Models: 1
+
+================================================================================

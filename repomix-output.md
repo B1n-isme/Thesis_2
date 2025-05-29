@@ -1,60 +1,19 @@
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
-The content has been processed where content has been compressed (code blocks are separated by ⋮---- delimiter).
-
-# File Summary
-
-## Purpose
-This file contains a packed representation of the entire repository's contents.
-It is designed to be easily consumable by AI systems for analysis, code review,
-or other automated processes.
-
-## File Format
-The content is organized as follows:
-1. This summary section
-2. Repository information
-3. Directory structure
-4. Repository files (if enabled)
-5. Multiple file entries, each consisting of:
-  a. A header with the file path (## File: path/to/file)
-  b. The full contents of the file in a code block
-
-## Usage Guidelines
-- This file should be treated as read-only. Any changes should be made to the
-  original repository files, not this packed version.
-- When processing this file, use the file path to distinguish
-  between different files in the repository.
-- Be aware that this file may contain sensitive information. Handle it with
-  the same level of security as you would the original repository.
-
-## Notes
-- Some files may have been excluded based on .gitignore rules and Repomix's configuration
-- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: **/*.csv, **/*.json, **/*.ipynb, **/__pycache__/, **/lightning_logs/**
-- Files matching patterns in .gitignore are excluded
-- Files matching default ignore patterns are excluded
-- Content has been compressed - code blocks are separated by ⋮---- delimiter
-- Files are sorted by Git change count (files with more changes are at the bottom)
-
 # Directory Structure
 ```
 config/
   algo.txt
   base.py
   search_algo.py
-enhanced_results/
+results/
   final/
-    summary_report_20250527_111443.txt
-    summary_report_20250527_112628.txt
-    summary_report_20250527_121711.txt
-    summary_report_20250527_153716.txt
+    summary_report_20250528_074647.txt
 src/
   dataset/
     data_preparation.py
-  hpo/
-    hyperparameter_tuning.py
   models/
     mlforecast/
       auto_models.py
+      models.py
     neuralforecast/
       auto_cfg.py
       auto_models.py
@@ -63,159 +22,28 @@ src/
       models.py
     model_registry.py
   pipelines/
+    cross_validation.py
     cv.py
     evaluate.py
-    model_selection.py
+    final_fit_predict.py
+    hpo_ml.py
+    hpo_neural.py
     test.py
     train.py
   utils/
     hyperparam.py
     other.py
-    plot.py
 .gitignore
 .repomixignore
-learn.md
 main.py
+output.txt
+READEVERYTIMEOPENREPO.md
 README.md
 repomix.txt
 requirements.txt
 ```
 
 # Files
-
-## File: enhanced_results/final/summary_report_20250527_111443.txt
-````
-============================================================
-🎯 BITCOIN FORECASTING PIPELINE SUMMARY
-============================================================
-Execution Time: 20250527_111443
-HPO: Executed
-
-📊 DATA INFORMATION:
-  • Total samples: 2,922
-  • Training samples: 2,887
-  • Test samples: 35
-  • Features: 77
-  • Horizon: 7 days
-
-🔧 HYPERPARAMETER OPTIMIZATION:
-  • Execution time: 8.3 seconds
-  • Models tuned: 1
-  • Samples per model: 1
-
-🎯 RECOMMENDATIONS:
-  • Review top-performing models for deployment
-  • Consider ensemble methods for improved performance
-  • Monitor model performance over time
-  • Retrain periodically with new data
-
-============================================================
-````
-
-## File: enhanced_results/final/summary_report_20250527_112628.txt
-````
-============================================================
-🎯 BITCOIN FORECASTING PIPELINE SUMMARY
-============================================================
-Execution Time: 20250527_112628
-HPO: Executed
-
-📊 DATA INFORMATION:
-  • Total samples: 2,922
-  • Training samples: 2,887
-  • Test samples: 35
-  • Features: 77
-  • Horizon: 7 days
-
-🔧 HYPERPARAMETER OPTIMIZATION:
-  • Execution time: 8.4 seconds
-  • Models tuned: 1
-  • Samples per model: 1
-
-🏆 MODEL COMPARISON:
-  • Execution time: 199.3 seconds
-  • Models compared: 2
-  • Best model: AutoARIMA
-  • Best MAE: 5721.7205
-
-🎯 RECOMMENDATIONS:
-  • Review top-performing models for deployment
-  • Consider ensemble methods for improved performance
-  • Monitor model performance over time
-  • Retrain periodically with new data
-
-============================================================
-````
-
-## File: enhanced_results/final/summary_report_20250527_121711.txt
-````
-============================================================
-🎯 BITCOIN FORECASTING PIPELINE SUMMARY
-============================================================
-Execution Time: 2025-05-27 12:17:11
-HPO: Executed
-
-📊 DATA INFORMATION:
-  • Total samples: 2,922
-  • Training samples: 2,887
-  • Test samples: 35
-  • Features: 77
-  • Horizon: 7 days
-
-🔧 HYPERPARAMETER OPTIMIZATION:
-  • Execution time: 9.8 seconds
-  • Models tuned: 1
-  • Samples per model: 1
-
-🏆 MODEL COMPARISON:
-  • Execution time: 2.1 seconds
-  • Models compared: 1
-  • Best model: NHITS
-  • Best MAE: 5071.1786
-
-🎯 RECOMMENDATIONS:
-  • Review top-performing models for deployment
-  • Consider ensemble methods for improved performance
-  • Monitor model performance over time
-  • Retrain periodically with new data
-
-============================================================
-````
-
-## File: enhanced_results/final/summary_report_20250527_153716.txt
-````
-============================================================
-🎯 BITCOIN FORECASTING PIPELINE SUMMARY
-============================================================
-Execution Time: 2025-05-27 15:37:16
-HPO: Executed
-
-📊 DATA INFORMATION:
-  • Total samples: 2,922
-  • Training samples: 2,887
-  • Test samples: 35
-  • Features: 77
-  • Horizon: 7 days
-
-🔧 HYPERPARAMETER OPTIMIZATION:
-  • Execution time: 10.5 seconds
-  • Models tuned: 1
-  • Samples per model: 1
-
-🏆 MODEL COMPARISON:
-  • Execution time: 200.4 seconds
-  • Models compared: 2
-  • Best model: AutoARIMA
-  • Best MAE: 5721.7205
-
-🎯 RECOMMENDATIONS:
-  • Review top-performing models for deployment
-  • Consider ensemble methods for improved performance
-  • Monitor model performance over time
-  • Retrain periodically with new data
-
-============================================================
-````
 
 ## File: config/algo.txt
 ````
@@ -237,72 +65,6 @@ Suggestion:
 2. Move to BOHB or Optuna (with TPE/HyperBand Pruner): These are often my first choices for serious tuning due to their balance of performance and efficiency. HEBO is a strong alternative if you anticipate a noisy or complex landscape.
 ````
 
-## File: config/base.py
-````python
-"""
-Configuration settings.
-"""
-⋮----
-# === Data Configuration ===
-DATA_PATH = 'data/final/dataset.parquet'
-DATE_COLUMN = 'Date'
-DATE_RENAMED = 'ds'
-TARGET_COLUMN = 'btc_close'
-TARGET_RENAMED = 'y'
-UNIQUE_ID_VALUE = 'Bitcoin'
-⋮----
-# === Forecasting Configuration ===
-HORIZON = 7
-LEVELS = [80, 90]
-TEST_LENGTH_MULTIPLIER = 5
-SEED = 42
-⋮----
-# === Model Configuration ===
-FREQUENCY = 'D'
-SCALER_TYPE = ['standard']  # List for tune.choice()
-LOCAL_SCALER_TYPE = 'standard'  # String for direct use
-⋮----
-# === Cross-validation Configuration ===
-CV_N_WINDOWS = 5
-CV_STEP_SIZE = HORIZON
-⋮----
-# === Hyperparameter Tuning Configuration ===
-NUM_SAMPLES_PER_MODEL = 1
-BEST_HYPERPARAMETERS_CSV = 'tuning_results/best_hyperparameters.json'
-⋮----
-# === Search Algorithm Configuration ===
-DEFAULT_SEARCH_ALGORITHM = 'optuna'  # Default search algorithm
-SEARCH_ALGORITHM_MAX_CONCURRENT = 4  # Max concurrent trials
-SEARCH_ALGORITHM_REPEAT_TRIALS = None  # Number of repeated evaluations (None = no repeat)
-FAST_SEARCH_ALGORITHM = 'hyperopt'  # Algorithm to use in fast mode
-⋮----
-# === Ray Configuration ===
-RAY_ADDRESS = 'local'
-RAY_NUM_CPUS = os.cpu_count()
-RAY_NUM_GPUS = torch.cuda.device_count() if torch.cuda.is_available() else 0
-⋮----
-# === Loss function mapping ===
-LOSS_MAP = {
-⋮----
-# === Columns to exclude when processing best hyperparameters ===
-EXCLUDE_HYPERPARAMETER_KEYS = [
-⋮----
-# === JSON parseable hyperparameter keys ===
-JSON_PARSEABLE_KEYS = [
-⋮----
-# === Output Directories ===
-RESULTS_DIR: str = 'enhanced_results'
-HPO_DIR: str = f"{RESULTS_DIR}/hpo"
-PLOT_DIR: str = f"{RESULTS_DIR}/cv"
-FINAL_DIR: str = f"{RESULTS_DIR}/final"
-MODELS_DIR: str = f"{RESULTS_DIR}/models"
-⋮----
-def __post_init__(self)
-⋮----
-"""Set default values that depend on other attributes."""
-# Create output directories
-````
-
 ## File: config/search_algo.py
 ````python
 # For initial baseline establishment (as recommended in algo.txt)
@@ -317,28 +79,218 @@ NOISY_DATA = ['hebo', 'random']
 def get_search_algorithm_class(algorithm: str) -> Any
 ````
 
-## File: src/models/mlforecast/auto_models.py
+## File: results/final/summary_report_20250528_074647.txt
+````
+============================================================
+🎯 BITCOIN FORECASTING PIPELINE SUMMARY
+============================================================
+Execution Time: 2025-05-28 07:46:47
+HPO: Skipped
+
+📊 DATA INFORMATION:
+  • Total samples: 2,922
+  • Training samples: 2,887
+  • Test samples: 35
+  • Features: 77
+  • Horizon: 7 days
+
+🏆 MODEL COMPARISON:
+  • Execution time: 275.7 seconds
+  • CV models evaluated: 2
+  • Final models evaluated: 2
+  • Best model: AutoARIMA
+  • Best test MAE: 5821.6465
+
+🎯 RECOMMENDATIONS:
+  • Review top-performing models for deployment
+  • Consider ensemble methods for improved performance
+  • Monitor model performance over time
+  • Retrain periodically with new data
+
+============================================================
+````
+
+## File: src/models/mlforecast/models.py
 ````python
-def get_mlforecast_models(self, model_names: List[str] = None) -> List[Tuple[str, Any]]
+lgb_params = {
 ⋮----
+models={
+````
+
+## File: src/pipelines/cross_validation.py
+````python
+# src/pipelines/cross_validation.py
 """
-        Get MLForecast models with different algorithms.
-        
-        Parameters:
-        -----------
-        model_names : List[str], optional
-            Specific model names to include. If None, returns all models.
-            
-        Returns:
-        --------
-        List[Tuple[str, Any]]: List of (model_name, sklearn_model) tuples
-        """
-n_estimators = 200
-max_depth = 15
+Cross-validation evaluation framework for model performance comparison.
+"""
 ⋮----
-all_models = {
+class CrossValidationEvaluator
 ⋮----
-# Add XGBoost
+"""Cross-validation based model performance evaluation."""
+⋮----
+def __init__(self, results_dir: str = FINAL_DIR)
+⋮----
+def evaluate_neural_models_cv(self, models, train_df, horizon: int) -> List[Dict]
+⋮----
+"""Evaluate neural models using cross-validation."""
+results = []
+⋮----
+model_name = model.__class__.__name__
+⋮----
+start_time = time.time()
+⋮----
+# Create NeuralForecast instance
+nf = NeuralForecast(models=[model], freq='D')
+⋮----
+# Perform cross-validation
+cv_results = nf.cross_validation(
+⋮----
+# Calculate metrics from CV results
+metrics = self._calculate_metrics(cv_results, [model_name])
+evaluation_method = "cross_validation"
+⋮----
+# Training time
+training_time = time.time() - start_time
+⋮----
+# Check if metrics were calculated successfully
+⋮----
+result = {
+⋮----
+error_msg = str(e)
+⋮----
+successful_count = sum(1 for r in results if r.get('status') == 'success')
+⋮----
+def evaluate_statistical_models_cv(self, models, train_df, horizon: int) -> List[Dict]
+⋮----
+"""Evaluate statistical models using cross-validation."""
+⋮----
+# Prepare data for StatsForecast
+df_train = train_df[['unique_id', 'ds', 'y']].copy()
+⋮----
+# Create StatsForecast instance
+sf = StatsForecast(models=[model], freq='D', verbose=True)
+⋮----
+# Cross-validation for metrics
+cv_results = sf.cross_validation(
+⋮----
+def _calculate_metrics(self, cv_results: pd.DataFrame, model_names: List[str]) -> Dict
+⋮----
+"""Calculate comprehensive metrics for cross-validation results."""
+metrics = {}
+⋮----
+# Check for valid data
+y_true = cv_results['y'].values
+y_pred = cv_results[model_name].values
+⋮----
+# Remove NaN values
+mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+y_true_clean = y_true[mask]
+y_pred_clean = y_pred[mask]
+⋮----
+# Basic metrics using utilsforecast
+⋮----
+model_metrics = evaluate(
+⋮----
+# Extract metric values
+mae_val = model_metrics[model_metrics['metric'] == 'mae'][model_name].iloc[0]
+mse_val = model_metrics[model_metrics['metric'] == 'mse'][model_name].iloc[0]
+rmse_val = model_metrics[model_metrics['metric'] == 'rmse'][model_name].iloc[0]
+mape_val = model_metrics[model_metrics['metric'] == 'mape'][model_name].iloc[0]
+smape_val = model_metrics[model_metrics['metric'] == 'smape'][model_name].iloc[0]
+⋮----
+# Fallback to manual calculation
+mae_val = np.mean(np.abs(y_true_clean - y_pred_clean))
+mse_val = np.mean((y_true_clean - y_pred_clean) ** 2)
+rmse_val = np.sqrt(mse_val)
+mape_val = np.mean(np.abs((y_true_clean - y_pred_clean) / y_true_clean)) * 100
+smape_val = np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_clean) + np.abs(y_pred_clean))) * 100
+⋮----
+# Additional custom metrics
+directional_accuracy = self._calculate_directional_accuracy(y_true_clean, y_pred_clean)
+coverage = self._calculate_coverage(cv_results, model_name)
+⋮----
+def _calculate_directional_accuracy(self, y_true: np.ndarray, y_pred: np.ndarray) -> float
+⋮----
+"""Calculate directional accuracy (correct prediction of up/down movement)."""
+⋮----
+true_direction = np.diff(y_true) > 0
+pred_direction = np.diff(y_pred) > 0
+⋮----
+def _calculate_coverage(self, cv_results: pd.DataFrame, model_name: str) -> Dict
+⋮----
+"""Calculate prediction interval coverage."""
+coverage = {}
+⋮----
+# Check for prediction intervals
+⋮----
+lo_col = f"{model_name}-lo-{level}"
+hi_col = f"{model_name}-hi-{level}"
+⋮----
+y_true = cv_results['y']
+y_lo = cv_results[lo_col]
+y_hi = cv_results[hi_col]
+⋮----
+# Coverage = proportion of true values within prediction intervals
+within_interval = (y_true >= y_lo) & (y_true <= y_hi)
+⋮----
+def compare_models_cv(self, neural_models, stat_models, train_df, horizon: int) -> pd.DataFrame
+⋮----
+"""Compare all models using cross-validation and return ranked results."""
+⋮----
+all_results = []
+⋮----
+# Evaluate neural models
+⋮----
+neural_results = self.evaluate_neural_models_cv(neural_models, train_df, horizon)
+⋮----
+# Evaluate statistical models
+⋮----
+stat_results = self.evaluate_statistical_models_cv(stat_models, train_df, horizon)
+⋮----
+# Create results DataFrame
+⋮----
+results_df = pd.DataFrame(all_results)
+⋮----
+# Filter out failed models
+⋮----
+successful_results = results_df[results_df['status'] == 'success'].copy()
+⋮----
+successful_results = results_df[results_df['error'].isna()].copy()
+⋮----
+# Assume all are successful if no status/error columns
+successful_results = results_df.copy()
+⋮----
+# Rank models by MAE (lower is better)
+⋮----
+# Combined rank (simple average)
+⋮----
+# Sort by combined rank
+successful_results = successful_results.sort_values('combined_rank')
+⋮----
+successful_results = successful_results.sort_values('mae')
+⋮----
+# Save results
+⋮----
+def save_cv_results(self, all_results: pd.DataFrame, successful_results: pd.DataFrame)
+⋮----
+"""Save cross-validation results."""
+⋮----
+# Use simple timestamp without timezone
+timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+⋮----
+# Save all results
+⋮----
+# Save successful results
+⋮----
+# Save summary
+summary = {
+⋮----
+def get_top_models(self, results_df: pd.DataFrame, top_n: int = 5) -> List[str]
+⋮----
+"""Get top N model names based on CV performance."""
+⋮----
+actual_top_n = min(top_n, len(results_df))
+top_models = results_df.head(actual_top_n)['model_name'].tolist()
 ````
 
 ## File: src/pipelines/cv.py
@@ -472,6 +424,188 @@ evaluation_results = evaluate_predictions(test_df, predictions, model_name)
 # print(f"Test RMSE: {eval_results['test_rmse']:.4f}")
 ````
 
+## File: src/pipelines/hpo_ml.py
+````python
+# difference helps remove seasonality
+target_transforms =[
+⋮----
+@njit
+def rolling_mean_48(x)
+⋮----
+fcst = MLForecast(
+⋮----
+freq=1,  # our series have integer timestamps, so we'll just add 1 in every timestep
+⋮----
+prep = fcst.preprocess(df)
+````
+
+## File: src/pipelines/hpo_neural.py
+````python
+"""
+Hyperparameter tuning module for neural forecasting models.
+
+This module provides a comprehensive hyperparameter optimization pipeline
+for neural forecasting models using Ray Tune and NeuralForecast.
+"""
+⋮----
+class HPOResultsProcessor
+⋮----
+"""Handles processing and extraction of HPO results."""
+⋮----
+@staticmethod
+    def process_single_model_results(model, model_name: str) -> Optional[Dict[str, Any]]
+⋮----
+"""Process results for a single model."""
+⋮----
+results_df = model.results.get_dataframe()
+⋮----
+# Find the row with the lowest 'loss'
+# Reset index to avoid issues with unhashable types
+results_df_reset = results_df.reset_index(drop=True)
+best_idx = results_df_reset['loss'].idxmin()
+best_run = results_df_reset.loc[best_idx]
+⋮----
+# Extract the 'config/' columns to get the hyperparameters
+best_params = {}
+⋮----
+val = best_run[col]
+⋮----
+val = json.dumps(val)
+⋮----
+# Add model name and best loss to the dictionary
+⋮----
+class HPOConfigSerializer
+⋮----
+"""Handles serialization and deserialization of HPO configurations."""
+⋮----
+@staticmethod
+    def make_json_serializable(value: Any) -> Any
+⋮----
+"""Convert a value to JSON-serializable format."""
+# Handle numpy types
+⋮----
+# Handle PyTorch loss objects
+⋮----
+# Handle tuples (convert to lists for JSON)
+⋮----
+# Handle other non-serializable objects
+⋮----
+@staticmethod
+    def serialize_config(config: Dict[str, Any]) -> Dict[str, Any]
+⋮----
+"""Serialize a single configuration dictionary."""
+serializable_config = {}
+⋮----
+serialized_value = HPOConfigSerializer.make_json_serializable(value)
+⋮----
+@staticmethod
+    def deserialize_config(config: Dict[str, Any]) -> Dict[str, Any]
+⋮----
+"""Deserialize a configuration dictionary for model use."""
+clean_config = config.copy()
+⋮----
+# Remove metadata fields
+metadata_fields = ['model_name', 'best_valid_loss', 'training_iteration', 'loss', 'valid_loss']
+⋮----
+# Convert lists back to tuples for specific parameters
+tuple_params = ['kernel_size', 'downsample']
+⋮----
+class HPOConfigManager
+⋮----
+"""Manages saving and loading of HPO configurations."""
+⋮----
+@staticmethod
+    def save_configurations(configs: List[Dict[str, Any]], filepath: str) -> bool
+⋮----
+"""Save configurations to JSON file."""
+⋮----
+output_dir = os.path.dirname(filepath)
+⋮----
+serializable_configs = [
+⋮----
+@staticmethod
+    def load_configurations(filepath: str) -> Dict[str, Dict[str, Any]]
+⋮----
+"""Load configurations from JSON file."""
+⋮----
+configs_list = json.load(f)
+⋮----
+configs_map = {}
+⋮----
+model_name = config_item['model_name']
+clean_config = HPOConfigSerializer.deserialize_config(config_item)
+⋮----
+class HyperparameterTuner
+⋮----
+"""Main class for hyperparameter tuning operations."""
+⋮----
+def __init__(self, frequency: str = FREQUENCY, local_scaler_type: str = LOCAL_SCALER_TYPE)
+⋮----
+def run_optimization(self, train_df: pd.DataFrame, horizon: int, hist_exog_list: Optional[List[str]] = None, num_samples: int = NUM_SAMPLES_PER_MODEL) -> Tuple[pd.DataFrame, NeuralForecast]
+⋮----
+"""Run hyperparameter optimization using AutoModels."""
+⋮----
+# Get auto models for HPO
+automodels = ModelRegistry.get_auto_models(
+⋮----
+# Create NeuralForecast instance
+nf_hpo = NeuralForecast(
+⋮----
+# Perform fit
+# cv_df = nf_hpo.cross_validation(train_df, n_windows=CV_N_WINDOWS, verbose=False)
+cv_df = nf_hpo.fit(train_df, val_size=24)
+⋮----
+def extract_best_configurations(self, nf_hpo: NeuralForecast) -> List[Dict[str, Any]]
+⋮----
+"""Extract best configurations from HPO results."""
+all_best_configs = []
+⋮----
+model_name = model.__class__.__name__
+⋮----
+best_config = self.results_processor.process_single_model_results(model, model_name)
+⋮----
+def save_best_configurations(self, configs: List[Dict[str, Any]], filepath: str) -> bool
+⋮----
+"""Save best configurations to file."""
+⋮----
+def load_best_configurations(self, filepath: str) -> Dict[str, Dict[str, Any]]
+⋮----
+"""Load best configurations from file."""
+⋮----
+"""Run the complete hyperparameter optimization pipeline."""
+⋮----
+all_best_configs = self.extract_best_configurations(nf_hpo)
+⋮----
+success = self.save_best_configurations(all_best_configs, save_path)
+⋮----
+# Convenience functions for backward compatibility
+def run_hyperparameter_optimization(train_df: pd.DataFrame, horizon: int = None, num_samples: int = None) -> Tuple[pd.DataFrame, NeuralForecast]
+⋮----
+"""Legacy function for backward compatibility."""
+tuner = HyperparameterTuner()
+⋮----
+def extract_best_configurations(nf_hpo: NeuralForecast) -> List[Dict[str, Any]]
+⋮----
+def save_best_configurations(all_best_configs: List[Dict[str, Any]], filepath: str) -> bool
+⋮----
+def load_best_hyperparameters(json_filepath: str) -> Dict[str, Dict[str, Any]]
+⋮----
+# def run_complete_hpo_pipeline(train_df: pd.DataFrame, horizon: int = None, num_samples: int = None) -> List[Dict[str, Any]]:
+#     """Legacy function for backward compatibility."""
+#     tuner = HyperparameterTuner()
+#     return tuner.run_complete_pipeline(train_df, horizon, num_samples)
+⋮----
+# Prepare data
+⋮----
+# Create tuner instance
+⋮----
+# Run HPO pipeline
+all_best_configs = tuner.run_complete_pipeline(
+⋮----
+# Load and display best hyperparameters
+best_hyperparameters = tuner.load_best_configurations(BEST_HYPERPARAMETERS_CSV)
+````
+
 ## File: src/pipelines/test.py
 ````python
 # Get data
@@ -517,84 +651,6 @@ nf_final_train = train_final_model(model_instance, train_df)
 # Create and train final model
 ````
 
-## File: src/utils/hyperparam.py
-````python
-
-````
-
-## File: src/utils/plot.py
-````python
-class ForecastVisualizer
-⋮----
-"""
-    A utility class for plotting and saving forecast visualizations using utilsforecast.plotting.plot_series.
-
-    Attributes
-    ----------
-    Y_df : pd.DataFrame
-        DataFrame of actual time series with columns ['unique_id', 'ds', 'y']
-    Y_hat_df : pd.DataFrame
-        DataFrame of forecasted values with columns ['unique_id', 'ds', 'y']
-    """
-⋮----
-"""
-        Generate a forecast vs. actual plot.
-
-        Parameters
-        ----------
-        ids : List[int], optional
-            List of series IDs to plot (default None = all)
-        levels : List[int], optional
-            Prediction intervals to display, e.g., [80, 95]
-        max_insample_length : int, optional
-            Number of past periods to display
-        plot_anomalies : bool
-            Whether to highlight anomalies outside intervals
-        engine : str
-            Backend engine ('matplotlib' or 'plotly')
-        plot_random : bool
-            If True, select random series to plot
-        **kwargs
-            Additional kwargs passed to plot_series
-
-        Returns
-        -------
-        matplotlib.figure.Figure or plotly.graph_objs._figure.Figure
-            The generated figure object
-        """
-fig = plot_series(
-⋮----
-"""
-        Save the figure to disk.
-
-        Parameters
-        ----------
-        fig : Figure
-            The figure object returned by plot()
-        save_dir : str
-            Directory to save the figure
-        filename : str
-            File name for the saved image
-        dpi : int
-            Resolution in dots per inch
-
-        Returns
-        -------
-        str
-            Full path to the saved file
-        """
-⋮----
-path = os.path.join(save_dir, filename)
-⋮----
-# Example
-# --------
-# from forecast_visualizer import ForecastVisualizer
-# vis = ForecastVisualizer(Y_df, Y_hat_df)
-# fig = vis.plot(ids=[0,1], levels=[80,95], max_insample_length=36, plot_anomalies=True)
-# out_path = vis.save(fig, save_dir='outputs', filename='forecast.png')
-# print(f"Plot saved to {out_path}")
-````
-
 ## File: .repomixignore
 ````
 # Add patterns to ignore here, one per line
@@ -603,7 +659,294 @@ path = os.path.join(save_dir, filename)
 # tmp/
 ````
 
-## File: learn.md
+## File: output.txt
+````
+============================================================
+🚀 BITCOIN FORECASTING PIPELINE
+============================================================
+Timestamp: 2025-05-28 07:46:47
+Skip HPO: True
+============================================================
+2025-05-28 00:46:48,422 INFO worker.py:1888 -- Started a local Ray instance.
+Pipeline execution started at: 2025-05-28 07:46:49 (Ho Chi Minh City Time)
+
+📊 STEP 1: DATA PREPARATION
+----------------------------------------
+Loading and preparing data...
+Forecast horizon (h) set to: 7 days
+
+Total data shape: (2922, 80)
+Train set shape: (2887, 80)
+Test set shape: (35, 80)
+  Train set covers: 2017-01-01 00:00:00 to 2024-11-26 00:00:00
+  Test set covers: 2024-11-27 00:00:00 to 2024-12-31 00:00:00
+✅ Data prepared successfully
+   • Training samples: 2,887
+   • Test samples: 35
+   • Features: 77 exogenous variables
+   • Forecast horizon: 7 days
+
+⏭️  STEP 2: HYPERPARAMETER OPTIMIZATION (SKIPPED)
+----------------------------------------
+Using default configurations...
+
+🏆 STEP 3: MODEL COMPARISON
+----------------------------------------
+Using default neural model configurations...
+Getting neural models with horizon=7
+Exogenous features: 77
+Hyperparameters path: None
+Successfully loaded and parsed best hyperparameters from results/best_hyperparameters.json
+Loaded hyperparameters for 1 models
+Available HPO configurations: ['AutoNHITS']
+
+=== Applying HPO parameters for NHITS (found as 'AutoNHITS') ===
+Original HPO params: {'input_size': 42, 'learning_rate': 0.0001, 'scaler_type': 'standard', 'max_steps': 100, 'batch_size': 64, 'windows_batch_size': 256, 'val_check_steps': 50, 'random_seed': 3, 'n_pool_kernel_size': (2, 2, 2), 'n_freq_downsample': (168, 24, 1), 'h': 7}
+  ✓ input_size: 42 → 42 (type: <class 'int'>)
+  ✓ learning_rate: 0.0001 → 0.0001 (type: <class 'float'>)
+  ✓ scaler_type: standard → standard (type: <class 'str'>)
+  ✓ max_steps: 100 → 100 (type: <class 'int'>)
+  ✓ batch_size: 64 → 64 (type: <class 'int'>)
+  ✓ windows_batch_size: 256 → 256 (type: <class 'int'>)
+  ✓ val_check_steps: 50 → 50 (type: <class 'int'>)
+  ✓ random_seed: 3 → 3 (type: <class 'int'>)
+  ✓ n_pool_kernel_size: (2, 2, 2) → (2, 2, 2) (type: <class 'tuple'>)
+  ✓ n_freq_downsample: (168, 24, 1) → (168, 24, 1) (type: <class 'tuple'>)
+  ✓ h: 7 → 7 (type: <class 'int'>)
+  Applied 11 hyperparameters to NHITS
+
+=== Instantiating 1 models ===
+
+--- Instantiating NHITS ---
+Model class: NHITS
+Configuration (18 params):
+  batch_size: 64 (type: int)
+  dropout_prob_theta: 0.0 (type: float)
+  h: 7 (type: int)
+  hist_exog_list: ['btc_sma_5', 'btc_ema_5', 'btc_sma_14', 'btc_ema_14', 'btc_sma_21', 'btc_ema_21', 'btc_sma_50', 'btc_ema_50', 'btc_sma_14_50_diff', 'btc_ema_14_50_diff', 'btc_sma_14_50_ratio', 'btc_sma_14_slope', 'btc_ema_14_slope', 'btc_sma_21_slope', 'btc_ema_21_slope', 'btc_sma_50_slope', 'btc_ema_50_slope', 'btc_close_ema_21_dist', 'btc_close_ema_21_dist_norm', 'btc_rsi_14', 'btc_macd', 'btc_macd_signal', 'btc_macd_diff', 'btc_bb_high', 'btc_bb_low', 'btc_bb_mid', 'btc_bb_width', 'btc_atr_14', 'btc_volatility_index', 'btc_trading_volume', 'active_addresses_blockchain', 'hash_rate_blockchain', 'miner_revenue_blockchain', 'difficulty_blockchain', 'estimated_transaction_volume_usd_blockchain', 'PiCycle_cbbi', 'RUPL_cbbi', 'RHODL_cbbi', 'Puell_cbbi', '2YMA_cbbi', 'Trolololo_cbbi', 'MVRV_cbbi', 'ReserveRisk_cbbi', 'Woobull_cbbi', 'Confidence_cbbi', 'Fear Greed', 'positive_sentiment', 'negative_sentiment', 'bullish_sentiment', 'bearish_sentiment', 'risk_uncertainty_sentiment', 'problem_malicious_sentiment', 'active_trading_sentiment', 'long_term_investment_sentiment', 'market_narrative_sentiment', 'core_technology_sentiment', 'development_ecosystem_sentiment', 'news_events_sentiment', 'regulations_sentiment', 'community_social_sentiment', 'price_sentiment', 'volume_sentiment', 'marketcap_sentiment', 'Gold_Price', 'Gold_Share', 'Gold_Volatility', 'Oil_Crude_Price', 'Oil_Brent_Price', 'Oil_Volatility', 'DJI', 'GSPC', 'IXIC', 'NYFANG', 'CBOE_Volatility', 'EM_ETF', 'DXY', 'EURUSD'] (type: list)
+  input_size: 42 (type: int)
+  interpolation_mode: linear (type: str)
+  learning_rate: 0.0001 (type: float)
+  loss: MAE() (type: MAE)
+  max_steps: 100 (type: int)
+  mlp_units: [[512, 512], [512, 512], [512, 512]] (type: list)
+  n_blocks: [1, 1, 1] (type: list)
+  n_freq_downsample: (168, 24, 1) (type: tuple)
+  n_pool_kernel_size: (2, 2, 2) (type: tuple)
+  random_seed: 3 (type: int)
+  scaler_type: standard (type: str)
+  stack_types: ['identity', 'identity', 'identity'] (type: list)
+  val_check_steps: 50 (type: int)
+  windows_batch_size: 256 (type: int)
+Seed set to 3
+✓ Successfully created NHITS model
+
+✓ Successfully instantiated 1 models: ['NHITS']
+   • Train data: 2,887 samples
+   • Test data: 35 samples
+   • Neural models: 1
+   • Statistical models: 1
+
+--- Step 3a: Cross-Validation Model Selection ---
+=== Starting Cross-Validation Model Comparison ===
+Train data shape: (2887, 80)
+Horizon: 7
+CV windows: 5
+CV step size: 7
+Neural models: 1
+Statistical models: 1
+
+--- Cross-Validating Neural Models ---
+Evaluating 1 neural models with cross-validation...
+[1/1] Cross-validating NHITS...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 59.58it/s, v_num=50, train_loss_step=0.492, train_loss_epoch=0.492]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 57.16it/s, v_num=50, train_loss_step=0.492, train_loss_epoch=0.492]
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 207.02it/s]
+  ✓ NHITS CV completed (MAE: 4862.8310)
+Neural models CV completed: 1/1 successful
+
+--- Cross-Validating Statistical Models ---
+Evaluating 1 statistical models with cross-validation...
+[1/1] Cross-validating AutoARIMA...
+Cross Validation Time Series 1: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [03:54<00:00, 46.93s/it]
+  ✓ AutoARIMA CV completed (MAE: 4420.7214)
+Statistical models CV completed: 1/1 successful
+
+Total CV results: 2
+Successful CV results: 2
+✓ Models ranked successfully by CV performance
+All CV results saved: 2 entries
+Ranked CV results saved: 2 entries
+CV results saved to results/final
+CV Summary: {'timestamp': '20250528_005046', 'evaluation_type': 'cross_validation', 'cv_windows': 5, 'cv_step_size': 7, 'total_models': 2, 'successful_models': 2, 'failed_models': 0, 'best_model': 'AutoARIMA', 'best_mae': 4420.721415771486}
+✓ Cross-validation completed: 2 models evaluated
+
+🏅 TOP CV MODELS (2):
+------------------------------
+1. AutoARIMA            MAE: 4420.7214 (statsforecast)
+2. NHITS                MAE: 4862.8310 (neuralforecast)
+
+--- Step 3b: Final Fit-Predict Evaluation ---
+=== Starting Final Fit-Predict Model Evaluation ===
+Train data shape: (2887, 80)
+Test data shape: (35, 80)
+Horizon: 7
+Neural models: 1
+Statistical models: 1
+Plots will be saved to: results/plot
+
+--- Fit-Predict Neural Models ---
+Fitting and predicting 1 neural models...
+  Train data columns: ['unique_id', 'ds', 'y', 'btc_sma_5', 'btc_ema_5', 'btc_sma_14', 'btc_ema_14', 'btc_sma_21', 'btc_ema_21', 'btc_sma_50', 'btc_ema_50', 'btc_sma_14_50_diff', 'btc_ema_14_50_diff', 'btc_sma_14_50_ratio', 'btc_sma_14_slope', 'btc_ema_14_slope', 'btc_sma_21_slope', 'btc_ema_21_slope', 'btc_sma_50_slope', 'btc_ema_50_slope', 'btc_close_ema_21_dist', 'btc_close_ema_21_dist_norm', 'btc_rsi_14', 'btc_macd', 'btc_macd_signal', 'btc_macd_diff', 'btc_bb_high', 'btc_bb_low', 'btc_bb_mid', 'btc_bb_width', 'btc_atr_14', 'btc_volatility_index', 'btc_trading_volume', 'active_addresses_blockchain', 'hash_rate_blockchain', 'miner_revenue_blockchain', 'difficulty_blockchain', 'estimated_transaction_volume_usd_blockchain', 'PiCycle_cbbi', 'RUPL_cbbi', 'RHODL_cbbi', 'Puell_cbbi', '2YMA_cbbi', 'Trolololo_cbbi', 'MVRV_cbbi', 'ReserveRisk_cbbi', 'Woobull_cbbi', 'Confidence_cbbi', 'Fear Greed', 'positive_sentiment', 'negative_sentiment', 'bullish_sentiment', 'bearish_sentiment', 'risk_uncertainty_sentiment', 'problem_malicious_sentiment', 'active_trading_sentiment', 'long_term_investment_sentiment', 'market_narrative_sentiment', 'core_technology_sentiment', 'development_ecosystem_sentiment', 'news_events_sentiment', 'regulations_sentiment', 'community_social_sentiment', 'price_sentiment', 'volume_sentiment', 'marketcap_sentiment', 'Gold_Price', 'Gold_Share', 'Gold_Volatility', 'Oil_Crude_Price', 'Oil_Brent_Price', 'Oil_Volatility', 'DJI', 'GSPC', 'IXIC', 'NYFANG', 'CBOE_Volatility', 'EM_ETF', 'DXY', 'EURUSD']
+  Test data columns: ['unique_id', 'ds', 'y', 'btc_sma_5', 'btc_ema_5', 'btc_sma_14', 'btc_ema_14', 'btc_sma_21', 'btc_ema_21', 'btc_sma_50', 'btc_ema_50', 'btc_sma_14_50_diff', 'btc_ema_14_50_diff', 'btc_sma_14_50_ratio', 'btc_sma_14_slope', 'btc_ema_14_slope', 'btc_sma_21_slope', 'btc_ema_21_slope', 'btc_sma_50_slope', 'btc_ema_50_slope', 'btc_close_ema_21_dist', 'btc_close_ema_21_dist_norm', 'btc_rsi_14', 'btc_macd', 'btc_macd_signal', 'btc_macd_diff', 'btc_bb_high', 'btc_bb_low', 'btc_bb_mid', 'btc_bb_width', 'btc_atr_14', 'btc_volatility_index', 'btc_trading_volume', 'active_addresses_blockchain', 'hash_rate_blockchain', 'miner_revenue_blockchain', 'difficulty_blockchain', 'estimated_transaction_volume_usd_blockchain', 'PiCycle_cbbi', 'RUPL_cbbi', 'RHODL_cbbi', 'Puell_cbbi', '2YMA_cbbi', 'Trolololo_cbbi', 'MVRV_cbbi', 'ReserveRisk_cbbi', 'Woobull_cbbi', 'Confidence_cbbi', 'Fear Greed', 'positive_sentiment', 'negative_sentiment', 'bullish_sentiment', 'bearish_sentiment', 'risk_uncertainty_sentiment', 'problem_malicious_sentiment', 'active_trading_sentiment', 'long_term_investment_sentiment', 'market_narrative_sentiment', 'core_technology_sentiment', 'development_ecosystem_sentiment', 'news_events_sentiment', 'regulations_sentiment', 'community_social_sentiment', 'price_sentiment', 'volume_sentiment', 'marketcap_sentiment', 'Gold_Price', 'Gold_Share', 'Gold_Volatility', 'Oil_Crude_Price', 'Oil_Brent_Price', 'Oil_Volatility', 'DJI', 'GSPC', 'IXIC', 'NYFANG', 'CBOE_Volatility', 'EM_ETF', 'DXY', 'EURUSD']
+  Train data shape: (2887, 80)
+  Test data shape: (35, 80)
+  Using rolling forecast (horizon=7 < test_length=35)
+[1/1] Fit-Predict NHITS...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 54.53it/s, v_num=52, train_loss_step=0.483, train_loss_epoch=0.483]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 51.73it/s, v_num=52, train_loss_step=0.483, train_loss_epoch=0.483]
+    Performing rolling forecast for NHITS (horizon=7, test_length=35)
+      Exogenous features: ['btc_sma_5', 'btc_ema_5', 'btc_sma_14', 'btc_ema_14', 'btc_sma_21', 'btc_ema_21', 'btc_sma_50', 'btc_ema_50', 'btc_sma_14_50_diff', 'btc_ema_14_50_diff', 'btc_sma_14_50_ratio', 'btc_sma_14_slope', 'btc_ema_14_slope', 'btc_sma_21_slope', 'btc_ema_21_slope', 'btc_sma_50_slope', 'btc_ema_50_slope', 'btc_close_ema_21_dist', 'btc_close_ema_21_dist_norm', 'btc_rsi_14', 'btc_macd', 'btc_macd_signal', 'btc_macd_diff', 'btc_bb_high', 'btc_bb_low', 'btc_bb_mid', 'btc_bb_width', 'btc_atr_14', 'btc_volatility_index', 'btc_trading_volume', 'active_addresses_blockchain', 'hash_rate_blockchain', 'miner_revenue_blockchain', 'difficulty_blockchain', 'estimated_transaction_volume_usd_blockchain', 'PiCycle_cbbi', 'RUPL_cbbi', 'RHODL_cbbi', 'Puell_cbbi', '2YMA_cbbi', 'Trolololo_cbbi', 'MVRV_cbbi', 'ReserveRisk_cbbi', 'Woobull_cbbi', 'Confidence_cbbi', 'Fear Greed', 'positive_sentiment', 'negative_sentiment', 'bullish_sentiment', 'bearish_sentiment', 'risk_uncertainty_sentiment', 'problem_malicious_sentiment', 'active_trading_sentiment', 'long_term_investment_sentiment', 'market_narrative_sentiment', 'core_technology_sentiment', 'development_ecosystem_sentiment', 'news_events_sentiment', 'regulations_sentiment', 'community_social_sentiment', 'price_sentiment', 'volume_sentiment', 'marketcap_sentiment', 'Gold_Price', 'Gold_Share', 'Gold_Volatility', 'Oil_Crude_Price', 'Oil_Brent_Price', 'Oil_Volatility', 'DJI', 'GSPC', 'IXIC', 'NYFANG', 'CBOE_Volatility', 'EM_ETF', 'DXY', 'EURUSD']
+      Window 1/5: forecasting 7 steps
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 193.75it/s]
+        Re-fitting model with 2894 samples...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 60.02it/s, v_num=54, train_loss_step=0.319, train_loss_epoch=0.319]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 57.64it/s, v_num=54, train_loss_step=0.319, train_loss_epoch=0.319]
+      Window 2/5: forecasting 7 steps
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 289.94it/s]
+        Re-fitting model with 2901 samples...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 58.69it/s, v_num=56, train_loss_step=0.302, train_loss_epoch=0.302]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 56.23it/s, v_num=56, train_loss_step=0.302, train_loss_epoch=0.302]
+      Window 3/5: forecasting 7 steps
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 292.53it/s]
+        Re-fitting model with 2908 samples...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 58.83it/s, v_num=58, train_loss_step=0.231, train_loss_epoch=0.231]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 55.89it/s, v_num=58, train_loss_step=0.231, train_loss_epoch=0.231]
+      Window 4/5: forecasting 7 steps
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 268.25it/s]
+        Re-fitting model with 2915 samples...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 57.74it/s, v_num=60, train_loss_step=0.215, train_loss_epoch=0.215]`Trainer.fit` stopped: `max_steps=100` reached.                                                                                                                             
+Epoch 99: 100%|██████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 54.96it/s, v_num=60, train_loss_step=0.215, train_loss_epoch=0.215]
+      Window 5/5: forecasting 7 steps
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Predicting DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 278.64it/s]
+  ✓ NHITS rolling_forecast completed (Test MAE: 5823.4087)
+Neural models fit-predict completed: 1/1 successful
+
+--- Fit-Predict Statistical Models ---
+Fitting and predicting 1 statistical models...
+[1/1] Fit-Predict AutoARIMA...
+Forecast: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:29<00:00, 29.20s/it]
+  ✓ AutoARIMA fit-predict completed (Test MAE: 5821.6465)
+Statistical models fit-predict completed: 1/1 successful
+
+--- Creating Final Unified Forecast Plot ---
+Creating unified forecast comparison plot...
+✓ Final forecast plot saved: results/plot/final_forecast_comparison_20250528_005123.png
+  • Plot shows 2 model predictions vs actual values
+  • Continuous line from last 100 train values to 35 test values
+
+Total fit-predict results: 2
+Successful fit-predict results: 2
+✓ Models ranked successfully by test set performance
+All final results saved: 2 entries
+Ranked final results saved: 2 entries
+Final results saved to results/final
+Final Summary: {'timestamp': '20250528_005124', 'evaluation_type': 'final_fit_predict', 'total_models': 2, 'successful_models': 2, 'failed_models': 0, 'best_model': 'AutoARIMA', 'best_test_mae': 5821.646466483697}
+
+🏅 TOP FINAL MODELS (2):
+------------------------------
+1. AutoARIMA            MAE: 5821.6465 (statsforecast)
+2. NHITS                MAE: 5823.4087 (neuralforecast)
+✅ Model comparison completed in 275.7 seconds
+   • CV models evaluated: 2
+   • Final models evaluated: 2
+   • Best model: AutoARIMA
+   • Best test MAE: 5821.6465
+   • Final results saved to: results/final/model_comparison_20250528_074647.csv
+
+📈 STEP 4: FINAL EVALUATION
+----------------------------------------
+
+🏅 TOP 2 MODELS (2):
+------------------------------
+1. AutoARIMA            MAE: 5821.6465
+2. NHITS                MAE: 5823.4087
+
+📊 Ensemble Weights (inverse MAE):
+   AutoARIMA: 0.500
+   NHITS: 0.500
+
+✅ Final evaluation completed
+   • Results saved to: results/final/final_results_20250528_074647.json
+
+============================================================
+🎯 BITCOIN FORECASTING PIPELINE SUMMARY
+============================================================
+Execution Time: 2025-05-28 07:46:47
+HPO: Skipped
+
+📊 DATA INFORMATION:
+  • Total samples: 2,922
+  • Training samples: 2,887
+  • Test samples: 35
+  • Features: 77
+  • Horizon: 7 days
+
+🏆 MODEL COMPARISON:
+  • Execution time: 275.7 seconds
+  • CV models evaluated: 2
+  • Final models evaluated: 2
+  • Best model: AutoARIMA
+  • Best test MAE: 5821.6465
+
+🎯 RECOMMENDATIONS:
+  • Review top-performing models for deployment
+  • Consider ensemble methods for improved performance
+  • Monitor model performance over time
+  • Retrain periodically with new data
+
+============================================================
+
+📝 Summary report saved to: results/final/summary_report_20250528_074647.txt
+````
+
+## File: READEVERYTIMEOPENREPO.md
 ````markdown
 - input_size: number of read past points
 
@@ -616,6 +959,8 @@ path = os.path.join(save_dir, filename)
 - max_steps: num of train iterations (num_epoch)
 - val_check_steps: freq in making validate -> smaller is better since spot quick early stopping but can be computation overhead
     -> these 2 often go with early_stop_patience_steps
+
+Include prediction interval to account for uncertainty
 ````
 
 ## File: README.md
@@ -873,27 +1218,144 @@ For issues or questions:
 repomix --ignore "**/*.csv,**/*.json,**/*.ipynb,**/__pycache__/,**/lightning_logs/**" --style markdown --compress
 ````
 
-## File: requirements.txt
+## File: src/models/mlforecast/auto_models.py
+````python
+def get_ml_models(self, model_names: List[str] = None) -> List[Tuple[str, Any]]
+⋮----
+"""
+        Get MLForecast models with different algorithms.
+        
+        Parameters:
+        -----------
+        model_names : List[str], optional
+            Specific model names to include. If None, returns all models.
+            
+        Returns:
+        --------
+        List[Tuple[str, Any]]: List of (model_name, sklearn_model) tuples
+        """
+n_estimators = 200
+max_depth = 15
+⋮----
+all_models = {
+⋮----
+# Add XGBoost
 ````
-matplotlib
-numpy
-pandas
-seaborn
-statsmodels
-scikit-learn
-scipy
-torch
-yfinance
-pytrends
-lightning
-sktime
-optuna
-neuralforecast
-hyperopt
-torchvision
-ray
-HEBO
-ConfigSpace
+
+## File: src/models/statsforecast/models.py
+````python
+"""
+Bitcoin-optimized statistical models for forecasting.
+"""
+⋮----
+def get_statistical_models(season_length: int = 7) -> List[Any]
+⋮----
+"""
+    Get optimized statistical models for Bitcoin forecasting.
+    
+    Args:
+        season_length: Seasonal period (default 7 for weekly patterns)
+        
+    Returns:
+        List of statistical model instances
+    """
+# Full model set optimized for Bitcoin characteristics
+all_models = [
+⋮----
+# PRIMARY: Best for Bitcoin's non-stationary, trending, volatile nature
+⋮----
+# AutoETS(season_length=season_length, model='ZZZ'),  # Auto-select
+# AutoETS(season_length=season_length, model='MMM'),  # Multiplicative
+# AutoETS(season_length=season_length, model='MAM'),  # Mixed
+⋮----
+# # THETA METHODS: Excellent for trending financial data
+# AutoTheta(season_length=season_length),
+⋮----
+# # COMPLEX SMOOTHING: Handles complex patterns
+# AutoCES(season_length=season_length),
+⋮----
+# # BASELINE MODELS: Simple but effective
+# RandomWalkWithDrift(),
+# WindowAverage(window_size=3),   # Very responsive
+# WindowAverage(window_size=7),   # Weekly patterns
+⋮----
+# # SEASONAL PATTERNS
+# SeasonalNaive(season_length=season_length),
+# SeasonalWindowAverage(season_length=season_length, window_size=3),
+````
+
+## File: src/utils/hyperparam.py
+````python
+
+````
+
+## File: config/base.py
+````python
+"""
+Configuration settings.
+"""
+⋮----
+# === Data Configuration ===
+DATA_PATH = 'data/final/dataset.parquet'
+DATE_COLUMN = 'Date'
+DATE_RENAMED = 'ds'
+TARGET_COLUMN = 'btc_close'
+TARGET_RENAMED = 'y'
+UNIQUE_ID_VALUE = 'Bitcoin'
+⋮----
+# === Forecasting Configuration ===
+HORIZON = 7
+LEVELS = [80, 90]
+TEST_LENGTH_MULTIPLIER = 5
+SEED = 42
+⋮----
+# === Rolling Forecast Configuration ===
+ENABLE_ROLLING_FORECAST = True  # Enable rolling forecast for neural models when horizon < test_length
+⋮----
+# === Model Configuration ===
+FREQUENCY = 'D'
+SCALER_TYPE = ['standard']  # List for tune.choice()
+LOCAL_SCALER_TYPE = 'standard'  # String for direct use
+⋮----
+# === Cross-validation Configuration ===
+CV_N_WINDOWS = 5
+CV_STEP_SIZE = HORIZON
+⋮----
+# === Hyperparameter Tuning Configuration ===
+NUM_SAMPLES_PER_MODEL = 1
+⋮----
+# === Search Algorithm Configuration ===
+DEFAULT_SEARCH_ALGORITHM = 'optuna'  # Default search algorithm
+SEARCH_ALGORITHM_MAX_CONCURRENT = 4  # Max concurrent trials
+SEARCH_ALGORITHM_REPEAT_TRIALS = None  # Number of repeated evaluations (None = no repeat)
+FAST_SEARCH_ALGORITHM = 'hyperopt'  # Algorithm to use in fast mode
+⋮----
+# === Ray Configuration ===
+RAY_ADDRESS = 'local'
+RAY_NUM_CPUS = os.cpu_count()
+RAY_NUM_GPUS = torch.cuda.device_count() if torch.cuda.is_available() else 0
+⋮----
+# === Loss function mapping ===
+LOSS_MAP = {
+⋮----
+# === Columns to exclude when processing best hyperparameters ===
+EXCLUDE_HYPERPARAMETER_KEYS = [
+⋮----
+# === JSON parseable hyperparameter keys ===
+JSON_PARSEABLE_KEYS = [
+⋮----
+# === Output Directories ===
+RESULTS_DIR: str = 'results'
+HPO_DIR: str = f"{RESULTS_DIR}/hpo"
+PLOT_DIR: str = f"{RESULTS_DIR}/plot"
+FINAL_DIR: str = f"{RESULTS_DIR}/final"
+MODELS_DIR: str = f"{RESULTS_DIR}/models"
+BEST_HYPERPARAMETERS_CSV = f"{RESULTS_DIR}/best_hyperparameters.json"
+⋮----
+def __post_init__(self)
+⋮----
+"""Set default values that depend on other attributes."""
+# Create output directories
 ````
 
 ## File: src/dataset/data_preparation.py
@@ -919,6 +1381,8 @@ def split_data(df, horizon, test_length_multiplier)
 """Split data into train and test sets."""
 ⋮----
 test_length = horizon * test_length_multiplier
+⋮----
+# print(f"Forecast horizon (h) set to: {horizon} days")
 ⋮----
 # Validate data length
 ⋮----
@@ -948,172 +1412,6 @@ train_df = train_df[['unique_id', 'ds', 'y'] + hist_exog_list]
 test_df = test_df[['unique_id', 'ds', 'y'] + hist_exog_list]
 ⋮----
 # Example usage with sample values
-````
-
-## File: src/hpo/hyperparameter_tuning.py
-````python
-"""
-Hyperparameter tuning module for neural forecasting models.
-
-This module provides a comprehensive hyperparameter optimization pipeline
-for neural forecasting models using Ray Tune and NeuralForecast.
-"""
-⋮----
-class HPOResultsProcessor
-⋮----
-"""Handles processing and extraction of HPO results."""
-⋮----
-@staticmethod
-    def process_single_model_results(model, model_name: str) -> Optional[Dict[str, Any]]
-⋮----
-"""Process results for a single model."""
-⋮----
-results_df = model.results.get_dataframe()
-⋮----
-# Find the row with the lowest 'loss'
-# Reset index to avoid issues with unhashable types
-results_df_reset = results_df.reset_index(drop=True)
-best_idx = results_df_reset['loss'].idxmin()
-best_run = results_df_reset.loc[best_idx]
-⋮----
-# Extract the 'config/' columns to get the hyperparameters
-best_params = {}
-⋮----
-val = best_run[col]
-⋮----
-val = json.dumps(val)
-⋮----
-# Add model name and best loss to the dictionary
-⋮----
-class HPOConfigSerializer
-⋮----
-"""Handles serialization and deserialization of HPO configurations."""
-⋮----
-@staticmethod
-    def make_json_serializable(value: Any) -> Any
-⋮----
-"""Convert a value to JSON-serializable format."""
-# Handle numpy types
-⋮----
-# Handle PyTorch loss objects
-⋮----
-# Handle tuples (convert to lists for JSON)
-⋮----
-# Handle other non-serializable objects
-⋮----
-@staticmethod
-    def serialize_config(config: Dict[str, Any]) -> Dict[str, Any]
-⋮----
-"""Serialize a single configuration dictionary."""
-serializable_config = {}
-⋮----
-serialized_value = HPOConfigSerializer.make_json_serializable(value)
-⋮----
-@staticmethod
-    def deserialize_config(config: Dict[str, Any]) -> Dict[str, Any]
-⋮----
-"""Deserialize a configuration dictionary for model use."""
-clean_config = config.copy()
-⋮----
-# Remove metadata fields
-metadata_fields = ['model_name', 'best_valid_loss', 'training_iteration', 'loss', 'valid_loss']
-⋮----
-# Convert lists back to tuples for specific parameters
-tuple_params = ['kernel_size', 'downsample']
-⋮----
-class HPOConfigManager
-⋮----
-"""Manages saving and loading of HPO configurations."""
-⋮----
-@staticmethod
-    def save_configurations(configs: List[Dict[str, Any]], filepath: str) -> bool
-⋮----
-"""Save configurations to JSON file."""
-⋮----
-output_dir = os.path.dirname(filepath)
-⋮----
-serializable_configs = [
-⋮----
-@staticmethod
-    def load_configurations(filepath: str) -> Dict[str, Dict[str, Any]]
-⋮----
-"""Load configurations from JSON file."""
-⋮----
-configs_list = json.load(f)
-⋮----
-configs_map = {}
-⋮----
-model_name = config_item['model_name']
-clean_config = HPOConfigSerializer.deserialize_config(config_item)
-⋮----
-class HyperparameterTuner
-⋮----
-"""Main class for hyperparameter tuning operations."""
-⋮----
-def __init__(self, frequency: str = FREQUENCY, local_scaler_type: str = LOCAL_SCALER_TYPE)
-⋮----
-def run_optimization(self, train_df: pd.DataFrame, horizon: int, hist_exog_list: Optional[List[str]] = None, num_samples: int = NUM_SAMPLES_PER_MODEL) -> Tuple[pd.DataFrame, NeuralForecast]
-⋮----
-"""Run hyperparameter optimization using AutoModels."""
-⋮----
-# Get auto models for HPO
-automodels = ModelRegistry.get_auto_models(
-⋮----
-# Create NeuralForecast instance
-nf_hpo = NeuralForecast(
-⋮----
-# Perform cross-validation (includes HPO)
-cv_df = nf_hpo.cross_validation(train_df, n_windows=CV_N_WINDOWS, verbose=False)
-⋮----
-def extract_best_configurations(self, nf_hpo: NeuralForecast) -> List[Dict[str, Any]]
-⋮----
-"""Extract best configurations from HPO results."""
-all_best_configs = []
-⋮----
-model_name = model.__class__.__name__
-⋮----
-best_config = self.results_processor.process_single_model_results(model, model_name)
-⋮----
-def save_best_configurations(self, configs: List[Dict[str, Any]], filepath: str) -> bool
-⋮----
-"""Save best configurations to file."""
-⋮----
-def load_best_configurations(self, filepath: str) -> Dict[str, Dict[str, Any]]
-⋮----
-"""Load best configurations from file."""
-⋮----
-"""Run the complete hyperparameter optimization pipeline."""
-⋮----
-all_best_configs = self.extract_best_configurations(nf_hpo)
-⋮----
-success = self.save_best_configurations(all_best_configs, save_path)
-⋮----
-# Convenience functions for backward compatibility
-def run_hyperparameter_optimization(train_df: pd.DataFrame, horizon: int = None, num_samples: int = None) -> Tuple[pd.DataFrame, NeuralForecast]
-⋮----
-"""Legacy function for backward compatibility."""
-tuner = HyperparameterTuner()
-⋮----
-def extract_best_configurations(nf_hpo: NeuralForecast) -> List[Dict[str, Any]]
-⋮----
-def save_best_configurations(all_best_configs: List[Dict[str, Any]], filepath: str) -> bool
-⋮----
-def load_best_hyperparameters(json_filepath: str) -> Dict[str, Dict[str, Any]]
-⋮----
-# def run_complete_hpo_pipeline(train_df: pd.DataFrame, horizon: int = None, num_samples: int = None) -> List[Dict[str, Any]]:
-#     """Legacy function for backward compatibility."""
-#     tuner = HyperparameterTuner()
-#     return tuner.run_complete_pipeline(train_df, horizon, num_samples)
-⋮----
-# Prepare data
-⋮----
-# Create tuner instance
-⋮----
-# Run HPO pipeline
-all_best_configs = tuner.run_complete_pipeline(
-⋮----
-# Load and display best hyperparameters
-best_hyperparameters = tuner.load_best_configurations(BEST_HYPERPARAMETERS_CSV)
 ````
 
 ## File: src/models/neuralforecast/auto_cfg.py
@@ -1174,286 +1472,6 @@ def neural_auto_model_cfg_legacy(h: int) -> Dict[str, Dict]
 # TFT config for complex temporal patterns
 ⋮----
 # 'dropout': tune.choice([0.1, 0.2, 0.3]),
-````
-
-## File: src/models/neuralforecast/auto_models.py
-````python
-"""
-    Get auto models for hyperparameter optimization.
-
-    Args:
-        h: Forecast horizon
-        loss_fn: Loss function (default MAE)
-        num_samples: Number of hyperparameter samples per model
-        hist_exog_list: List of historical exogenous features
-
-    Returns:
-        List of auto model instances for HPO
-    """
-⋮----
-configs = neural_auto_model_cfg(h)
-search_alg = get_search_algorithm_class("hyperopt")
-⋮----
-init_config = {
-⋮----
-# base_auto_config = {
-#     "input_size": tune.choice([h * 2, h * 3, h * 4, h * 6]),
-#     "learning_rate": tune.choice([1e-4, 1e-3, 5e-3]),
-#     "scaler_type": tune.choice(SCALER_TYPE),
-#     "max_steps": tune.choice([500, 1000, 1500]),
-#     "batch_size": tune.choice([16, 32, 64]),
-#     "windows_batch_size": tune.choice([128, 256, 512]),
-#     "val_check_steps": 50,
-#     "random_seed": tune.randint(1, 20),
-# }
-base_auto_config = {
-⋮----
-models = [
-⋮----
-# Primary auto models for HPO
-⋮----
-# AutoNBEATS(**init_config, config=configs["nbeats"]),
-# AutoLSTM(**init_config, config=configs["lstm"]),
-# AutoTFT(**init_config, config=configs["tft"]),
-````
-
-## File: src/models/neuralforecast/models.py
-````python
-"""
-Enhanced model configurations optimized for Bitcoin forecasting.
-"""
-⋮----
-"""
-    Get neural forecasting models with default configurations, optionally enhanced 
-    with best hyperparameters from JSON file.
-    
-    Args:
-        h: Forecast horizon
-        hist_exog_list: List of historical exogenous features
-        hyperparameters_json_path: Path to best_hyperparameters.json file.
-        
-    Returns:
-        List of configured neural model instances
-    """
-⋮----
-# Define model configurations with their default parameters
-model_configs = _get_default_model_configs(h, hist_exog_list)
-⋮----
-# Load and apply hyperparameters if JSON path is provided
-⋮----
-hyperparameters_json_path = BEST_HYPERPARAMETERS_CSV
-⋮----
-# Use the correct import from the refactored HPO system
-⋮----
-best_hyperparams_map = load_best_hyperparameters(hyperparameters_json_path)
-⋮----
-model_configs = _apply_hyperparameters(model_configs, best_hyperparams_map, h)
-⋮----
-# Instantiate all models
-⋮----
-def _get_default_model_configs(h: int, hist_exog_list: Optional[List[str]] = None) -> Dict[str, Dict]
-⋮----
-"""
-    Get default configurations for all neural models.
-    
-    Args:
-        h: Forecast horizon
-        hist_exog_list: List of historical exogenous features
-        
-    Returns:
-        Dictionary mapping model names to their default configurations
-    """
-# Base configuration shared across all models
-base_config = {
-⋮----
-'input_size': h * 6,  # Increased from h*2 for better performance
-⋮----
-'max_steps': 500,     # Reduced from 1000 for faster training
-⋮----
-'random_seed': 42,    # Add for reproducibility
-⋮----
-# Include exogenous features if available
-⋮----
-# Model-specific configurations matching HPO Auto models
-model_configs = {
-⋮----
-# 'NBEATS': {
-#     **base_config,
-#     'model_class': NBEATS,
-#     'stack_types': ['trend', 'seasonality'],
-#     'n_blocks': [3, 3],
-#     'mlp_units': [[512, 512], [512, 512]],
-#     'sharing': [False, False],
-# },
-⋮----
-# 'LSTM': {
-⋮----
-#     'model_class': LSTM,
-#     'encoder_n_layers': 2,
-#     'encoder_hidden_size': 128,
-#     'decoder_hidden_size': 128,
-#     'decoder_layers': 1,
-⋮----
-# 'TFT': {
-⋮----
-#     'model_class': TFT,
-#     'hidden_size': 64,
-#     'n_rnn_layers': 2,
-#     'n_head': 4,
-#     'dropout': 0.1,
-⋮----
-# 'GRU': {
-⋮----
-#     'model_class': GRU,
-⋮----
-"""
-    Apply best hyperparameters from JSON to model configurations.
-    
-    Args:
-        model_configs: Default model configurations
-        best_hyperparams_map: Best hyperparameters loaded from JSON (from HPO system)
-        h: Forecast horizon
-        
-    Returns:
-        Updated model configurations
-    """
-# Parameters that should not be overridden by HPO
-protected_params = {'loss', 'model_class', 'valid_loss'}
-⋮----
-# Parameters used internally by HPO that should be filtered out
-internal_hpo_keys = {
-⋮----
-# Try different naming conventions for the model in JSON
-# The HPO system saves models with 'Auto' prefix
-possible_json_keys = [
-⋮----
-f'Auto{model_name}',  # AutoNHITS, AutoNBEATS, etc. (most likely)
-model_name,           # NHITS, NBEATS, etc.
-f'{model_name}Auto',  # Alternative naming
-f'Auto{model_name}_Mock'  # For mock versions if they exist
-⋮----
-loaded_hpo_params = None
-matched_key = None
-⋮----
-# Find the matching hyperparameters in the JSON
-⋮----
-loaded_hpo_params = best_hyperparams_map[json_key].copy()  # Copy to avoid modifying original
-matched_key = json_key
-⋮----
-# Clean up and validate hyperparameters
-cleaned_params = {}
-⋮----
-# Handle special parameter types
-cleaned_val = _process_hyperparameter_value(param_key, hpo_val)
-⋮----
-# Apply cleaned hyperparameters to model config
-⋮----
-def _process_hyperparameter_value(param_key: str, value: Any) -> Any
-⋮----
-"""
-    Process and validate hyperparameter values, handling special cases.
-    
-    Args:
-        param_key: Parameter name
-        value: Parameter value from HPO
-        
-    Returns:
-        Processed value or None if invalid
-    """
-# Handle None values
-⋮----
-# Handle string representations of lists (from JSON serialization)
-⋮----
-# Try to parse JSON strings back to Python objects
-⋮----
-parsed_value = json.loads(value)
-⋮----
-# Try to parse tuples represented as strings
-⋮----
-# Convert string tuple representation to actual tuple
-parsed_value = eval(value)  # Use with caution, only for trusted data
-⋮----
-# Handle specific parameter types that need special processing
-tuple_params = {'n_pool_kernel_size', 'n_freq_downsample'}
-⋮----
-# Handle boolean strings
-⋮----
-# Return value as-is if no special processing needed
-⋮----
-def _instantiate_models(model_configs: Dict[str, Dict]) -> List[Any]
-⋮----
-"""
-    Instantiate model instances from configurations.
-    
-    Args:
-        model_configs: Dictionary of model configurations
-        
-    Returns:
-        List of instantiated model objects
-    """
-models = []
-⋮----
-# Extract the model class
-ModelClass = config.pop('model_class')
-⋮----
-# Validate required parameters
-⋮----
-# Sort and display configuration for better readability
-⋮----
-value = config[key]
-⋮----
-# Create model instance with remaining configuration
-model_instance = ModelClass(**config)
-⋮----
-# Continue with other models instead of failing completely
-⋮----
-model_names = [type(m).__name__ for m in models]
-⋮----
-# Test the model loading with hyperparameters
-⋮----
-models = get_neural_models(h=7, hyperparameters_json_path=BEST_HYPERPARAMETERS_CSV)
-````
-
-## File: src/models/statsforecast/models.py
-````python
-"""
-Bitcoin-optimized statistical models for forecasting.
-"""
-⋮----
-def get_statistical_models(season_length: int = 7) -> List[Any]
-⋮----
-"""
-    Get optimized statistical models for Bitcoin forecasting.
-    
-    Args:
-        season_length: Seasonal period (default 7 for weekly patterns)
-        
-    Returns:
-        List of statistical model instances
-    """
-# Full model set optimized for Bitcoin characteristics
-all_models = [
-⋮----
-# PRIMARY: Best for Bitcoin's non-stationary, trending, volatile nature
-⋮----
-# AutoETS(season_length=season_length, model='ZZZ'),  # Auto-select
-# AutoETS(season_length=season_length, model='MMM'),  # Multiplicative
-# AutoETS(season_length=season_length, model='MAM'),  # Mixed
-⋮----
-# # THETA METHODS: Excellent for trending financial data
-# AutoTheta(season_length=season_length),
-⋮----
-# # COMPLEX SMOOTHING: Handles complex patterns
-# AutoCES(season_length=season_length),
-⋮----
-# # BASELINE MODELS: Simple but effective
-# RandomWalkWithDrift(),
-# WindowAverage(window_size=3),   # Very responsive
-# WindowAverage(window_size=7),   # Weekly patterns
-⋮----
-# # SEASONAL PATTERNS
-# SeasonalNaive(season_length=season_length),
-# SeasonalWindowAverage(season_length=season_length, window_size=3),
 ````
 
 ## File: src/models/model_registry.py
@@ -1531,23 +1549,72 @@ class ModelRegistry
         """
 ````
 
-## File: src/pipelines/model_selection.py
+## File: src/pipelines/final_fit_predict.py
 ````python
-# src/pipelines/model_selection.py
+# src/pipelines/final_fit_predict.py
 """
-Comprehensive model selection and comparison framework.
+Final fit and predict framework for generating future forecasts and visualization.
 """
 ⋮----
-class ModelComparison
+class FinalFitPredictor
 ⋮----
-"""Comprehensive model comparison across different frameworks."""
+"""Final fit and predict for generating future forecasts with visualization."""
 ⋮----
-def __init__(self, results_dir: str = PLOT_DIR)
+def __init__(self, results_dir: str = FINAL_DIR)
 ⋮----
-def evaluate_neural_models(self, models, train_df, horizon: int) -> List[Dict]
+self.all_forecasts = {}  # Store all forecasts for unified plotting
 ⋮----
-"""Evaluate neural models with cross-validation, fallback to forecast if CV fails."""
+def _rolling_forecast_neural(self, nf, train_df, test_df, horizon: int, model_name: str) -> pd.DataFrame
+⋮----
+"""Perform rolling forecast for neural models when horizon < test_df length."""
+⋮----
+all_forecasts = []
+current_train_df = train_df.copy()  # Keep all columns from original training data
+⋮----
+# Identify exogenous columns (all columns except 'unique_id', 'ds', 'y')
+exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
+futr_cols = ['unique_id', 'ds'] + exog_cols  # Columns needed for prediction
+⋮----
+# Calculate number of rolling windows needed
+test_length = len(test_df)
+n_windows = (test_length + horizon - 1) // horizon  # Ceiling division
+⋮----
+start_idx = window * horizon
+end_idx = min(start_idx + horizon, test_length)
+⋮----
+# Get the current test window
+current_test_window = test_df.iloc[start_idx:end_idx].copy()
+⋮----
+# Predict for current window - include all exogenous features
+futr_df = current_test_window[futr_cols].copy()
+window_forecast = nf.predict(futr_df=futr_df)
+⋮----
+# Update training data with actual values from current window for next iteration
+if window < n_windows - 1:  # Don't update after last window
+# Add actual values to training data (keep all columns for consistency)
+window_actual = current_test_window.copy()
+current_train_df = pd.concat([current_train_df, window_actual], ignore_index=True)
+⋮----
+# Re-fit the model with updated training data
+⋮----
+# Combine all forecasts
+combined_forecasts = pd.concat(all_forecasts, ignore_index=True)
+⋮----
+def fit_predict_neural_models(self, models, train_df, test_df, horizon: int) -> List[Dict]
+⋮----
+"""Fit neural models on full training data and predict on test data."""
 results = []
+⋮----
+# # Debug: Show data structure
+# print(f"  Train data columns: {list(train_df.columns)}")
+# print(f"  Test data columns: {list(test_df.columns)}")
+# print(f"  Train data shape: {train_df.shape}")
+# print(f"  Test data shape: {test_df.shape}")
+⋮----
+# Determine if rolling forecast is needed
+⋮----
+# ENABLE_ROLLING_FORECAST = False
+use_rolling = ENABLE_ROLLING_FORECAST and horizon < test_length
 ⋮----
 model_name = model.__class__.__name__
 ⋮----
@@ -1556,31 +1623,31 @@ start_time = time.time()
 # Create NeuralForecast instance
 nf = NeuralForecast(models=[model], freq='D')
 ⋮----
-# Try cross-validation first (uses train_df internally)
+# Fit on full training data
 ⋮----
-cv_results = nf.cross_validation(
+# Choose forecasting method based on horizon vs test length
 ⋮----
-n_windows=3,  # Reduced for faster evaluation
+# Rolling forecast
+forecasts = self._rolling_forecast_neural(nf, train_df, test_df, horizon, model_name)
+evaluation_method = "rolling_forecast"
 ⋮----
-# Calculate metrics from CV results
-metrics = self._calculate_metrics(cv_results, [model_name])
-evaluation_method = "cross_validation"
+# Direct multi-step forecast
+# Include all exogenous features for prediction
 ⋮----
-# Fallback: Manual split for train/forecast
-val_size = min(len(train_df) // 4, horizon * 3)
-df_train = train_df.iloc[:-val_size].copy()
-df_test = train_df.iloc[-val_size:].copy()
+futr_cols = ['unique_id', 'ds'] + exog_cols
+futr_df = test_df[futr_cols].copy()
+forecasts = nf.predict(futr_df=futr_df)
+evaluation_method = "direct_forecast"
 ⋮----
-# Train on df_train and forecast on df_test
+# Merge with actual test values for evaluation
+eval_df = test_df.merge(forecasts, on=['unique_id', 'ds'], how='inner')
 ⋮----
-forecasts = nf.predict(futr_df=df_test[['unique_id', 'ds']])
+# Store forecast for unified plotting
 ⋮----
-# Merge with actual values for evaluation
-eval_df = df_test.merge(forecasts, on=['unique_id', 'ds'], how='inner')
+'eval_df': eval_df,  # Store eval_df for plotting actual vs predicted
 ⋮----
 # Calculate metrics from forecast results
-metrics = self._calculate_metrics(eval_df, [model_name])
-evaluation_method = "train_forecast"
+metrics = self._calculate_test_metrics(eval_df, [model_name])
 ⋮----
 # Training time
 training_time = time.time() - start_time
@@ -1593,29 +1660,32 @@ error_msg = str(e)
 ⋮----
 successful_count = sum(1 for r in results if r.get('status') == 'success')
 ⋮----
-def evaluate_statistical_models(self, models, train_df, horizon: int) -> List[Dict]
+def fit_predict_statistical_models(self, models, train_df, test_df, horizon: int) -> List[Dict]
 ⋮----
-"""Evaluate statistical models."""
+"""Fit statistical models on training data and predict on test data."""
 ⋮----
 # Prepare data for StatsForecast
-df_stats = train_df[['unique_id', 'ds', 'y']].copy()
+df_train = train_df[['unique_id', 'ds', 'y']].copy()
+df_test = test_df[['unique_id', 'ds']].copy()
 ⋮----
 # Create StatsForecast instance
 sf = StatsForecast(models=[model], freq='D', verbose=True)
 ⋮----
-# Cross-validation
-cv_results = sf.cross_validation(
+# Generate forecast on test data
+forecasts = sf.forecast(df=df_train, X_df=df_test, h=HORIZON * TEST_LENGTH_MULTIPLIER)
 ⋮----
-# Calculate metrics
+# Merge with test data for evaluation
 ⋮----
-def _calculate_metrics(self, cv_results: pd.DataFrame, model_names: List[str]) -> Dict
+'eval_df': eval_df  # Store eval_df for plotting actual vs predicted
 ⋮----
-"""Calculate comprehensive metrics for cross-validation results."""
+def _calculate_test_metrics(self, test_results: pd.DataFrame, model_names: List[str]) -> Dict
+⋮----
+"""Calculate comprehensive metrics for test set predictions."""
 metrics = {}
 ⋮----
 # Check for valid data
-y_true = cv_results['y'].values
-y_pred = cv_results[model_name].values
+y_true = test_results['y'].values
+y_pred = test_results[model_name].values
 ⋮----
 # Remove NaN values
 mask = ~(np.isnan(y_true) | np.isnan(y_pred))
@@ -1642,7 +1712,6 @@ smape_val = np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_cle
 ⋮----
 # Additional custom metrics
 directional_accuracy = self._calculate_directional_accuracy(y_true_clean, y_pred_clean)
-coverage = self._calculate_coverage(cv_results, model_name)
 ⋮----
 def _calculate_directional_accuracy(self, y_true: np.ndarray, y_pred: np.ndarray) -> float
 ⋮----
@@ -1651,36 +1720,113 @@ def _calculate_directional_accuracy(self, y_true: np.ndarray, y_pred: np.ndarray
 true_direction = np.diff(y_true) > 0
 pred_direction = np.diff(y_pred) > 0
 ⋮----
-def _calculate_coverage(self, cv_results: pd.DataFrame, model_name: str) -> Dict
+def _create_unified_forecast_plot(self, train_df: pd.DataFrame, test_df: pd.DataFrame)
 ⋮----
-"""Calculate prediction interval coverage."""
-coverage = {}
+"""Create a unified plot showing all model predictions with actual values from eval_df."""
 ⋮----
-# Check for prediction intervals
+# Take last 100 values from train_df for continuity
+train_tail = train_df.tail(50).copy()
 ⋮----
-lo_col = f"{model_name}-lo-{level}"
-hi_col = f"{model_name}-hi-{level}"
+# Set up the plot
 ⋮----
-y_true = cv_results['y']
-y_lo = cv_results[lo_col]
-y_hi = cv_results[hi_col]
+# Convert ds to datetime for better plotting
 ⋮----
-# Coverage = proportion of true values within prediction intervals
-within_interval = (y_true >= y_lo) & (y_true <= y_hi)
+test_df = test_df.copy()
 ⋮----
-def compare_all_models(self, neural_models, stat_models, train_df, horizon: int) -> pd.DataFrame
+# Create continuous actual values line (train tail + test)
+# Combine train tail and test for continuous line
+actual_dates = pd.concat([train_tail['ds'], test_df['ds']], ignore_index=True)
+actual_values = pd.concat([train_tail['y'], test_df['y']], ignore_index=True)
 ⋮----
-"""Compare all models and return ranked results."""
+# Plot continuous actual values line
+⋮----
+# Highlight test period with markers
+⋮----
+# Define colors for different models
+num_models = len(self.all_forecasts)
+cmap = cm.get_cmap('tab20', num_models)
+⋮----
+# Plot forecasts from all models using eval_df data
+⋮----
+color = cmap(i)
+⋮----
+# Use eval_df data if available, otherwise fall back to forecast data
+⋮----
+eval_df = forecast_data['eval_df']
+# Convert dates to datetime and sort by date
+eval_df_sorted = eval_df.sort_values('ds')
+forecast_dates = pd.to_datetime(eval_df_sorted['ds'])
+predictions = eval_df_sorted[model_name].values
+⋮----
+# Remove any NaN predictions
+mask = ~np.isnan(predictions)
+forecast_dates = forecast_dates[mask]
+predictions = predictions[mask]
+⋮----
+# Fallback to original forecast data
+forecast_dates = pd.to_datetime(forecast_data['ds'])
+predictions = forecast_data['predictions']
+⋮----
+# Plot model predictions
+linestyle = '--' if forecast_data['framework'] == 'statistical' else '-'
+alpha = 0.8
+linewidth = 2.5 if forecast_data['framework'] == 'neural' else 2
+⋮----
+# Create label with forecast method info
+method_info = ""
+⋮----
+method_info = f" - {forecast_data['forecast_method']}"
+⋮----
+# Customize the plot
+⋮----
+# Improve legend
+legend = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+⋮----
+# Format x-axis dates
+⋮----
+# plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(test_df)//8)))
+⋮----
+# Add vertical line to separate train and test with annotation
+⋮----
+split_date = test_df['ds'].iloc[0]
+⋮----
+# Add annotation for the split
+⋮----
+# Add text box with summary info
+⋮----
+info_text = f"Models Compared: {len(self.all_forecasts)}\n"
+⋮----
+# info_text += f"Train Context: {len(train_tail)} days\n"
+⋮----
+# Add rolling forecast info
+rolling_models = [name for name, data in self.all_forecasts.items()
+⋮----
+# Save the plot
+timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+plot_filename = f"final_forecast_comparison_{timestamp}.png"
+plot_path = self.plot_dir / plot_filename
+⋮----
+def fit_predict_all_models(self, neural_models, stat_models, train_df, test_df, horizon: int) -> pd.DataFrame
+⋮----
+"""Fit all models and generate final predictions with unified plotting."""
+⋮----
+# print(f"Train data shape: {train_df.shape}")
+# print(f"Test data shape: {test_df.shape}")
+# print(f"Horizon: {horizon}")
+⋮----
+# Clear previous forecasts
 ⋮----
 all_results = []
 ⋮----
-# Evaluate neural models
+# Fit-predict neural models
 ⋮----
-neural_results = self.evaluate_neural_models(neural_models, train_df, horizon)
+neural_results = self.fit_predict_neural_models(neural_models, train_df, test_df, horizon)
 ⋮----
-# Evaluate statistical models
+# Fit-predict statistical models
 ⋮----
-stat_results = self.evaluate_statistical_models(stat_models, train_df, horizon)
+stat_results = self.fit_predict_statistical_models(stat_models, train_df, test_df, horizon)
+⋮----
+# Create unified forecast plot
 ⋮----
 # Create results DataFrame
 ⋮----
@@ -1695,7 +1841,7 @@ successful_results = results_df[results_df['error'].isna()].copy()
 # Assume all are successful if no status/error columns
 successful_results = results_df.copy()
 ⋮----
-# Rank models by MAE (lower is better)
+# Rank models by test set MAE (lower is better)
 ⋮----
 # Combined rank (simple average)
 ⋮----
@@ -1706,12 +1852,11 @@ successful_results = successful_results.sort_values('mae')
 ⋮----
 # Save results
 ⋮----
-def save_results(self, all_results: pd.DataFrame, successful_results: pd.DataFrame)
+def save_final_results(self, all_results: pd.DataFrame, successful_results: pd.DataFrame)
 ⋮----
-"""Save comparison results."""
+"""Save final fit-predict results."""
 ⋮----
 # Use simple timestamp without timezone
-timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
 ⋮----
 # Save all results
 ⋮----
@@ -1722,7 +1867,7 @@ summary = {
 ⋮----
 def get_top_models(self, results_df: pd.DataFrame, top_n: int = 5) -> List[str]
 ⋮----
-"""Get top N model names for ensemble or further analysis."""
+"""Get top N model names based on test set performance."""
 ⋮----
 actual_top_n = min(top_n, len(results_df))
 top_models = results_df.head(actual_top_n)['model_name'].tolist()
@@ -1778,10 +1923,79 @@ rmse_val = np.sqrt(mse_val)
 
 ## File: .gitignore
 ````
-data/
+data/processed/
+data/raw/
 lightning_logs/
 __pycache__/
 .venv/
+.DS_Store
+````
+
+## File: requirements.txt
+````
+matplotlib
+numpy
+pandas
+seaborn
+statsmodels
+scikit-learn
+scipy
+torch
+yfinance
+pytrends
+lightning
+sktime
+optuna
+neuralforecast
+hyperopt
+torchvision
+ray
+HEBO
+ConfigSpace
+plotly
+kaleido
+window-ops
+````
+
+## File: src/models/neuralforecast/auto_models.py
+````python
+"""
+    Get auto models for hyperparameter optimization.
+
+    Args:
+        h: Forecast horizon
+        loss_fn: Loss function (default MAE)
+        num_samples: Number of hyperparameter samples per model
+        hist_exog_list: List of historical exogenous features
+
+    Returns:
+        List of auto model instances for HPO
+    """
+⋮----
+configs = neural_auto_model_cfg(h)
+search_alg = get_search_algorithm_class("hyperopt")
+⋮----
+init_config = {
+⋮----
+# base_auto_config = {
+#     "input_size": tune.choice([h * 2, h * 3, h * 4, h * 6]),
+#     "learning_rate": tune.choice([1e-4, 1e-3, 5e-3]),
+#     "scaler_type": tune.choice(SCALER_TYPE),
+#     "max_steps": tune.choice([500, 1000, 1500]),
+#     "batch_size": tune.choice([16, 32, 64]),
+#     "windows_batch_size": tune.choice([128, 256, 512]),
+#     "val_check_steps": 50,
+#     "random_seed": tune.randint(1, 20),
+# }
+base_auto_config = {
+⋮----
+models = [
+⋮----
+# Primary auto models for HPO
+⋮----
+# AutoNBEATS(**init_config, config=configs["nbeats"]),
+# AutoLSTM(**init_config, config=configs["lstm"]),
+# AutoTFT(**init_config, config=configs["tft"]),
 ````
 
 ## File: main.py
@@ -1913,16 +2127,16 @@ def step3_model_comparison(self, train_df: pd.DataFrame, df_test: pd.DataFrame, 
 """
         Step 3: Comprehensive Model Comparison
         
-        Use the best hyperparameters from HPO to train and compare models
-        from all three frameworks: statsforecast, mlforecast, neuralforecast
+        First perform cross-validation for model selection, then final fit-predict for test evaluation
         
         Args:
             train_df: train dataset
             df_test: Test dataset for final evaluation
+            hist_exog_list: List of exogenous features
             best_configs: Best hyperparameters from HPO (if available)
             
         Returns:
-            DataFrame with model comparison results
+            DataFrame with final model comparison results
         """
 ⋮----
 # Get models for comparison
@@ -1936,27 +2150,37 @@ stat_models = ModelRegistry.get_statistical_models(season_length=7)
 ⋮----
 # Use optimized configurations from HPO
 ⋮----
-# TODO: Implement loading best configs into regular models
-⋮----
 neural_models = ModelRegistry.get_neural_models(HORIZON, hist_exog_list, BEST_HYPERPARAMETERS_CSV)
 ⋮----
 # Use default configurations
 ⋮----
 neural_models = ModelRegistry.get_neural_models(HORIZON, hist_exog_list)
 ⋮----
-# Initialize model comparison
-comparison = ModelComparison(results_dir=PLOT_DIR)
+# print(f"   • Train data: {len(train_df):,} samples")
+# print(f"   • Test data: {len(df_test):,} samples")
+# print(f"   • Neural models: {len(neural_models)}")
+# print(f"   • Statistical models: {len(stat_models)}")
 ⋮----
-# Run model comparison
+# Step 3a: Cross-validation for model selection
 ⋮----
-results_df = comparison.compare_all_models(
+cv_evaluator = CrossValidationEvaluator(results_dir=FINAL_DIR)
+⋮----
+cv_results_df = cv_evaluator.compare_models_cv(
+⋮----
+# Display top models from CV
+⋮----
+# Step 3b: Final fit-predict evaluation
+⋮----
+final_predictor = FinalFitPredictor(results_dir=FINAL_DIR)
+⋮----
+final_results_df = final_predictor.fit_predict_all_models(
 ⋮----
 # Display top models using helper method
 ⋮----
 # Store results
 ⋮----
 # Save results
-results_path = Path(PLOT_DIR) / f"model_comparison_{self.timestamp.strftime('%Y%m%d_%H%M%S')}.csv"
+results_path = Path(FINAL_DIR) / f"model_comparison_{self.timestamp.strftime('%Y%m%d_%H%M%S')}.csv"
 ⋮----
 # Return empty DataFrame as fallback
 ⋮----
@@ -2042,4 +2266,197 @@ pipeline = BitcoinForecastingPipeline(
 results = pipeline.run_complete_pipeline()
 ⋮----
 # Exit with appropriate code
+````
+
+## File: src/models/neuralforecast/models.py
+````python
+"""
+Enhanced model configurations optimized for Bitcoin forecasting.
+"""
+⋮----
+trainer_kwargs = {
+⋮----
+"""
+    Get neural forecasting models with default configurations, optionally enhanced 
+    with best hyperparameters from JSON file.
+    
+    Args:
+        h: Forecast horizon
+        hist_exog_list: List of historical exogenous features
+        hyperparameters_json_path: Path to best_hyperparameters.json file.
+        
+    Returns:
+        List of configured neural model instances
+    """
+⋮----
+# Define model configurations with their default parameters
+model_configs = _get_default_model_configs(h, hist_exog_list)
+⋮----
+# Load and apply hyperparameters if JSON path is provided
+⋮----
+hyperparameters_json_path = BEST_HYPERPARAMETERS_CSV
+⋮----
+# Use the correct import from the refactored HPO system
+⋮----
+best_hyperparams_map = load_best_hyperparameters(hyperparameters_json_path)
+⋮----
+model_configs = _apply_hyperparameters(model_configs, best_hyperparams_map, h)
+⋮----
+# Instantiate all models
+⋮----
+def _get_default_model_configs(h: int, hist_exog_list: Optional[List[str]] = None) -> Dict[str, Dict]
+⋮----
+"""
+    Get default configurations for all neural models.
+    
+    Args:
+        h: Forecast horizon
+        hist_exog_list: List of historical exogenous features
+        
+    Returns:
+        Dictionary mapping model names to their default configurations
+    """
+# Base configuration shared across all models
+base_config = {
+⋮----
+'input_size': h * 6,  # Increased from h*2 for better performance
+⋮----
+'max_steps': 500,     # Reduced from 1000 for faster training
+⋮----
+'random_seed': 42,    # Add for reproducibility
+⋮----
+# Include exogenous features if available
+⋮----
+# Model-specific configurations matching HPO Auto models
+model_configs = {
+⋮----
+# 'NBEATS': {
+#     **base_config,
+#     'model_class': NBEATS,
+#     'stack_types': ['trend', 'seasonality'],
+#     'n_blocks': [3, 3],
+#     'mlp_units': [[512, 512], [512, 512]],
+#     'sharing': [False, False],
+# },
+⋮----
+# 'LSTM': {
+⋮----
+#     'model_class': LSTM,
+#     'encoder_n_layers': 2,
+#     'encoder_hidden_size': 128,
+#     'decoder_hidden_size': 128,
+#     'decoder_layers': 1,
+⋮----
+# 'TFT': {
+⋮----
+#     'model_class': TFT,
+#     'hidden_size': 64,
+#     'n_rnn_layers': 2,
+#     'n_head': 4,
+#     'dropout': 0.1,
+⋮----
+# 'GRU': {
+⋮----
+#     'model_class': GRU,
+⋮----
+"""
+    Apply best hyperparameters from JSON to model configurations.
+    
+    Args:
+        model_configs: Default model configurations
+        best_hyperparams_map: Best hyperparameters loaded from JSON (from HPO system)
+        h: Forecast horizon
+        
+    Returns:
+        Updated model configurations
+    """
+# Parameters that should not be overridden by HPO
+protected_params = {'loss', 'model_class', 'valid_loss'}
+⋮----
+# Parameters used internally by HPO that should be filtered out
+internal_hpo_keys = {
+⋮----
+# The HPO system saves models with 'Auto' prefix
+json_key = f'Auto{model_name}'
+⋮----
+loaded_hpo_params = None
+matched_key = None
+⋮----
+# Find the matching hyperparameters in the JSON
+⋮----
+loaded_hpo_params = best_hyperparams_map[json_key].copy()  # Copy to avoid modifying original
+matched_key = json_key
+⋮----
+# Clean up and validate hyperparameters
+cleaned_params = {}
+⋮----
+# Handle special parameter types
+cleaned_val = _process_hyperparameter_value(param_key, hpo_val)
+⋮----
+# Apply cleaned hyperparameters to model config
+⋮----
+def _process_hyperparameter_value(param_key: str, value: Any) -> Any
+⋮----
+"""
+    Process and validate hyperparameter values, handling special cases.
+    
+    Args:
+        param_key: Parameter name
+        value: Parameter value from HPO
+        
+    Returns:
+        Processed value or None if invalid
+    """
+# Handle None values
+⋮----
+# Handle string representations of lists (from JSON serialization)
+⋮----
+# Try to parse JSON strings back to Python objects
+⋮----
+parsed_value = json.loads(value)
+⋮----
+# Try to parse tuples represented as strings
+⋮----
+# Convert string tuple representation to actual tuple
+parsed_value = eval(value)  # Use with caution, only for trusted data
+⋮----
+# Handle specific parameter types that need special processing
+tuple_params = {'n_pool_kernel_size', 'n_freq_downsample'}
+⋮----
+# Handle boolean strings
+⋮----
+# Return value as-is if no special processing needed
+⋮----
+def _instantiate_models(model_configs: Dict[str, Dict]) -> List[Any]
+⋮----
+"""
+    Instantiate model instances from configurations.
+    
+    Args:
+        model_configs: Dictionary of model configurations
+        
+    Returns:
+        List of instantiated model objects
+    """
+models = []
+⋮----
+# Extract the model class
+ModelClass = config.pop('model_class')
+⋮----
+# Validate required parameters
+⋮----
+# Sort and display configuration for better readability
+⋮----
+value = config[key]
+⋮----
+# Create model instance with remaining configuration
+model_instance = ModelClass(**config)
+⋮----
+# Continue with other models instead of failing completely
+⋮----
+model_names = [type(m).__name__ for m in models]
+⋮----
+# Test the model loading with hyperparameters
+⋮----
+models = get_neural_models(h=7, hyperparameters_json_path=BEST_HYPERPARAMETERS_CSV)
 ````

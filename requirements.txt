@@ -20,3 +20,4 @@ ConfigSpace
 plotly
 kaleido
 window-ops
+utilsforecast
