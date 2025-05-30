@@ -50,8 +50,8 @@ def get_neural_models(
 
     init_config = {
         "h": horizon,
-        # "loss": MAE(),
-        "loss": DistributionLoss("Normal", level=[90]),
+        "loss": MAE(),
+        # "loss": DistributionLoss("StudentT", level=[90]),
         "search_alg": search_alg,
         "num_samples": num_samples,
         "verbose": False,

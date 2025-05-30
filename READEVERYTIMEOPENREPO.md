@@ -14,7 +14,3 @@
 Include prediction interval to account for uncertainty
 
 - refactor all_forecasts_dict in model_forecasting.py to visualize mean in 1 plot to compare and interval for independent plots
-
-# supress ray tune logging in library
-import logging
-logging.getLogger("ray.tune").setLevel(logging.WARNING)

@@ -21,6 +21,7 @@ SEED = 42
 
 # === Rolling Forecast Configuration ===
 ENABLE_ROLLING_FORECAST = True  # Enable rolling forecast for neural models when horizon < test_length
+ROLLING_REFIT_FREQUENCY = 3  # Refit every N windows (1=every window, 3=every 3 windows, 0=no refit)
 
 # === Model Configuration ===
 FREQUENCY = 'D'
@@ -28,8 +29,9 @@ SCALER_TYPE = ['standard']  # List for tune.choice()
 LOCAL_SCALER_TYPE = 'standard'  # String for direct use
 
 # === Cross-validation Configuration ===
-CV_N_WINDOWS = 5
+CV_N_WINDOWS = 10
 CV_STEP_SIZE = HORIZON
+PI_N_WINDOWS_FOR_CONFORMAL = 20 
 
 # === Hyperparameter Tuning Configuration ===
 NUM_SAMPLES_PER_MODEL = 1

@@ -11,7 +11,7 @@ from config.base import *
 from neuralforecast import NeuralForecast
 from neuralforecast.utils import PredictionIntervals
 from statsforecast import StatsForecast
-
+from statsforecast.utils import ConformalIntervals
 # Import utilsforecast for cross-validation evaluation
 from utilsforecast.evaluation import evaluate
 from utilsforecast.losses import mse, mae, rmse
@@ -33,9 +33,10 @@ def perform_cross_validation(auto_models: List, stat_models: List, train_df: pd.
                     df=train_df,
                     n_windows=CV_N_WINDOWS,
                     step_size=CV_STEP_SIZE,
+                    val_size=HORIZON,
                     refit=True,
                     verbose=False,
-                    prediction_intervals=PredictionIntervals(),
+                    prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL),
                     level= LEVELS
                 )
                 if cv_df.empty:
@@ -74,7 +75,9 @@ def perform_cross_validation(auto_models: List, stat_models: List, train_df: pd.
                     h=HORIZON, 
                     n_windows=CV_N_WINDOWS, 
                     step_size=CV_STEP_SIZE,
-                    refit=True
+                    refit=True,
+                    prediction_intervals=ConformalIntervals(h=HORIZON, n_windows=PI_N_WINDOWS_FOR_CONFORMAL), 
+                    level=LEVELS
                 )
                 if cv_df.empty:
                     raise ValueError("Cross-validation returned empty results")

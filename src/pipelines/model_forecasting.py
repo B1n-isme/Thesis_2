@@ -9,10 +9,11 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Any
 
 # Configuration and local imports
-from config.base import FREQUENCY, LOCAL_SCALER_TYPE, HORIZON, ENABLE_ROLLING_FORECAST
+from config.base import *
 from neuralforecast import NeuralForecast
-from neuralforecast import PredictionIntervals
+from neuralforecast.utils import PredictionIntervals
 from statsforecast import StatsForecast
+from statsforecast.utils import ConformalIntervals
 from src.pipelines.model_evaluation import calculate_test_metrics # Import from new location
 
 def save_best_auto_model_config(model_name: str, best_config: Dict, auto_model_configs_dir: Path):
@@ -59,12 +60,6 @@ def rolling_forecast_neural_all_models(
     futr_cols = ['unique_id', 'ds'] + exog_cols
 
     # Determine the number of steps for rolling.
-    # test_duration_steps: User's original code used len(test_df). This is sensitive to
-    # test_df structure (single vs. multi-series stacked). If test_df contains multiple
-    # series stacked, len(test_df) = num_series * num_timesteps.
-    # For rolling forecasts, we usually mean the number of time periods in the test set.
-    # A potentially more robust measure for multi-series might be test_df['ds'].nunique(),
-    # but this assumes 'ds' are aligned. Sticking to len(test_df) as per original.
     test_duration_steps = len(test_df)
 
     if horizon_length <= 0:
@@ -91,7 +86,6 @@ def rolling_forecast_neural_all_models(
         
         # If futr_df_for_predict is empty (e.g. futr_cols were missing from test_df slice),
         # it might indicate an issue or a need to predict using h.
-        # For simplicity, we assume futr_df_for_predict can be constructed.
         if futr_df_for_predict.empty:
             if not exog_cols and not current_test_window_actuals_df[['unique_id', 'ds']].empty:
                  # If no exogenous features, futr_df only needs unique_id and ds
@@ -121,9 +115,101 @@ def rolling_forecast_neural_all_models(
             fit_val_size = horizon_length if horizon_length > 0 and len(current_train_df) > horizon_length * 2 else None # Ensure val_size is reasonable
             
             # nf_model.fit() will re-train all models within nf_model.
-            # PredictionIntervals() object is not passed again, assuming models are configured from initial fit.
-            nf_model.fit(current_train_df, val_size=fit_val_size, verbose=False) 
+            # Pass PredictionIntervals() configuration for consistency
+            nf_model.fit(
+                        current_train_df, 
+                        val_size=fit_val_size, 
+                        verbose=False, 
+                        prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+                    ) 
             print(f"        Models re-fitted.")
+            
+    if not all_forecasts_list:
+        print("        Warning: No forecasts were generated during the rolling forecast process.")
+        return pd.DataFrame()
+
+    final_concatenated_forecasts_df = pd.concat(all_forecasts_list, ignore_index=True)
+    return final_concatenated_forecasts_df
+
+def rolling_forecast_neural_all_models_efficient(
+    nf_model: NeuralForecast,
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    horizon_length: int,
+    predict_level: List[int],
+    refit_frequency: int = 1  # Refit every N windows (1 = every window, 3 = every 3 windows)
+) -> pd.DataFrame:
+    """
+    More efficient rolling forecast with configurable refit frequency.
+    
+    Args:
+        refit_frequency: How often to refit models (1 = every window, 2 = every 2 windows, etc.)
+                        Set to 0 to disable refitting (fastest but less adaptive)
+    """
+    print(f"      Performing efficient rolling forecast (refit every {refit_frequency} windows)...")
+    all_forecasts_list = []
+    current_train_df = train_df.copy()
+
+    # Prepare column names for future exogenous features
+    exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
+    futr_cols = ['unique_id', 'ds'] + exog_cols
+
+    test_duration_steps = len(test_df)
+    if horizon_length <= 0:
+        raise ValueError("horizon_length must be positive for rolling forecast.")
+
+    n_windows = (test_duration_steps + horizon_length - 1) // horizon_length
+    print(f"        Rolling windows: {n_windows}, Horizon per window: {horizon_length}")
+
+    for window_idx in range(n_windows):
+        print(f"        Processing rolling window {window_idx + 1}/{n_windows}...")
+        
+        start_idx = window_idx * horizon_length
+        end_idx = min(start_idx + horizon_length, test_duration_steps)
+        current_test_window_actuals_df = test_df.iloc[start_idx:end_idx].copy()
+
+        if current_test_window_actuals_df.empty:
+            print(f"        Window {window_idx + 1} data is empty, skipping.")
+            continue
+            
+        # Prepare futr_df for prediction
+        futr_df_for_predict = current_test_window_actuals_df[futr_cols].copy()
+        if futr_df_for_predict.empty:
+            if not exog_cols and not current_test_window_actuals_df[['unique_id', 'ds']].empty:
+                futr_df_for_predict = current_test_window_actuals_df[['unique_id', 'ds']].copy()
+            else:
+                print(f"        futr_df for prediction is empty for window {window_idx + 1}. Skipping.")
+                continue
+
+        print(f"        Predicting for window {window_idx + 1} (futr_df rows: {len(futr_df_for_predict)}).")
+        window_forecast_df = nf_model.predict(futr_df=futr_df_for_predict, level=predict_level)
+        all_forecasts_list.append(window_forecast_df)
+        
+        # Update training data with ACTUAL VALUES (not predictions) and conditionally refit
+        if window_idx < n_windows - 1:
+            if 'y' not in current_test_window_actuals_df.columns:
+                print(f"        Warning: Column 'y' not in test data for window {window_idx + 1}.")
+            
+            # Always append actual values to training data
+            actuals_to_append = current_test_window_actuals_df
+            print(f"        Appending {len(actuals_to_append)} actual observations to training data.")
+            current_train_df = pd.concat([current_train_df, actuals_to_append], ignore_index=True)
+            
+            # Conditional refit based on frequency
+            should_refit = (refit_frequency > 0 and (window_idx + 1) % refit_frequency == 0)
+            
+            if should_refit:
+                print(f"        Re-fitting models (window {window_idx + 1}, train size: {len(current_train_df)})...")
+                fit_val_size = horizon_length if horizon_length > 0 and len(current_train_df) > horizon_length * 2 else None
+                nf_model.fit(
+                    current_train_df, 
+                    val_size=fit_val_size, 
+                    verbose=False, 
+                    prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+                )
+                print(f"        Models re-fitted.")
+            else:
+                print(f"        Skipping refit (will refit at window {((window_idx // refit_frequency) + 1) * refit_frequency}).")
             
     if not all_forecasts_list:
         print("        Warning: No forecasts were generated during the rolling forecast process.")
@@ -164,7 +250,11 @@ def perform_final_fit_predict(
             
             fit_start_time = time.time()
             # Initial fit with PredictionIntervals configuration
-            nf.fit(train_df, val_size=HORIZON if HORIZON > 0 else None, prediction_intervals=PredictionIntervals())
+            nf.fit(
+                train_df, 
+                val_size=HORIZON if HORIZON > 0 else None, 
+                prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+            )
             total_neural_fit_time = time.time() - fit_start_time
             print(f"    ✓ All {len(neural_models)} neural models fitted in {total_neural_fit_time:.2f}s.")
 
@@ -173,13 +263,14 @@ def perform_final_fit_predict(
                 print(f"  Performing rolling forecast for all {len(neural_models)} neural models...")
                 rolling_predict_start_time = time.time()
                 
-                # Call the unified rolling forecast function
-                all_nf_forecasts_df = rolling_forecast_neural_all_models(
+                # Call the efficient rolling forecast function with configurable refit frequency
+                all_nf_forecasts_df = rolling_forecast_neural_all_models_efficient(
                     nf_model=nf,
-                    train_df=train_df.copy(), # Pass original train_df for the start of rolling
-                    test_df=test_df.copy(),   # test_df provides actuals and future timestamps/exog
+                    train_df=train_df.copy(),
+                    test_df=test_df.copy(),
                     horizon_length=HORIZON,
-                    predict_level=[90]    # Define your desired PI level
+                    predict_level=LEVELS,
+                    refit_frequency=ROLLING_REFIT_FREQUENCY  # Use configuration setting
                 )
                 total_neural_predict_time = time.time() - rolling_predict_start_time
                 if all_nf_forecasts_df is not None and not all_nf_forecasts_df.empty:
@@ -194,9 +285,9 @@ def perform_final_fit_predict(
                 futr_df = test_df[['unique_id', 'ds'] + exog_cols].copy() if not test_df.empty else None
 
                 if futr_df is not None and not futr_df.empty:
-                    all_nf_forecasts_df = nf.predict(futr_df=futr_df, level=[90])
+                    all_nf_forecasts_df = nf.predict(futr_df=futr_df, level=LEVELS)
                 elif HORIZON > 0 :
-                     all_nf_forecasts_df = nf.predict(h=HORIZON, level=[90])
+                     all_nf_forecasts_df = nf.predict(h=HORIZON, level=LEVELS)
                 else: # Should not happen if HORIZON is well-defined
                     all_nf_forecasts_df = pd.DataFrame() 
                     print("    ! Cannot perform direct predict: test_df is empty and HORIZON is not positive.")
@@ -243,16 +334,14 @@ def perform_final_fit_predict(
                         
                         lo_preds_dict = {}
                         hi_preds_dict = {}
-                        for col_name in current_model_forecasts_df.columns:
-                            if col_name == model_name or col_name in ['unique_id', 'ds']:
-                                continue
-                            if col_name.startswith(model_name): 
-                                if '-lo-' in col_name:
-                                    q = col_name.split('-lo-')[-1]
-                                    lo_preds_dict[q] = current_model_forecasts_df[col_name].values
-                                elif '-hi-' in col_name:
-                                    q = col_name.split('-hi-')[-1]
-                                    hi_preds_dict[q] = current_model_forecasts_df[col_name].values
+                        # Process prediction intervals for all configured levels
+                        for level in LEVELS:
+                            lo_col = f"{model_name}-lo-{level}"
+                            hi_col = f"{model_name}-hi-{level}"
+                            if lo_col in current_model_forecasts_df.columns:
+                                lo_preds_dict[str(level)] = current_model_forecasts_df[lo_col].values
+                            if hi_col in current_model_forecasts_df.columns:
+                                hi_preds_dict[str(level)] = current_model_forecasts_df[hi_col].values
                         
                         all_forecasts_dict[model_name] = {
                             'framework': 'neural',
@@ -313,7 +402,7 @@ def perform_final_fit_predict(
             
             # Fit models
             fit_start_time_stats = time.time()
-            sf.fit(df_stat_train)
+            sf.fit(df_stat_train, prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL))
             total_stats_fit_time = time.time() - fit_start_time_stats
             print(f"  ✓ All {len(stats_models)} statistical models fitted in {total_stats_fit_time:.2f}s.")
 
@@ -327,7 +416,7 @@ def perform_final_fit_predict(
             exog_cols_stats = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
             X_futr = test_df[['unique_id', 'ds'] + exog_cols_stats].copy() if exog_cols_stats and not test_df.empty else None
             
-            stat_forecasts_df = sf.predict(h=h, X_df=X_futr, level=[90]) # Added level for consistency
+            stat_forecasts_df = sf.predict(h=h, X_df=X_futr, level=LEVELS) # Use LEVELS configuration
             total_stats_predict_time = time.time() - predict_start_time_stats
             print(f"  ✓ Predictions for all statistical models generated in {total_stats_predict_time:.2f}s.")
             
@@ -343,26 +432,24 @@ def perform_final_fit_predict(
                     # Create a DataFrame for the current model's forecast to merge
                     current_model_stat_forecast_df = stat_forecasts_df[['unique_id', 'ds', model_name]].copy()
                     
-                    # Add prediction interval columns if they exist
-                    lo_pi_col = f"{model_name}-lo-90" # Assuming 90% level from predict
-                    hi_pi_col = f"{model_name}-hi-90"
-                    if lo_pi_col in stat_forecasts_df.columns:
-                        current_model_stat_forecast_df[lo_pi_col] = stat_forecasts_df[lo_pi_col]
-                    if hi_pi_col in stat_forecasts_df.columns:
-                        current_model_stat_forecast_df[hi_pi_col] = stat_forecasts_df[hi_pi_col]
+                    # Add prediction interval columns if they exist (using LEVELS configuration)
+                    lo_preds_stat = {}
+                    hi_preds_stat = {}
+                    for level in LEVELS:
+                        lo_pi_col = f"{model_name}-lo-{level}"
+                        hi_pi_col = f"{model_name}-hi-{level}"
+                        if lo_pi_col in stat_forecasts_df.columns:
+                            current_model_stat_forecast_df[lo_pi_col] = stat_forecasts_df[lo_pi_col]
+                            lo_preds_stat[str(level)] = stat_forecasts_df[lo_pi_col].values
+                        if hi_pi_col in stat_forecasts_df.columns:
+                            current_model_stat_forecast_df[hi_pi_col] = stat_forecasts_df[hi_pi_col]
+                            hi_preds_stat[str(level)] = stat_forecasts_df[hi_pi_col].values
 
                     eval_df_stat = test_df.merge(current_model_stat_forecast_df, on=['unique_id', 'ds'], how='inner')
                     if eval_df_stat.empty:
                          raise ValueError(f"No matching StatForecast forecasts and actual values for evaluation for model {model_name}.")
 
                     mean_pred_stat = eval_df_stat[model_name].values if model_name in eval_df_stat else None
-                    lo_preds_stat = {}
-                    hi_preds_stat = {}
-
-                    if lo_pi_col in eval_df_stat.columns:
-                        lo_preds_stat['90'] = eval_df_stat[lo_pi_col].values
-                    if hi_pi_col in eval_df_stat.columns:
-                        hi_preds_stat['90'] = eval_df_stat[hi_pi_col].values
                         
                     all_forecasts_dict[model_name] = {
                         'framework': 'statistical',
