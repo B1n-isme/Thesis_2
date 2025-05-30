@@ -7,7 +7,7 @@ from typing import Dict
 
 # Configuration and utilities
 from config.base import RESULTS_DIR, RAY_ADDRESS, RAY_NUM_CPUS, RAY_NUM_GPUS, SEED
-from src.utils.other import setup_environment as util_setup_environment # Renamed to avoid conflict
+from utils.utils import setup_environment as util_setup_environment # Renamed to avoid conflict
 
 
 def setup_pipeline_directories(base_results_dir: str) -> Dict[str, Path]:

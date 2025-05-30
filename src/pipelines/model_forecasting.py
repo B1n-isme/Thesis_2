@@ -14,7 +14,7 @@ from neuralforecast import NeuralForecast
 from neuralforecast.utils import PredictionIntervals
 from statsforecast import StatsForecast
 from statsforecast.utils import ConformalIntervals
-from src.pipelines.model_evaluation import calculate_test_metrics # Import from new location
+from src.utils.utils import calculate_metrics
 
 def save_best_auto_model_config(model_name: str, best_config: Dict, auto_model_configs_dir: Path):
     """Save the best hyperparameter configuration for an AutoModel."""
@@ -224,7 +224,7 @@ def perform_final_fit_predict(
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
     auto_model_configs_dir: Path,
-    all_forecasts_dict: Dict  # To store forecasts for plotting
+    all_forecasts_dict: Dict  
 ) -> Tuple[pd.DataFrame, Dict]:
     """Perform final fit and predict on test data for all models."""
     final_results = []
@@ -314,6 +314,7 @@ def perform_final_fit_predict(
                         cols_to_select = ['unique_id', 'ds']
                         # Model columns can be model_name itself or model_name-lo-XX, model_name-hi-XX
                         model_pred_cols = [col for col in all_nf_forecasts_df.columns if col.startswith(model_name)]
+
                         if not model_pred_cols and model_name in all_nf_forecasts_df.columns: # for just 'ModelName' column
                             cols_to_select.append(model_name)
                         cols_to_select.extend(model_pred_cols)
@@ -358,7 +359,7 @@ def perform_final_fit_predict(
                         if hasattr(model_instance, 'results_') and model_instance.results_ is not None:
                             save_best_auto_model_config(model_name, model_instance.results_.best_config, auto_model_configs_dir)
 
-                        metrics = calculate_test_metrics(eval_df, model_name)
+                        metrics = calculate_metrics(eval_df, model_name)
                         per_model_time = time.time() - per_model_start_time
                         final_results.append({
                             'model_name': model_name, 'framework': 'neuralforecast',
@@ -400,13 +401,13 @@ def perform_final_fit_predict(
         try:
             sf = StatsForecast(models=stats_models, freq=FREQUENCY, n_jobs=-1) # Added n_jobs for potential speedup
             
-            # Fit models
+            # --- Fit models ---
             fit_start_time_stats = time.time()
             sf.fit(df_stat_train, prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL))
             total_stats_fit_time = time.time() - fit_start_time_stats
             print(f"  ✓ All {len(stats_models)} statistical models fitted in {total_stats_fit_time:.2f}s.")
 
-            # Predict
+            # --- Predict ---
             predict_start_time_stats = time.time()
             # `h` should be the forecast horizon. If test_df represents this horizon:
             h = len(test_df['ds'].unique()) if not test_df.empty else HORIZON
@@ -420,69 +421,93 @@ def perform_final_fit_predict(
             total_stats_predict_time = time.time() - predict_start_time_stats
             print(f"  ✓ Predictions for all statistical models generated in {total_stats_predict_time:.2f}s.")
             
-            # Process results for each statistical model
-            for model_instance in stats_models:
-                model_name = model_instance.__class__.__name__
-                per_model_stat_start_time = time.time()
-                print(f"  Processing results for {model_name}...")
-                try:
-                    if model_name not in stat_forecasts_df.columns:
-                        raise ValueError(f"Model {model_name} not found in StatForecast results columns: {stat_forecasts_df.columns}")
-                    
-                    # Create a DataFrame for the current model's forecast to merge
-                    current_model_stat_forecast_df = stat_forecasts_df[['unique_id', 'ds', model_name]].copy()
-                    
-                    # Add prediction interval columns if they exist (using LEVELS configuration)
-                    lo_preds_stat = {}
-                    hi_preds_stat = {}
-                    for level in LEVELS:
-                        lo_pi_col = f"{model_name}-lo-{level}"
-                        hi_pi_col = f"{model_name}-hi-{level}"
-                        if lo_pi_col in stat_forecasts_df.columns:
-                            current_model_stat_forecast_df[lo_pi_col] = stat_forecasts_df[lo_pi_col]
-                            lo_preds_stat[str(level)] = stat_forecasts_df[lo_pi_col].values
-                        if hi_pi_col in stat_forecasts_df.columns:
-                            current_model_stat_forecast_df[hi_pi_col] = stat_forecasts_df[hi_pi_col]
-                            hi_preds_stat[str(level)] = stat_forecasts_df[hi_pi_col].values
-
-                    eval_df_stat = test_df.merge(current_model_stat_forecast_df, on=['unique_id', 'ds'], how='inner')
-                    if eval_df_stat.empty:
-                         raise ValueError(f"No matching StatForecast forecasts and actual values for evaluation for model {model_name}.")
-
-                    mean_pred_stat = eval_df_stat[model_name].values if model_name in eval_df_stat else None
+            # --- Process results for each STATISTICAL model ---
+            print(f"  Processing individual statistical model results...")
+            if 'stat_forecasts_df' not in locals() or stat_forecasts_df is None or stat_forecasts_df.empty: # Ensure stat_forecasts_df exists
+                print("    ! No forecasts (stat_forecasts_df) available to process for statistical models. Skipping.")
+            else:
+                for model_instance in stats_models:
+                    model_name = model_instance.__class__.__name__
+                    per_model_stat_start_time = time.time()
+                    print(f"  Processing Statistical Model: {model_name}...")
+                    try:
+                        if model_name not in stat_forecasts_df.columns:
+                            raise ValueError(f"Model prediction column '{model_name}' not found in StatForecast results columns: {stat_forecasts_df.columns.tolist()}")
                         
-                    all_forecasts_dict[model_name] = {
-                        'framework': 'statistical',
-                        'predictions': {
-                            'mean': mean_pred_stat,
-                            'lo': lo_preds_stat,
-                            'hi': hi_preds_stat
-                        },
-                        'ds': eval_df_stat['ds'].values,
-                        'actual': eval_df_stat['y'].values,
-                        'forecast_method': 'direct_forecast' # StatsForecast generally does direct
-                    }
-                    
-                    metrics_stat = calculate_test_metrics(eval_df_stat, model_name)
-                    per_model_stat_time = time.time() - per_model_stat_start_time
-                    final_results.append({
-                        'model_name': model_name, 'framework': 'statsforecast',
-                        'training_time': per_model_stat_time, # Time to extract results & eval for this model
-                        'evaluation_method': 'direct_forecast',
-                        'is_auto': isinstance(model_instance, (getattr(sf, 'AutoARIMA', type(None)))), # A simple check for auto models
-                        'status': 'success', **metrics_stat
-                    })
-                    print(f"    ✓ {model_name} processed (Test MAE: {metrics_stat.get('mae', 'N/A'):.4f}) in {per_model_stat_time:.2f}s.")
-                except Exception as e_stat_model:
-                    per_model_stat_time = time.time() - per_model_stat_start_time
-                    error_msg_stat = str(e_stat_model)
-                    print(f"    ✗ Error processing {model_name} (statistical): {error_msg_stat}")
-                    final_results.append({
-                        'model_name': model_name, 'framework': 'statsforecast',
-                        'training_time': per_model_stat_time, 'error': error_msg_stat,
-                        'status': 'failed', 'is_auto': False,
-                        'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
-                    })
+                        # Create a DataFrame for the current model's forecast by selecting relevant columns
+                        # from the comprehensive stat_forecasts_df
+                        current_model_cols_to_select = ['unique_id', 'ds', model_name]
+                        lo_preds_stat = {}
+                        hi_preds_stat = {}
+
+                        for level_val in LEVELS: # Ensure LEVELS is defined
+                            lo_pi_col = f"{model_name}-lo-{level_val}"
+                            hi_pi_col = f"{model_name}-hi-{level_val}"
+                            if lo_pi_col in stat_forecasts_df.columns:
+                                current_model_cols_to_select.append(lo_pi_col)
+                                # Values for all_forecasts_dict will be extracted after merge from eval_df_stat
+                            if hi_pi_col in stat_forecasts_df.columns:
+                                current_model_cols_to_select.append(hi_pi_col)
+                                # Values for all_forecasts_dict will be extracted after merge from eval_df_stat
+                        
+                        current_model_stat_forecast_df = stat_forecasts_df[list(dict.fromkeys(current_model_cols_to_select))].copy()
+
+                        eval_df_stat = test_df.merge(current_model_stat_forecast_df, on=['unique_id', 'ds'], how='inner')
+                        if eval_df_stat.empty:
+                            raise ValueError(f"No matching StatForecast forecasts and actual values for evaluation for model {model_name}. Merged df is empty.")
+
+                        mean_pred_stat_series = eval_df_stat[model_name] if model_name in eval_df_stat else None
+                        
+                        # Re-extract PI values from eval_df_stat to ensure they are aligned with 'y'
+                        for level_val in LEVELS:
+                            lo_pi_col = f"{model_name}-lo-{level_val}"
+                            hi_pi_col = f"{model_name}-hi-{level_val}"
+                            if lo_pi_col in eval_df_stat.columns:
+                                lo_preds_stat[str(level_val)] = eval_df_stat[lo_pi_col].values
+                            if hi_pi_col in eval_df_stat.columns:
+                                hi_preds_stat[str(level_val)] = eval_df_stat[hi_pi_col].values
+                                
+                        all_forecasts_dict[model_name] = {
+                            'framework': 'statistical',
+                            'predictions': {
+                                'mean': mean_pred_stat_series.values if mean_pred_stat_series is not None else np.full(len(eval_df_stat), np.nan),
+                                'lo': lo_preds_stat,
+                                'hi': hi_preds_stat
+                            },
+                            'ds': eval_df_stat['ds'].values,
+                            'actual': eval_df_stat['y'].values,
+                            'forecast_method': 'direct_forecast' # StatsForecast generally does direct
+                        }
+                        
+                        # Use the user-provided calculate_metrics function
+                        metrics_stat = calculate_metrics(eval_df_stat, model_name)
+                        per_model_stat_time = time.time() - per_model_stat_start_time
+                        
+                        # Determine if the model is an "auto" model (example for AutoARIMA)
+                        is_auto_stat = False
+                        if 'sf' in locals() and sf is not None: # Check if sf object exists
+                            is_auto_stat = isinstance(model_instance, getattr(sf, 'AutoARIMA', type(None))) # Add other auto classes if needed
+                        
+                        final_results.append({
+                            'model_name': model_name, 'framework': 'statsforecast',
+                            'training_time': per_model_stat_time, 
+                            'evaluation_method': 'direct_forecast',
+                            'is_auto': is_auto_stat, 
+                            'status': 'success' if 'error' not in metrics_stat else 'metrics_error', 
+                            **metrics_stat
+                        })
+                        print(f"    ✓ {model_name} processed (Test MAE: {metrics_stat.get('mae', 'N/A'):.4f}) in {per_model_stat_time:.2f}s.")
+                    except Exception as e_stat_model:
+                        per_model_stat_time = time.time() - per_model_stat_start_time
+                        error_msg_stat = str(e_stat_model)
+                        print(f"    ✗ Error processing {model_name} (statistical): {error_msg_stat}")
+                        final_results.append({
+                            'model_name': model_name, 'framework': 'statsforecast',
+                            'training_time': per_model_stat_time, 'error': error_msg_stat,
+                            'status': 'failed', 
+                            'is_auto': isinstance(model_instance, getattr(sf if 'sf' in locals() else None, 'AutoARIMA', type(None))) if 'sf' in locals() and sf is not None else False,
+                            'mae': np.nan, 'rmse': np.nan, 'mape': np.nan, 'smape': np.nan # Match keys from calculate_metrics
+                        })
         except Exception as e_global_sf:
             print(f"  ✗ Global error in StatsForecast fit/predict: {str(e_global_sf)}")
             for model_instance in stats_models:

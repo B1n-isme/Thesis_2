@@ -6,7 +6,7 @@ from config.base import (
     DATA_PATH, DATE_COLUMN, TARGET_COLUMN, TARGET_RENAMED, 
     DATE_RENAMED, UNIQUE_ID_VALUE
 )
-from src.utils.other import get_historical_exogenous_features, print_data_info
+from utils.utils import get_historical_exogenous_features, print_data_info
 
 
 def load_and_prepare_data():

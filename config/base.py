@@ -21,7 +21,7 @@ SEED = 42
 
 # === Rolling Forecast Configuration ===
 ENABLE_ROLLING_FORECAST = True  # Enable rolling forecast for neural models when horizon < test_length
-ROLLING_REFIT_FREQUENCY = 3  # Refit every N windows (1=every window, 3=every 3 windows, 0=no refit)
+ROLLING_REFIT_FREQUENCY = 0  # Refit every N windows (1=every window, 3=every 3 windows, 0=no refit)
 
 # === Model Configuration ===
 FREQUENCY = 'D'
