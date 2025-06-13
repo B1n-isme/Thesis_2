@@ -13,7 +13,7 @@
 # Point Forecast -> Probabilistic Forecast
 Include prediction interval to account for uncertainty
 
-- refactor all_forecasts_dict in model_forecasting.py to visualize mean in 1 plot to compare and interval for independent plots
+- refactor final_plot_results_dict in model_forecasting.py to visualize mean in 1 plot to compare and interval for independent plots
 
 
 # Suppress Ray logs

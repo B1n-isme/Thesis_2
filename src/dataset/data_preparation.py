@@ -2,11 +2,12 @@
 Data preparation module for neural forecasting pipeline.
 """
 import pandas as pd
+from typing import Tuple, List, Dict
 from config.base import (
     DATA_PATH, DATE_COLUMN, TARGET_COLUMN, TARGET_RENAMED, 
-    DATE_RENAMED, UNIQUE_ID_VALUE
+    DATE_RENAMED, UNIQUE_ID_VALUE, HORIZON, TEST_LENGTH_MULTIPLIER
 )
-from utils.utils import get_historical_exogenous_features, print_data_info
+from src.utils.utils import get_historical_exogenous_features, print_data_info
 
 
 def load_and_prepare_data():
@@ -22,6 +23,7 @@ def load_and_prepare_data():
     # Add unique_id and convert date
     df['unique_id'] = UNIQUE_ID_VALUE
     df[DATE_RENAMED] = pd.to_datetime(df[DATE_RENAMED])
+    
     df.reset_index(drop=True, inplace=True)
     
     return df
@@ -75,9 +77,46 @@ def prepare_data(horizon, test_length_multiplier):
     return train_df, test_df, hist_exog_list
 
 
+def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict]:
+    """
+    Enhanced data preparation for the pipeline with detailed logging and metadata.
+    
+    Args:
+        horizon (int, optional): Forecast horizon in days. Defaults to HORIZON.
+        test_length_multiplier (int, optional): Multiplier for test set length. Defaults to TEST_LENGTH_MULTIPLIER.
+    
+    Returns:
+        Tuple of (train_df, test_df, hist_exog_list, data_info_dict)
+    """
+    print("\n📊 STEP 1: DATA PREPARATION")
+    print("-" * 40)
+    
+    train_df, test_df, hist_exog_list = prepare_data(
+        horizon=horizon,
+        test_length_multiplier=test_length_multiplier
+    )
+    
+    data_info = {
+        'total_samples': len(train_df) + len(test_df),
+        'train_samples': len(train_df),
+        'test_samples': len(test_df),
+        'features': hist_exog_list,
+        'horizon': horizon
+    }
+    
+    print(f"✅ Data prepared successfully")
+    print(f"   • Training samples: {len(train_df):,}")
+    print(f"   • Test samples: {len(test_df):,}")
+    print(f"   • Features: {len(hist_exog_list)} exogenous variables")
+    print(f"   • Forecast horizon: {horizon} days")
+    
+    return train_df, test_df, hist_exog_list, data_info
+
+
 if __name__ == "__main__":
     # Example usage with sample values
     df_dev, df_test, hist_exog = prepare_data(horizon=7, test_length_multiplier=2)
     print(f"\nHistorical exogenous features: {len(hist_exog)} features")
     print(f"Sample features: {hist_exog[:5] if len(hist_exog) >= 5 else hist_exog}") 
     print(f"df_dev.head(): {df_dev.head()}")
+    print(f"df_test.head(): {df_test.head()}")

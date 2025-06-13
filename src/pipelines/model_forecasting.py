@@ -14,221 +14,30 @@ from neuralforecast import NeuralForecast
 from neuralforecast.utils import PredictionIntervals
 from statsforecast import StatsForecast
 from statsforecast.utils import ConformalIntervals
-from src.utils.utils import calculate_metrics
+from mlforecast.auto import AutoMLForecast
+from mlforecast.utils import PredictionIntervals as MLPredictionIntervals
 
-def save_best_auto_model_config(model_name: str, best_config: Dict, auto_model_configs_dir: Path):
-    """Save the best hyperparameter configuration for an AutoModel."""
-    if best_config is None:
-        print(f"  INFO: No best_config found for {model_name} to save.")
-        return
-
-    config_path = auto_model_configs_dir / f"{model_name}_best_config.json"
-    
-    try:
-        serializable_config = {}
-        for key, value in best_config.items():
-            if hasattr(value, '__name__'):
-                serializable_config[key] = value.__name__
-            elif isinstance(value, (int, float, str, bool, list, dict, type(None))):
-                serializable_config[key] = value
-            else:
-                serializable_config[key] = str(value)
-
-        with open(config_path, 'w') as f:
-            json.dump(serializable_config, f, indent=4)
-        print(f"  ✓ Best config for {model_name} saved to {config_path}")
-    except Exception as e:
-        print(f"  ✗ Error saving best config for {model_name}: {e}")
-
-def rolling_forecast_neural_all_models(
-    nf_model: NeuralForecast, # NeuralForecast object containing potentially multiple models
-    train_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-    horizon_length: int, # HORIZON value
-    predict_level: List[int] # e.g., [90] for prediction intervals
-) -> pd.DataFrame:
-    """
-    Perform rolling forecast for ALL neural models contained in nf_model.
-    Retrains all models in nf_model at each step using new data from test_df.
-    """
-    print(f"      Performing rolling forecast for all models in the NeuralForecast object.")
-    all_forecasts_list = [] # List to store forecast DataFrames from each window
-    current_train_df = train_df.copy() # This df will grow with actuals from test_df
-
-    # Prepare column names for future exogenous features
-    exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
-    futr_cols = ['unique_id', 'ds'] + exog_cols
-
-    # Determine the number of steps for rolling.
-    test_duration_steps = len(test_df)
-
-    if horizon_length <= 0:
-        raise ValueError("horizon_length must be positive for rolling forecast.")
-
-    n_windows = (test_duration_steps + horizon_length - 1) // horizon_length
-    print(f"        Rolling windows: {n_windows}, Horizon per window: {horizon_length}, Test duration steps: {test_duration_steps}")
-
-    for window_idx in range(n_windows):
-        print(f"        Processing rolling window {window_idx + 1}/{n_windows}...")
-        
-        start_idx = window_idx * horizon_length
-        end_idx = min(start_idx + horizon_length, test_duration_steps)
-        
-        # This .iloc slicing assumes test_df is structured such that rows map directly to time steps.
-        current_test_window_actuals_df = test_df.iloc[start_idx:end_idx].copy()
-
-        if current_test_window_actuals_df.empty:
-            print(f"        Window {window_idx + 1} data is empty, skipping.")
-            continue
-            
-        # Prepare futr_df for prediction (contains 'unique_id', 'ds', and exog_cols for the window)
-        futr_df_for_predict = current_test_window_actuals_df[futr_cols].copy()
-        
-        # If futr_df_for_predict is empty (e.g. futr_cols were missing from test_df slice),
-        # it might indicate an issue or a need to predict using h.
-        if futr_df_for_predict.empty:
-            if not exog_cols and not current_test_window_actuals_df[['unique_id', 'ds']].empty:
-                 # If no exogenous features, futr_df only needs unique_id and ds
-                futr_df_for_predict = current_test_window_actuals_df[['unique_id', 'ds']].copy()
-            else:
-                print(f"        futr_df for prediction is empty for window {window_idx + 1}. Cannot predict for this window.")
-                continue # Skip to next window if no futr_df can be made
-
-        print(f"        Predicting for window {window_idx + 1} (futr_df rows: {len(futr_df_for_predict)}).")
-        # nf_model.predict() will use all models within nf_model and selected level for PIs
-        window_forecast_df = nf_model.predict(futr_df=futr_df_for_predict, level=predict_level)
-        all_forecasts_list.append(window_forecast_df)
-        
-        # Update training data with actuals from the current window for the next iteration's fit.
-        # Do not refit after the last window's prediction.
-        if window_idx < n_windows - 1:
-            # Ensure 'y' (actuals) are present in the slice to be appended for meaningful retraining.
-            if 'y' not in current_test_window_actuals_df.columns:
-                print(f"        Warning: Column 'y' not in test data for window {window_idx + 1}. Models will be refit on data potentially missing new actuals.")
-                # Or raise ValueError if 'y' is strictly required.
-            
-            actuals_to_append = current_test_window_actuals_df # Contains unique_id, ds, y (if available), and exog_cols
-            print(f"        Appending {len(actuals_to_append)} observations from window {window_idx + 1} to training data.")
-            current_train_df = pd.concat([current_train_df, actuals_to_append], ignore_index=True)
-            
-            print(f"        Re-fitting models for the next window (current train size: {len(current_train_df)})...")
-            fit_val_size = horizon_length if horizon_length > 0 and len(current_train_df) > horizon_length * 2 else None # Ensure val_size is reasonable
-            
-            # nf_model.fit() will re-train all models within nf_model.
-            # Pass PredictionIntervals() configuration for consistency
-            nf_model.fit(
-                        current_train_df, 
-                        val_size=fit_val_size, 
-                        verbose=False, 
-                        prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
-                    ) 
-            print(f"        Models re-fitted.")
-            
-    if not all_forecasts_list:
-        print("        Warning: No forecasts were generated during the rolling forecast process.")
-        return pd.DataFrame()
-
-    final_concatenated_forecasts_df = pd.concat(all_forecasts_list, ignore_index=True)
-    return final_concatenated_forecasts_df
-
-def rolling_forecast_neural_all_models_efficient(
-    nf_model: NeuralForecast,
-    train_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-    horizon_length: int,
-    predict_level: List[int],
-    refit_frequency: int = 1  # Refit every N windows (1 = every window, 3 = every 3 windows)
-) -> pd.DataFrame:
-    """
-    More efficient rolling forecast with configurable refit frequency.
-    
-    Args:
-        refit_frequency: How often to refit models (1 = every window, 2 = every 2 windows, etc.)
-                        Set to 0 to disable refitting (fastest but less adaptive)
-    """
-    print(f"      Performing efficient rolling forecast (refit every {refit_frequency} windows)...")
-    all_forecasts_list = []
-    current_train_df = train_df.copy()
-
-    # Prepare column names for future exogenous features
-    exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
-    futr_cols = ['unique_id', 'ds'] + exog_cols
-
-    test_duration_steps = len(test_df)
-    if horizon_length <= 0:
-        raise ValueError("horizon_length must be positive for rolling forecast.")
-
-    n_windows = (test_duration_steps + horizon_length - 1) // horizon_length
-    print(f"        Rolling windows: {n_windows}, Horizon per window: {horizon_length}")
-
-    for window_idx in range(n_windows):
-        print(f"        Processing rolling window {window_idx + 1}/{n_windows}...")
-        
-        start_idx = window_idx * horizon_length
-        end_idx = min(start_idx + horizon_length, test_duration_steps)
-        current_test_window_actuals_df = test_df.iloc[start_idx:end_idx].copy()
-
-        if current_test_window_actuals_df.empty:
-            print(f"        Window {window_idx + 1} data is empty, skipping.")
-            continue
-            
-        # Prepare futr_df for prediction
-        futr_df_for_predict = current_test_window_actuals_df[futr_cols].copy()
-        if futr_df_for_predict.empty:
-            if not exog_cols and not current_test_window_actuals_df[['unique_id', 'ds']].empty:
-                futr_df_for_predict = current_test_window_actuals_df[['unique_id', 'ds']].copy()
-            else:
-                print(f"        futr_df for prediction is empty for window {window_idx + 1}. Skipping.")
-                continue
-
-        print(f"        Predicting for window {window_idx + 1} (futr_df rows: {len(futr_df_for_predict)}).")
-        window_forecast_df = nf_model.predict(futr_df=futr_df_for_predict, level=predict_level)
-        all_forecasts_list.append(window_forecast_df)
-        
-        # Update training data with ACTUAL VALUES (not predictions) and conditionally refit
-        if window_idx < n_windows - 1:
-            if 'y' not in current_test_window_actuals_df.columns:
-                print(f"        Warning: Column 'y' not in test data for window {window_idx + 1}.")
-            
-            # Always append actual values to training data
-            actuals_to_append = current_test_window_actuals_df
-            print(f"        Appending {len(actuals_to_append)} actual observations to training data.")
-            current_train_df = pd.concat([current_train_df, actuals_to_append], ignore_index=True)
-            
-            # Conditional refit based on frequency
-            should_refit = (refit_frequency > 0 and (window_idx + 1) % refit_frequency == 0)
-            
-            if should_refit:
-                print(f"        Re-fitting models (window {window_idx + 1}, train size: {len(current_train_df)})...")
-                fit_val_size = horizon_length if horizon_length > 0 and len(current_train_df) > horizon_length * 2 else None
-                nf_model.fit(
-                    current_train_df, 
-                    val_size=fit_val_size, 
-                    verbose=False, 
-                    prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
-                )
-                print(f"        Models re-fitted.")
-            else:
-                print(f"        Skipping refit (will refit at window {((window_idx // refit_frequency) + 1) * refit_frequency}).")
-            
-    if not all_forecasts_list:
-        print("        Warning: No forecasts were generated during the rolling forecast process.")
-        return pd.DataFrame()
-
-    final_concatenated_forecasts_df = pd.concat(all_forecasts_list, ignore_index=True)
-    return final_concatenated_forecasts_df
+from src.utils.utils import calculate_metrics, save_best_configurations, extract_auto_model_names_from_columns, rolling_forecast_neural_all_models
+from src.utils.utils import save_dict_to_json, load_json_to_dict, process_cv_results
+from src.pipelines.model_evaluation import CV_DIR
 
 def perform_final_fit_predict(
-    neural_models: List,
     stats_models: List,
+    ml_models: Dict,  
+    neural_models: List,
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
-    auto_model_configs_dir: Path,
-    all_forecasts_dict: Dict  
-) -> Tuple[pd.DataFrame, Dict]:
-    """Perform final fit and predict on test data for all models."""
+    final_model_config_dir: Path,
+    final_plot_results_dict: Dict,
+) -> Tuple[pd.DataFrame, Dict, pd.DataFrame]:
+    """
+    Perform final fit and predict on test data for all models.
+    For ML models, this function also handles the CV and processing of CV results.
+    """
     final_results = []
     test_length = len(test_df)
+    
+    ml_cv_results_df = pd.DataFrame()
 
     use_rolling = ENABLE_ROLLING_FORECAST and HORIZON < test_length
 
@@ -237,19 +46,151 @@ def perform_final_fit_predict(
     else:
         print(f"Using direct multi-step forecast (horizon={HORIZON})")
 
+    # Initialize forecast dataframes and fitted objects for config saving
+    stat_forecasts_df = None
+    ml_forecasts_df = None 
+    neural_forecasts_df = None
+    fitted_objects = {}
+
+    # Convert 'unique_id' to category dtype if it is not already
+    for df in [train_df, test_df]:
+        if 'unique_id' in df.columns and df['unique_id'].dtype == 'object':
+            df['unique_id'] = df['unique_id'].astype('category')
+
+    # --- Forecast Statistical Models ---
+    if stats_models:
+        print(f"Forecasting {len(stats_models)} statistical models...")
+        try:
+            sf = StatsForecast(models=stats_models, freq='D', verbose=True)
+            
+            # --- Forecast (fit + predict in one step) ---
+            forecast_start_time_stats = time.time()
+            h = len(test_df['ds'].unique()) if not test_df.empty else HORIZON
+            if h == 0: 
+                raise ValueError("Horizon 'h' for StatsForecast cannot be zero.")
+
+            # Prepare future exogenous variables (exclude 'y' column)
+            exog_cols_stats = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
+            X_df_stats = test_df[['unique_id', 'ds'] + exog_cols_stats].copy() if exog_cols_stats and not test_df.empty else None
+            
+            stat_forecasts_df = sf.forecast(
+                h=h,
+                df=train_df[['unique_id', 'ds', 'y']],
+                X_df=X_df_stats[['unique_id', 'ds']],
+                level=LEVELS,
+                prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+            )
+            total_stats_forecast_time = time.time() - forecast_start_time_stats
+            print(f"  ✓ Forecasts for all statistical models generated in {total_stats_forecast_time:.2f}s.")
+            
+        except Exception as e_global_sf:
+            print(f"  ✗ Global error in StatsForecast fit/predict: {str(e_global_sf)}")
+            for model_instance in stats_models:
+                model_name = model_instance.__class__.__name__
+                final_results.append({
+                    'model_name': model_name, 'training_time': 0.0,
+                    'error': f"Global StatsForecast error: {str(e_global_sf)}", 'status': 'failed',
+                    'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
+                })
+
+    # --- Fit-Predict ML Models ---
+    if ml_models:
+        print(f"Fit-predicting {len(ml_models)} Auto ML models...")
+        fit_start_time_ml = time.time()
+        ml_model_metadata = {}
+        try:
+            from src.utils.utils import my_init_config, my_fit_config, custom_mse_loss
+            
+            ml = AutoMLForecast(
+                models=ml_models,
+                freq='D',
+                season_length=7,
+                init_config=my_init_config,
+                # fit_config=my_fit_config,
+                fit_config=lambda trial: {'static_features': ['unique_id']},
+                num_threads=4
+            )
+
+            train_df['unique_id'] = train_df['unique_id'].astype('category')
+            
+            # --- Fit models (with CV/hyperparameter tuning) ---
+            ml.fit(
+                train_df,
+                n_windows=CV_N_WINDOWS,
+                h=HORIZON,
+                num_samples=NUM_SAMPLES_PER_MODEL,
+                step_size=CV_STEP_SIZE,
+                fitted=True,
+                refit=True,
+                optimize_kwargs={'timeout': 60},
+                loss=custom_mse_loss,
+                prediction_intervals=MLPredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL, h=HORIZON)
+            )
+
+
+            total_ml_fit_time = time.time() - fit_start_time_ml
+            print(f"  ✓ All {len(ml_models)} ML models fitted (incl. CV) in {total_ml_fit_time:.2f}s.")
+
+            # === Process In-sample CV predictions for ML models ===
+            print("  ✓ Generating and processing in-sample (CV) predictions for ML models...")
+            ml_cv_df = ml.forecast_fitted_values(level=LEVELS)
+
+            print(ml_cv_df)
+            
+            auto_model_names = extract_auto_model_names_from_columns(ml_cv_df.columns.tolist())
+            if not auto_model_names:
+                print("  ! Warning: No 'Auto' model columns found in ML CV dataframe.")
+            else:
+                time_per_model = total_ml_fit_time / len(auto_model_names)
+                for model_name in auto_model_names:
+                    ml_model_metadata[model_name] = {'training_time': time_per_model, 'status': 'success'}
+                
+                # Process the CV results for ML models
+                ml_cv_results_df = process_cv_results(ml_cv_df, ml_model_metadata)
+                print(f"  ✓ CV results processed for {len(auto_model_names)} ML models.")
+
+            # --- Predict on Test Set---
+            predict_start_time_ml = time.time()
+            exog_cols_ml = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
+            X_df = test_df[['unique_id', 'ds'] + exog_cols_ml].copy() if exog_cols_ml and not test_df.empty else None
+            
+            ml_forecasts_df = pd.DataFrame()
+            ml_forecasts_df = ml.predict(
+                h=HORIZON,
+                X_df=X_df,
+                level=LEVELS
+            )
+            print(ml_forecasts_df)
+            total_ml_predict_time = time.time() - predict_start_time_ml
+            print(f"  ✓ Predictions for all ML models generated in {total_ml_predict_time:.2f}s.")
+            
+            # Store ML object for configuration saving
+            fitted_objects['ml'] = ml
+
+            
+        except Exception as e_global_ml:
+            print(f"  ✗ Global error in MLForecast fit/predict batch: {str(e_global_ml)}")
+            fit_time = time.time() - fit_start_time_ml
+            ml_model_metadata['MLForecast_Error'] = {
+                'training_time': fit_time,
+                'error': f"Global MLForecast error: {str(e_global_ml)}", 
+                'status': 'failed'
+            }
+            # Also create a failed entry in the results df
+            ml_cv_results_df = pd.DataFrame([{
+                'model_name': 'MLForecast_Error', 'training_time': fit_time, 
+                'error': str(e_global_ml), 'status': 'failed'
+            }])
+
     # --- Fit-Predict Auto Neural Models ---
     if neural_models:
         print(f"Processing {len(neural_models)} Auto Neural models...")
-        nf = None
-        all_nf_forecasts_df = None # This will store results from either direct or rolling predict
-
         try:
             # === Phase 1: Collective Fit ===
             print(f"  Fitting {len(neural_models)} Auto Neural models collectively...")
-            nf = NeuralForecast(models=neural_models, freq=FREQUENCY, local_scaler_type=LOCAL_SCALER_TYPE)
+            nf = NeuralForecast(models=neural_models, freq='D', local_scaler_type='robust')
             
             fit_start_time = time.time()
-            # Initial fit with PredictionIntervals configuration
             nf.fit(
                 train_df, 
                 val_size=HORIZON if HORIZON > 0 else None, 
@@ -263,263 +204,210 @@ def perform_final_fit_predict(
                 print(f"  Performing rolling forecast for all {len(neural_models)} neural models...")
                 rolling_predict_start_time = time.time()
                 
-                # Call the efficient rolling forecast function with configurable refit frequency
-                all_nf_forecasts_df = rolling_forecast_neural_all_models_efficient(
+                neural_forecasts_df = rolling_forecast_neural_all_models(
                     nf_model=nf,
                     train_df=train_df.copy(),
                     test_df=test_df.copy(),
                     horizon_length=HORIZON,
                     predict_level=LEVELS,
-                    refit_frequency=ROLLING_REFIT_FREQUENCY  # Use configuration setting
+                    refit_frequency=ROLLING_REFIT_FREQUENCY
                 )
                 total_neural_predict_time = time.time() - rolling_predict_start_time
-                if all_nf_forecasts_df is not None and not all_nf_forecasts_df.empty:
+                if neural_forecasts_df is not None and not neural_forecasts_df.empty:
                     print(f"    ✓ Rolling forecasts for all neural models generated in {total_neural_predict_time:.2f}s.")
                 else:
                     print(f"    ! Rolling forecasts generated an empty or None result in {total_neural_predict_time:.2f}s.")
-                    if all_nf_forecasts_df is None: all_nf_forecasts_df = pd.DataFrame() # Ensure it's an empty df
-            else: # Direct multi-step forecast
+                    if neural_forecasts_df is None: 
+                        neural_forecasts_df = pd.DataFrame()
+            else:
                 print(f"  Predicting with all {len(neural_models)} fitted neural models (direct multi-step forecast)...")
                 predict_start_time = time.time()
                 exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
                 futr_df = test_df[['unique_id', 'ds'] + exog_cols].copy() if not test_df.empty else None
 
                 if futr_df is not None and not futr_df.empty:
-                    all_nf_forecasts_df = nf.predict(futr_df=futr_df, level=LEVELS)
-                elif HORIZON > 0 :
-                     all_nf_forecasts_df = nf.predict(h=HORIZON, level=LEVELS)
-                else: # Should not happen if HORIZON is well-defined
-                    all_nf_forecasts_df = pd.DataFrame() 
+                    neural_forecasts_df = nf.predict(futr_df=futr_df, level=LEVELS)
+                elif HORIZON > 0:
+                    neural_forecasts_df = nf.predict(h=HORIZON, level=LEVELS)
+                else:
+                    neural_forecasts_df = pd.DataFrame() 
                     print("    ! Cannot perform direct predict: test_df is empty and HORIZON is not positive.")
                 
                 total_neural_predict_time = time.time() - predict_start_time
-                if not all_nf_forecasts_df.empty:
+                if not neural_forecasts_df.empty:
                     print(f"    ✓ Direct predictions for all neural models generated in {total_neural_predict_time:.2f}s.")
                 else:
-                     print(f"    ! Direct predictions generated an empty result in {total_neural_predict_time:.2f}s.")
+                    print(f"    ! Direct predictions generated an empty result in {total_neural_predict_time:.2f}s.")
 
-
-            # === Phase 3: Process results for each model ===
-            print(f"  Processing individual model results...")
-            if all_nf_forecasts_df is None or all_nf_forecasts_df.empty:
-                print("    ! No forecasts (all_nf_forecasts_df) available to process for neural models. Skipping Phase 3.")
-            else:
-                for i, model_instance in enumerate(neural_models, 1):
-                    model_name = model_instance.__class__.__name__
-                    per_model_start_time = time.time()
-                    print(f"  [{i}/{len(neural_models)}] Processing {model_name}...")
-                    
-                    try:
-                        # Extract this model's forecasts from the collective `all_nf_forecasts_df`
-                        cols_to_select = ['unique_id', 'ds']
-                        # Model columns can be model_name itself or model_name-lo-XX, model_name-hi-XX
-                        model_pred_cols = [col for col in all_nf_forecasts_df.columns if col.startswith(model_name)]
-
-                        if not model_pred_cols and model_name in all_nf_forecasts_df.columns: # for just 'ModelName' column
-                            cols_to_select.append(model_name)
-                        cols_to_select.extend(model_pred_cols)
-                        
-                        # Ensure unique columns, preserving order
-                        current_model_forecasts_df = all_nf_forecasts_df[list(dict.fromkeys(cols_to_select))].copy()
-                        
-                        evaluation_method = "rolling_forecast" if use_rolling else "direct_forecast"
-
-                        # Merge with actuals for evaluation
-                        eval_df = test_df.merge(current_model_forecasts_df, on=['unique_id', 'ds'], how='inner')
-                        if eval_df.empty:
-                            # (Provide more context for debugging if needed)
-                            raise ValueError(f"No matching forecasts and actual values for evaluation for model {model_name}. Merged df is empty.")
-                        
-                        # Extract predictions (mean, lo, hi) for all_forecasts_dict
-                        mean_pred_series = current_model_forecasts_df[model_name] if model_name in current_model_forecasts_df else None
-                        
-                        lo_preds_dict = {}
-                        hi_preds_dict = {}
-                        # Process prediction intervals for all configured levels
-                        for level in LEVELS:
-                            lo_col = f"{model_name}-lo-{level}"
-                            hi_col = f"{model_name}-hi-{level}"
-                            if lo_col in current_model_forecasts_df.columns:
-                                lo_preds_dict[str(level)] = current_model_forecasts_df[lo_col].values
-                            if hi_col in current_model_forecasts_df.columns:
-                                hi_preds_dict[str(level)] = current_model_forecasts_df[hi_col].values
-                        
-                        all_forecasts_dict[model_name] = {
-                            'framework': 'neural',
-                            'predictions': {
-                                'mean': mean_pred_series.values if mean_pred_series is not None else np.full(len(eval_df), np.nan),
-                                'lo': lo_preds_dict,
-                                'hi': hi_preds_dict
-                            },
-                            'ds': eval_df['ds'].values,
-                            'actual': eval_df['y'].values,
-                            'forecast_method': evaluation_method
-                        }
-                        
-                        if hasattr(model_instance, 'results_') and model_instance.results_ is not None:
-                            save_best_auto_model_config(model_name, model_instance.results_.best_config, auto_model_configs_dir)
-
-                        metrics = calculate_metrics(eval_df, model_name)
-                        per_model_time = time.time() - per_model_start_time
-                        final_results.append({
-                            'model_name': model_name, 'framework': 'neuralforecast',
-                            'training_time': per_model_time,
-                            'evaluation_method': evaluation_method,
-                            'is_auto': True, 'status': 'success', **metrics
-                        })
-                        print(f"    ✓ {model_name} processed (Test MAE: {metrics.get('mae', 'N/A'):.4f}) in {per_model_time:.2f}s.")
-                    
-                    except Exception as e_model:
-                        # (Error handling for individual model processing as before)
-                        per_model_time = time.time() - per_model_start_time
-                        error_msg = str(e_model)
-                        print(f"    ✗ Error processing {model_name}: {error_msg}")
-                        final_results.append({
-                            'model_name': model_name, 'framework': 'neuralforecast',
-                            'training_time': per_model_time, 'error': error_msg,
-                            'status': 'failed', 'is_auto': True,
-                            'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
-                        })
+            # Store neural object for configuration saving
+            fitted_objects['neural'] = nf
 
         except Exception as e_global_nf:
-            print(f"  ✗ Global error in NeuralForecast fit/predict phase: {str(e_global_nf)}")
-            for model_instance in neural_models: # Log failure for all neural models if global part fails
-                model_name = model_instance.__class__.__name__
-                final_results.append({
-                    'model_name': model_name, 'framework': 'neuralforecast', 
-                    'training_time': 0.0, 
-                    'error': f"Global NeuralForecast error: {str(e_global_nf)}", 
-                    'status': 'failed', 'is_auto': True,
-                    'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
-                })
+            print(f"  ✗ Global error in NeuralForecast fit/predict batch: {str(e_global_nf)}")
+            # Log a single error for the whole batch
+            final_results.append({
+                'model_name': 'NeuralForecast_Error', 
+                'training_time': 0.0, 
+                'error': f"Global NeuralForecast error: {str(e_global_nf)}", 
+                'status': 'failed',
+                'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
+            })
+
+    # === CONSOLIDATED PROCESSING: Merge all forecasts and process together ===
+    print("Consolidating and processing all forecasts...")
     
-    # --- Fit-Predict Statistical Models (Your existing logic, seems correct) ---
-    if stats_models:
-        print(f"Fit-predicting {len(stats_models)} statistical models...")
-        # Ensure train_df for stats models only contains y and no exogenous variables if models don't support them
-        df_stat_train = train_df[['unique_id', 'ds', 'y']].copy()
+    # Start with test data as base (preserve original test_df with actuals)
+    consolidated_forecasts_df = test_df[['unique_id', 'ds', 'y']].copy()
+    
+    # Merge forecasts from all frameworks
+    if stat_forecasts_df is not None and not stat_forecasts_df.empty:
+        print(f"  Merging StatsForecast results ({len(stat_forecasts_df)} rows)")
+        consolidated_forecasts_df = consolidated_forecasts_df.merge(stat_forecasts_df, how='left', on=['unique_id', 'ds'])
+    
+    if ml_forecasts_df is not None and not ml_forecasts_df.empty:
+        print(f"  Merging MLForecast results ({len(ml_forecasts_df)} rows)")
+        consolidated_forecasts_df = consolidated_forecasts_df.merge(ml_forecasts_df, how='left', on=['unique_id', 'ds'])
+    
+    if neural_forecasts_df is not None and not neural_forecasts_df.empty:
+        print(f"  Merging NeuralForecast results ({len(neural_forecasts_df)} rows)")
+        consolidated_forecasts_df = consolidated_forecasts_df.merge(neural_forecasts_df, how='left', on=['unique_id', 'ds'])
+
+    print(f"  Consolidated forecast dataframe shape: {consolidated_forecasts_df.shape}")
+    
+    # Store consolidated forecasts for visualization
+    final_plot_results_dict['common'] = {
+        'ds': consolidated_forecasts_df['ds'].values,
+        'actual': consolidated_forecasts_df['y'].values
+    }
+    final_plot_results_dict['models'] = {}
+
+    # Process all models at once
+    evaluation_method = "rolling_forecast" if use_rolling else "direct_forecast"
+    
+    # Extract Auto model names directly from consolidated dataframe (all models have Auto prefix)
+    auto_model_names = extract_auto_model_names_from_columns(consolidated_forecasts_df.columns.tolist())
+    
+    print(f"  Found {len(auto_model_names)} Auto models in consolidated dataframe: {auto_model_names}")
+    
+    # Process each Auto model
+    for model_name in auto_model_names:
+        start_time = time.time()
         try:
-            sf = StatsForecast(models=stats_models, freq=FREQUENCY, n_jobs=-1) # Added n_jobs for potential speedup
+            # Check if model prediction column exists
+            if model_name not in consolidated_forecasts_df.columns:
+                print(f"    ! Model '{model_name}' prediction column not found, skipping")
+                continue
             
-            # --- Fit models ---
-            fit_start_time_stats = time.time()
-            sf.fit(df_stat_train, prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL))
-            total_stats_fit_time = time.time() - fit_start_time_stats
-            print(f"  ✓ All {len(stats_models)} statistical models fitted in {total_stats_fit_time:.2f}s.")
-
-            # --- Predict ---
-            predict_start_time_stats = time.time()
-            # `h` should be the forecast horizon. If test_df represents this horizon:
-            h = len(test_df['ds'].unique()) if not test_df.empty else HORIZON
-            if h == 0: raise ValueError("Horizon 'h' for StatsForecast cannot be zero.")
-
-            # For StatsForecast, futr_df is passed to `predict` if models use exogenous vars
-            exog_cols_stats = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
-            X_futr = test_df[['unique_id', 'ds'] + exog_cols_stats].copy() if exog_cols_stats and not test_df.empty else None
+            # Extract prediction intervals
+            lo_preds = {}
+            hi_preds = {}
+            for level in LEVELS:
+                lo_col = f"{model_name}-lo-{level}"
+                hi_col = f"{model_name}-hi-{level}"
+                if lo_col in consolidated_forecasts_df.columns:
+                    lo_preds[str(level)] = consolidated_forecasts_df[lo_col].values
+                if hi_col in consolidated_forecasts_df.columns:
+                    hi_preds[str(level)] = consolidated_forecasts_df[hi_col].values
             
-            stat_forecasts_df = sf.predict(h=h, X_df=X_futr, level=LEVELS) # Use LEVELS configuration
-            total_stats_predict_time = time.time() - predict_start_time_stats
-            print(f"  ✓ Predictions for all statistical models generated in {total_stats_predict_time:.2f}s.")
             
-            # --- Process results for each STATISTICAL model ---
-            print(f"  Processing individual statistical model results...")
-            if 'stat_forecasts_df' not in locals() or stat_forecasts_df is None or stat_forecasts_df.empty: # Ensure stat_forecasts_df exists
-                print("    ! No forecasts (stat_forecasts_df) available to process for statistical models. Skipping.")
-            else:
-                for model_instance in stats_models:
-                    model_name = model_instance.__class__.__name__
-                    per_model_stat_start_time = time.time()
-                    print(f"  Processing Statistical Model: {model_name}...")
-                    try:
-                        if model_name not in stat_forecasts_df.columns:
-                            raise ValueError(f"Model prediction column '{model_name}' not found in StatForecast results columns: {stat_forecasts_df.columns.tolist()}")
-                        
-                        # Create a DataFrame for the current model's forecast by selecting relevant columns
-                        # from the comprehensive stat_forecasts_df
-                        current_model_cols_to_select = ['unique_id', 'ds', model_name]
-                        lo_preds_stat = {}
-                        hi_preds_stat = {}
-
-                        for level_val in LEVELS: # Ensure LEVELS is defined
-                            lo_pi_col = f"{model_name}-lo-{level_val}"
-                            hi_pi_col = f"{model_name}-hi-{level_val}"
-                            if lo_pi_col in stat_forecasts_df.columns:
-                                current_model_cols_to_select.append(lo_pi_col)
-                                # Values for all_forecasts_dict will be extracted after merge from eval_df_stat
-                            if hi_pi_col in stat_forecasts_df.columns:
-                                current_model_cols_to_select.append(hi_pi_col)
-                                # Values for all_forecasts_dict will be extracted after merge from eval_df_stat
-                        
-                        current_model_stat_forecast_df = stat_forecasts_df[list(dict.fromkeys(current_model_cols_to_select))].copy()
-
-                        eval_df_stat = test_df.merge(current_model_stat_forecast_df, on=['unique_id', 'ds'], how='inner')
-                        if eval_df_stat.empty:
-                            raise ValueError(f"No matching StatForecast forecasts and actual values for evaluation for model {model_name}. Merged df is empty.")
-
-                        mean_pred_stat_series = eval_df_stat[model_name] if model_name in eval_df_stat else None
-                        
-                        # Re-extract PI values from eval_df_stat to ensure they are aligned with 'y'
-                        for level_val in LEVELS:
-                            lo_pi_col = f"{model_name}-lo-{level_val}"
-                            hi_pi_col = f"{model_name}-hi-{level_val}"
-                            if lo_pi_col in eval_df_stat.columns:
-                                lo_preds_stat[str(level_val)] = eval_df_stat[lo_pi_col].values
-                            if hi_pi_col in eval_df_stat.columns:
-                                hi_preds_stat[str(level_val)] = eval_df_stat[hi_pi_col].values
-                                
-                        all_forecasts_dict[model_name] = {
-                            'framework': 'statistical',
-                            'predictions': {
-                                'mean': mean_pred_stat_series.values if mean_pred_stat_series is not None else np.full(len(eval_df_stat), np.nan),
-                                'lo': lo_preds_stat,
-                                'hi': hi_preds_stat
-                            },
-                            'ds': eval_df_stat['ds'].values,
-                            'actual': eval_df_stat['y'].values,
-                            'forecast_method': 'direct_forecast' # StatsForecast generally does direct
-                        }
-                        
-                        # Use the user-provided calculate_metrics function
-                        metrics_stat = calculate_metrics(eval_df_stat, model_name)
-                        per_model_stat_time = time.time() - per_model_stat_start_time
-                        
-                        # Determine if the model is an "auto" model (example for AutoARIMA)
-                        is_auto_stat = False
-                        if 'sf' in locals() and sf is not None: # Check if sf object exists
-                            is_auto_stat = isinstance(model_instance, getattr(sf, 'AutoARIMA', type(None))) # Add other auto classes if needed
-                        
-                        final_results.append({
-                            'model_name': model_name, 'framework': 'statsforecast',
-                            'training_time': per_model_stat_time, 
-                            'evaluation_method': 'direct_forecast',
-                            'is_auto': is_auto_stat, 
-                            'status': 'success' if 'error' not in metrics_stat else 'metrics_error', 
-                            **metrics_stat
-                        })
-                        print(f"    ✓ {model_name} processed (Test MAE: {metrics_stat.get('mae', 'N/A'):.4f}) in {per_model_stat_time:.2f}s.")
-                    except Exception as e_stat_model:
-                        per_model_stat_time = time.time() - per_model_stat_start_time
-                        error_msg_stat = str(e_stat_model)
-                        print(f"    ✗ Error processing {model_name} (statistical): {error_msg_stat}")
-                        final_results.append({
-                            'model_name': model_name, 'framework': 'statsforecast',
-                            'training_time': per_model_stat_time, 'error': error_msg_stat,
-                            'status': 'failed', 
-                            'is_auto': isinstance(model_instance, getattr(sf if 'sf' in locals() else None, 'AutoARIMA', type(None))) if 'sf' in locals() and sf is not None else False,
-                            'mae': np.nan, 'rmse': np.nan, 'mape': np.nan, 'smape': np.nan # Match keys from calculate_metrics
-                        })
-        except Exception as e_global_sf:
-            print(f"  ✗ Global error in StatsForecast fit/predict: {str(e_global_sf)}")
-            for model_instance in stats_models:
-                model_name = model_instance.__class__.__name__
-                final_results.append({
-                    'model_name': model_name, 'framework': 'statsforecast', 'training_time': 0.0,
-                    'error': f"Global StatsForecast error: {str(e_global_sf)}", 'status': 'failed', 
-                    'is_auto': False, # Or determine based on model type
-                    'mae': np.nan, 'rmse': np.nan, 'mape': np.nan
-                })
+            # Store in final_plot_results_dict
+            final_plot_results_dict['models'][model_name] = {
+                'predictions': {
+                    'mean': consolidated_forecasts_df[model_name].values,
+                    'lo': lo_preds,
+                    'hi': hi_preds
+                },
+                'forecast_method': evaluation_method
+            }
+            
+            # Calculate metrics
+            metrics = calculate_metrics(consolidated_forecasts_df, [model_name])
+            # Extract metrics for this specific model
+            model_metrics = metrics.get(model_name, {})
+            processing_time = time.time() - start_time
+            
+            
+            final_results.append({
+                'model_name': model_name,
+                'training_time': processing_time,
+                'evaluation_method': evaluation_method,
+                'status': 'success' if 'error' not in model_metrics else 'metrics_error',
+                **model_metrics
+            })
+            
+            print(f"    ✓ {model_name} processed (Test MAE: {model_metrics.get('mae', 'N/A'):.4f}) in {processing_time:.2f}s.")
+            
+        except Exception as e:
+            processing_time = time.time() - start_time
+            error_msg = str(e)
+            print(f"    ✗ Error processing {model_name}: {error_msg}")
+            
+            
+            final_results.append({
+                'model_name': model_name,
+                'training_time': processing_time,
+                'evaluation_method': evaluation_method,
+                'error': error_msg,
+                'status': 'failed',
+                'mae': np.nan, 'rmse': np.nan, 'mape': np.nan, 'smape': np.nan
+            })
+    
+    # Save best configurations to the specified directory if it exists
+    if final_model_config_dir:
+        save_best_configurations(fitted_objects, final_model_config_dir)
 
     final_results_df = pd.DataFrame(final_results)
-    successful_final = final_results_df[final_results_df['status'] == 'success']
-    print(f"Final fit-predict completed: {len(successful_final)}/{len(final_results_df)} models successful")
-    return final_results_df, all_forecasts_dict 
+    
+    if not final_results_df.empty:
+        successful_final = final_results_df[final_results_df['status'] == 'success']
+        print(f"Final fit-predict completed: {len(successful_final)}/{len(final_results_df)} models successful")
+    else:
+        print("Final fit-predict completed: 0 models processed, no results to show.")
+
+    
+
+    print(f"✅ Final fit-predict step completed. Returning {len(final_results_df)} results.")
+    return final_results_df, final_plot_results_dict, ml_cv_results_df
+
+if __name__ == "__main__":
+    from src.models.statsforecast.models import get_statistical_models
+    from src.models.mlforecast.models import get_ml_models
+    from src.models.neuralforecast.models import get_neural_models
+    
+    from src.pipelines.model_evaluation import prepare_pipeline_data
+
+    # Get data and models
+    train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(horizon=HORIZON, test_length_multiplier=TEST_LENGTH_MULTIPLIER)
+    stat_models = get_statistical_models(season_length=7)
+    ml_models = get_ml_models()
+    neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
+    
+    # Perform final fit and predict
+    final_results_df, final_plot_results_dict, ml_cv_results_df = perform_final_fit_predict(
+        stats_models= [],
+        ml_models=ml_models,
+        neural_models= [],
+        train_df=train_df,
+        test_df=test_df,
+        final_model_config_dir=FINAL_DIR,
+        final_plot_results_dict={}
+    )
+    # Generate timestamp for filenames
+    timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+
+    # Save final results to CSV with timestamp
+    final_results_df.to_csv(FINAL_DIR / f"metrics_results_{timestamp}.csv", index=False)
+
+    # Save final plot results to JSON with timestamp
+    plot_results_path = FINAL_DIR / f"final_plot_results_{timestamp}.json"
+    print(f"Saving final plot results to {plot_results_path}...")
+    try:
+        save_dict_to_json(final_plot_results_dict, plot_results_path)
+        print("  ✓ Final plot results saved successfully.")
+    except Exception as e:
+        print(f"  ✗ Error saving plot results: {e}")
+
+    # save ml_cv_results_df to csv
+    ml_cv_results_df.to_csv(CV_DIR / f"cv_metrics_{timestamp}.csv", index=False)
+
+ 

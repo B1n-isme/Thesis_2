@@ -1,0 +1,3 @@
+tmux new -s thesis
+tmux attach -t thesis
+tmux kill-session -t thesis

@@ -1,6 +1,0 @@
-return best hyperparam config from models list
-	nf.models[0].results.get_best_result().config
-
-merge stats and neural forecast 
-	fcst_df = fcst_df.merge(fcst_nf_df, how='left', on=['unique_id', 'ds'])
-

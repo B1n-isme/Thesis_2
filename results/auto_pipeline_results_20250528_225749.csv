@@ -1,3 +1,0 @@
-model_name,framework,training_time_cv,evaluation_method_cv,is_auto_cv,status_cv,mae_cv,rmse_cv,mape_cv,smape_cv,training_time_test,evaluation_method_test,is_auto_test,status_test,mae_test,rmse_test,mape_test,smape_test,is_auto
-AutoNHITS,neuralforecast,7.625255107879639,cross_validation,True,success,3958.3026786428577,6082.455668676227,4.828762863174357,5.071300504384243,44.104753255844116,rolling_forecast,True,success,4911.958038000001,5753.302095627105,5.0070781436606255,4.943595041391165,True
-AutoARIMA,statsforecast,235.05362963676453,cross_validation,False,success,4420.721415771486,6244.135534917689,5.39478254148624,5.637245541231247,0.0009148120880126953,direct_forecast,False,success,5821.646466483697,6722.816073243341,5.8338850838913805,6.064685240765626,False

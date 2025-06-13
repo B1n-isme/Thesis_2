@@ -7,35 +7,7 @@ from typing import Dict
 
 # Configuration and utilities
 from config.base import RESULTS_DIR, RAY_ADDRESS, RAY_NUM_CPUS, RAY_NUM_GPUS, SEED
-from utils.utils import setup_environment as util_setup_environment # Renamed to avoid conflict
-
-
-def setup_pipeline_directories(base_results_dir: str) -> Dict[str, Path]:
-    """Create necessary output directories and return their paths."""
-    results_dir = Path(base_results_dir)
-    plot_dir = results_dir / 'plot'
-    final_dir = results_dir / 'final'
-    models_dir = results_dir / 'models'
-    auto_model_configs_dir = models_dir / 'auto_model_configs'
-    
-    directories = [
-        results_dir,
-        plot_dir,
-        final_dir,
-        models_dir,
-        auto_model_configs_dir
-    ]
-    
-    for directory in directories:
-        directory.mkdir(parents=True, exist_ok=True)
-        
-    return {
-        "results_dir": results_dir,
-        "plot_dir": plot_dir,
-        "final_dir": final_dir,
-        "models_dir": models_dir,
-        "auto_model_configs_dir": auto_model_configs_dir
-    }
+from src.utils.utils import setup_environment as util_setup_environment # Renamed to avoid conflict
 
 def setup_environment(pipeline_timestamp):
     """Setup the forecasting environment."""

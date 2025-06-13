@@ -2,7 +2,7 @@ from typing import Dict
 from ray import tune
 
 
-def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
+def neural_auto_cfg(h: int) -> Dict[str, Dict]:
     """
     Get model configurations optimized for Bitcoin forecasting.
 
@@ -25,18 +25,13 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
     }
 
     # NBEATS config 
-    nbeats_config = {
-        # 'stack_types': tune.choice([
-        #     ['trend', 'seasonality'],
-        #     ['trend', 'trend', 'seasonality'],
-        #     ['generic', 'generic']
-        # ]),
-    }
+    nbeats_config = {}
 
     # LSTM config 
     lstm_config = {
         "encoder_n_layers": tune.choice([1, 2, 3]),
         "encoder_hidden_size": tune.choice([64, 128, 256]),
+        "decoder_hidden_size": tune.choice([32, 64, 128, 256]),
     }
 
     # TFT config 
@@ -46,69 +41,24 @@ def neural_auto_model_cfg(h: int) -> Dict[str, Dict]:
         "n_head": tune.choice([2, 4, 8]),
     }
 
+    # Transformer config 
+    transformer_config = {
+        "hidden_size": tune.choice([64, 128, 256]),
+        "n_heads": tune.choice([4, 8]),
+    }
+
+    # TSMixer config 
+    tsmixer_config = {
+        "n_block": tune.choice([2, 4, 6]),
+        "ff_dim": tune.choice([64, 128, 256]),
+        "dropout": tune.uniform(0.1, 0.5),
+    }
+
     return {
         "nhits": nhits_config,
         "nbeats": nbeats_config,
         "lstm": lstm_config,
         "tft": tft_config,
+        "transformer": transformer_config,
+        "tsmixer": tsmixer_config,
     }
-
-
-# Legacy function for backward compatibility
-def neural_auto_model_cfg_legacy(h: int) -> Dict[str, Dict]:
-    """
-    Get model configurations optimized for Bitcoin price forecasting.
-    Bitcoin exhibits high volatility, trending behavior, and potential regime changes.
-    """
-
-    # Enhanced NHITS config for crypto volatility
-    nhits_config = {
-        "input_size": tune.choice(
-            [h * 2, h * 3, h * 4, h * 6, h * 8]
-        ),  # Longer lookback for crypto
-        "max_steps": tune.choice([500, 1000, 1500, 2000]),
-        "learning_rate": tune.choice([1e-4, 5e-4, 1e-3, 2e-3]),
-        "batch_size": tune.choice([16, 32, 64]),
-        "windows_batch_size": tune.choice([128, 256, 512]),
-        "n_blocks": tune.choice([[2, 2], [3, 3], [4, 4]]),
-        "mlp_units": tune.choice([[256, 256], [512, 512], [256, 128]]),
-        # 'dropout_prob_theta': tune.choice([0.1, 0.2, 0.3]),
-        "activation": tune.choice(["ReLU", "GELU"]),
-        "stack_types": tune.choice(
-            [["identity", "identity"], ["trend", "seasonality"]]
-        ),
-        "scaler_type": tune.choice(["standard", "robust", "minmax"]),
-        "random_seed": tune.randint(1, 6),
-    }
-
-    # Enhanced NBEATS config
-    nbeats_config = {
-        "input_size": tune.choice([h * 3, h * 4, h * 6, h * 8]),
-        "max_steps": tune.choice([500, 1000, 1500]),
-        "learning_rate": tune.choice([1e-4, 5e-4, 1e-3]),
-        "batch_size": tune.choice([16, 32, 64]),
-        "windows_batch_size": tune.choice([128, 256]),
-        "stack_types": tune.choice([["trend", "seasonality"], ["generic", "generic"]]),
-        "n_blocks": tune.choice([2, 3, 4]),
-        "mlp_units": tune.choice([256, 512]),
-        # 'dropout_prob_theta': tune.choice([0.1, 0.2]),
-        "scaler_type": tune.choice(["standard", "robust"]),
-        "random_seed": tune.randint(1, 6),
-    }
-
-    # TFT config for complex temporal patterns
-    tft_config = {
-        "input_size": tune.choice([h * 4, h * 6, h * 8]),
-        "hidden_size": tune.choice([64, 128, 256]),
-        "n_rnn_layers": tune.choice([1, 2]),
-        "n_head": tune.choice([4, 8]),
-        # 'dropout': tune.choice([0.1, 0.2, 0.3]),
-        "learning_rate": tune.choice([1e-4, 5e-4, 1e-3]),
-        "max_steps": tune.choice([1000, 1500, 2000]),
-        "batch_size": tune.choice([16, 32]),
-        "windows_batch_size": tune.choice([128, 256]),
-        "scaler_type": tune.choice(["standard", "robust"]),
-        "random_seed": tune.randint(1, 6),
-    }
-
-    return {"nhits": nhits_config, "nbeats": nbeats_config, "tft": tft_config}

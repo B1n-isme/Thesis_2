@@ -1,3 +1,0 @@
-model_name,framework,training_time,evaluation_method,is_auto,status,mae,mse,rmse,mape,smape,directional_accuracy,n_predictions,mae_rank,rmse_rank,mape_rank,combined_rank
-AutoARIMA,statsforecast,29.216383457183838,fit_predict,True,success,5821.646466483697,45196255.954659015,6722.816073243341,0.058338850838913804,0.03032342620382814,0.5294117647058824,35,1.0,1.0,1.0,1.0
-NHITS,neuralforecast,8.155964374542236,rolling_forecast,False,success,5823.408707785716,49941447.2124191,7066.926291706961,0.059987407949951714,0.029209792840121488,0.47058823529411764,35,2.0,2.0,2.0,2.0

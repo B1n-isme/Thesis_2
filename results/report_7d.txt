@@ -1,0 +1,52 @@
+================================================================================
+🚀 BITCOIN AUTO MODELS PIPELINE - SUMMARY REPORT
+================================================================================
+Execution Time: 2025-06-13 08:22:29
+Pipeline: Direct Auto Models Workflow (No Separate HPO)
+
+📊 DATA INFORMATION
+----------------------------------------
+Training Samples: 2,915
+Test Samples: 7
+Forecast Horizon: 7 days
+Exogenous Features: 30
+
+🤖 AUTO MODELS WORKFLOW
+----------------------------------------
+Total Execution Time: 0.0 seconds
+Auto Neural Models: 0
+Statistical Models: 2
+Total Models: 9
+
+🏆 MODEL PERFORMANCE SUMMARY (CROSS-VALIDATION)
+----------------------------------------
+Top 5 Models (by CV MAE):
+
+1. AutoXGBoost
+   CV MAE: 95.1457 | RMSE: 181.5068
+
+2. AutoCatBoost
+   CV MAE: 98.5821 | RMSE: 129.2826
+
+3. AutoLightGBM
+   CV MAE: 424.2669 | RMSE: 1694.5965
+
+4. AutoARIMA
+   CV MAE: 2891.9928 | RMSE: 4010.9848
+
+5. AutoTheta
+   CV MAE: 2946.9666 | RMSE: 4035.7466
+
+Performance Statistics (CV):
+Best CV MAE: 95.1457
+Best CV RMSE: 129.2826
+Average CV MAE: 1291.3908
+Average CV RMSE: 2010.4235
+
+📈 SUCCESS METRICS
+----------------------------------------
+Total Models Evaluated: 5
+Successful Models (CV): 5
+Success Rate: 100.0%
+
+================================================================================
