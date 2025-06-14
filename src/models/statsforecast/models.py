@@ -3,7 +3,7 @@ Bitcoin-optimized statistical models for forecasting.
 """
 from typing import List, Any
 from statsforecast.models import (
-    AutoARIMA, AutoTheta
+    AutoARIMA, AutoTheta, AutoETS
 )
 
 
@@ -21,7 +21,7 @@ def get_statistical_models(season_length: int = 7) -> List[Any]:
     all_models = [
         # PRIMARY: Best for Bitcoin's non-stationary, trending, volatile nature
         AutoARIMA(season_length=season_length),
-        # AutoETS(season_length=season_length, model='ZZZ'),  # Auto-select
+        AutoETS(season_length=season_length, model='ZZZ'),  # Auto-select
         # AutoETS(season_length=season_length, model='MMM'),  # Multiplicative
         # AutoETS(season_length=season_length, model='MAM'),  # Mixed
         

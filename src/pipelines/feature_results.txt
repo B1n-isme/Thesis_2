@@ -1,0 +1,156 @@
+[FeatureSelector] RFECV fitting completed.                                                                                                                     
+[FeatureSelector] RFECV selected 65 optimal features for lightgbm.                                                                                             
+[FeatureSelector]                                                                                                                                              
+--- Running Step: Stability Selection ---                                                                                                                      
+[FeatureSelector] Starting stability selection with 50 bootstrap samples...                                                                                    
+[FeatureSelector] Bootstrap iteration 10/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 20/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 30/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 40/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 50/50                                                                                                                    
+[FeatureSelector] Stability selection found 26 features with frequency >= 0.7                                                                                  
+[FeatureSelector] Starting stability selection with 50 bootstrap samples...                                                                                    
+[FeatureSelector] Bootstrap iteration 10/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 20/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 30/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 40/50                                                                                                                    
+[FeatureSelector] Bootstrap iteration 50/50                                                                                                                    
+[FeatureSelector] Stability selection found 36 features with frequency >= 0.7                                                                                  
+[FeatureSelector]                                                                                                                                              
+--- Generating Consensus Features ---                                                                                                                          
+[FeatureSelector] Aggregating results with weighted scoring...                                                                                                 
+[FeatureSelector] Found 59 features with at least 2 votes.                                                                                                     
+[FeatureSelector]                                                                                                                                              
+--- Handling Multicollinearity ---                                                                                                                             
+[FeatureSelector] Handling multicollinearity for 59 features...                                                                                                
+[FeatureSelector] Reduced to 36 features after clustering.                                                                                                     
+[FeatureSelector] Removed 'Trolololo_cbbi' due to high VIF (57.46)                                                                                             
+[FeatureSelector] Removed 'GSPC' due to high VIF (45.76)                                                                                                       
+[FeatureSelector] Removed 'risk_uncertainty_sentiment' due to high VIF (34.08)                                                                                 
+[FeatureSelector] Removed 'ReserveRisk_cbbi' due to high VIF (23.28)                                                                                           
+[FeatureSelector] Removed 'Gold_Share' due to high VIF (21.18)                                                                                                 
+[FeatureSelector] Removed 'miner_revenue_blockchain' due to high VIF (13.10)                                                                                   
+[FeatureSelector] Removed 'btc_ema_50_slope' due to high VIF (11.70)                                                                                           
+[FeatureSelector] Removed '2YMA_cbbi' due to high VIF (11.43)                                                                                                  
+[FeatureSelector] Removed 'development_ecosystem_sentiment' due to high VIF (11.05)                                                                            
+[FeatureSelector] Reduced to 27 features after VIF check.                                                                                                      
+[FeatureSelector]                                                                                                                                              
+--- Running Permutation Importance Validation ---                                                                                                              
+[FeatureSelector] Validating feature selection with permutation importance...                                                                                  
+[FeatureSelector] Permutation importance validated 16 features out of 27                                                                                       
+[FeatureSelector] Complete feature selection strategy finished.
+
+--- Feature Selection Results ---                                                                                                                              
+Top consensus features recommended by the pipeline:                                                                                                            
+                                                                                                                                                               
+--- Feature Selection Counts ---                                                                                                                               
+                                        feature  votes  combined_score                                                                                         
+0                      miner_revenue_blockchain      7        5.675329                                                                                         
+1                               Gold_Volatility      7        5.571052                                                                                         
+2                           marketcap_sentiment      7        5.560376                                                                                         
+3                    risk_uncertainty_sentiment      6        5.272121                                                                                         
+4                                    Puell_cbbi      6        5.223656                                                                                         
+5                    market_narrative_sentiment      6        5.176595                                                                                         
+6                         regulations_sentiment      6        5.144057                                                                                         
+7                             bearish_sentiment      6        5.139439                                                                                         
+8                   active_addresses_blockchain      6        4.587322                                                                                         
+9               development_ecosystem_sentiment      5        4.884783                                                                                         
+10                        news_events_sentiment      5        4.882567                                                                                         
+11                                   Fear Greed      5        4.851741                                                                                         
+12                     active_trading_sentiment      5        4.815948                                                                                         
+13                              price_sentiment      5        4.794032                                                                                         
+14                              CBOE_Volatility      5        4.791894                                                                                         
+15                   community_social_sentiment      5        4.726540                                                                                         
+16                           positive_sentiment      5        4.679288                                                                                         
+17                               Oil_Volatility      5        4.619707                                                                                         
+18                             volume_sentiment      5        4.471851                                                                                         
+19                    core_technology_sentiment      5        4.459229                                                                                         
+20                            bullish_sentiment      5        4.369680                                                                                         
+21  estimated_transaction_volume_usd_blockchain      5        4.331504                                                                                         
+22                         hash_rate_blockchain      5        4.249843                                                                                         
+23                                       EURUSD      5        4.022699                                                                                         
+24                                   Gold_Share      5        3.999728                                                                                         
+25                           btc_trading_volume      5        3.954449                                                                                         
+26               long_term_investment_sentiment      4        3.996618                                                                                         
+27                  problem_malicious_sentiment      4        3.995678                                                                                         
+28                           negative_sentiment      4        3.956701                                                                                         
+29                              Oil_Crude_Price      4        3.819647                                                                                         
+30                                         GSPC      4        3.814738                                                                                         
+31                                          DXY      4        3.686023                                                                                         
+32                         btc_volatility_index      4        3.411802                                                                                         
+33                                   btc_rsi_14      4        3.308795                                                                                         
+34                                       EM_ETF      4        3.306839                                                                                         
+35                                    2YMA_cbbi      4        3.242712                                                                                         
+36                               Trolololo_cbbi      3        3.000000                                                                                         
+37                              Oil_Brent_Price      3        2.999771                                                                                         
+38                                 PiCycle_cbbi      3        2.999580
+39                                    RUPL_cbbi      3        2.999244
+40                              Confidence_cbbi      3        2.996357
+41                   btc_close_ema_21_dist_norm      3        2.991201
+42                                 btc_bb_width      3        2.990911
+43                             ReserveRisk_cbbi      3        2.986601
+44                                    MVRV_cbbi      3        2.965477
+45                          btc_sma_14_50_ratio      3        2.876582
+46                                   RHODL_cbbi      3        2.720000                                                                                         
+47                                   Gold_Price      3        2.502898
+48                        btc_close_ema_21_dist      3        2.450540                                                                                         
+49                             btc_sma_14_slope      3        2.280721                                                                                         
+50                                         IXIC      3        2.138225                                                                                         
+51                                   btc_ema_21      3        1.844433                                                                                         
+52                                          DJI      2        2.000000
+53                                       NYFANG      2        2.000000
+54                                btc_macd_diff      2        2.000000
+55                             btc_sma_21_slope      2        1.780000
+56                                    btc_sma_5      2        1.492458
+57                             btc_ema_50_slope      2        1.314602
+58                                   btc_bb_low      2        1.264983
+59                        difficulty_blockchain      1        1.000000
+60                           btc_sma_14_50_diff      1        1.000000
+61                           btc_ema_14_50_diff      1        1.000000
+62                             btc_ema_14_slope      1        1.000000
+63                             btc_ema_21_slope      1        1.000000
+64                             btc_sma_50_slope      1        1.000000
+65                                     btc_macd      1        1.000000
+66                              btc_macd_signal      1        1.000000
+67                                   btc_atr_14      1        1.000000
+68                                 Woobull_cbbi      1        0.997082
+
+
+
+1. Gold_Volatility
+2. marketcap_sentiment
+3. Puell_cbbi
+4. market_narrative_sentiment
+5. regulations_sentiment
+6. bearish_sentiment
+7. active_addresses_blockchain
+8. Fear Greed
+9. CBOE_Volatility
+10. Oil_Volatility
+11. volume_sentiment
+12. bullish_sentiment
+13. estimated_transaction_volume_usd_blockchain
+14. hash_rate_blockchain
+15. EURUSD
+16. btc_trading_volume
+17. Oil_Crude_Price
+18. btc_volatility_index
+19. btc_rsi_14
+20. EM_ETF
+21. PiCycle_cbbi
+22. btc_bb_width
+23. btc_sma_14_50_ratio
+24. RHODL_cbbi
+25. btc_sma_14_slope
+26. btc_macd_diff
+27. btc_sma_21_slope
+
+Total features selected: 27
+
+Exporting data with selected features...
+✅ Successfully saved final dataframe to 'data/processed/final_feature_selected_data.parquet'
+   • Shape of the saved data: (2922, 30)
+   • Columns: ['unique_id', 'ds', 'y', 'Gold_Volatility', 'marketcap_sentiment', 'Puell_cbbi', 'market_narrative_sentiment', 'regulations_sentiment', 'bearish_
+sentiment', 'active_addresses_blockchain', 'Fear Greed', 'CBOE_Volatility', 'Oil_Volatility', 'volume_sentiment', 'bullish_sentiment', 'estimated_transaction_v
+olume_usd_blockchain', 'hash_rate_blockchain', 'EURUSD', 'btc_trading_volume', 'Oil_Crude_Price', 'btc_volatility_index', 'btc_rsi_14', 'EM_ETF', 'PiCycle_cbbi
+', 'btc_bb_width', 'btc_sma_14_50_ratio', 'RHODL_cbbi', 'btc_sma_14_slope', 'btc_macd_diff', 'btc_sma_21_slope']

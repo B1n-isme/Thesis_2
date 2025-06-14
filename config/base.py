@@ -13,7 +13,7 @@ from ray.tune.search.optuna import OptunaSearch
 from typing import Any
 
 # === Data Configuration ===
-# DATA_PATH = 'data/final/dataset.parquet'
+RAW_DATA_PATH = 'data/final/dataset.parquet'
 DATA_PATH = 'data/final/final_feature_selected_data.parquet'
 DATE_COLUMN = 'Date'
 DATE_RENAMED = 'ds'

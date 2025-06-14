@@ -106,23 +106,14 @@ class FeatureSelector(
 
         self.print_info(f"Data split into training ({len(train_df)} rows) and validation ({len(val_df)} rows).")
 
-        # Step 3: Robust selection on the full dataset
-        if step3_params is None:
-            step3_params = {}
-        
-        robust_selection_results = self.robust_comprehensive_selection(
+        # The robust_comprehensive_selection function now handles all steps and
+        # returns the final results in the correct format.
+        selection_results = self.robust_comprehensive_selection(
             train_df, val_df, **step3_params
         )
-        self.step_results['step3'] = robust_selection_results
-        
-        # Recommendations are now based only on step 3 results
-        final_recommendations = self._generate_robust_recommendations(robust_selection_results)
         
         self.print_info("Complete feature selection strategy finished.")
-        return {
-            "step3_results": robust_selection_results,
-            "final_recommendations": final_recommendations
-        }
+        return selection_results
 
     def get_feature_summary(self) -> pd.DataFrame:
         """

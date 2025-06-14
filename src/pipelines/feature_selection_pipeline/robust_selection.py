@@ -15,8 +15,6 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from statsmodels.api import add_constant
-import warnings
-from sklearn.exceptions import UserWarning
 
 from config.base import HORIZON
 
@@ -269,9 +267,7 @@ class RobustSelectionMixin:
                 else:
                     raise ValueError(f"Unknown base method: {base_method} (from method: {method})")
                 
-                # --- FIX: Pass a DataFrame with feature names to suppress LGBM warning ---
-                X_boot_df = pd.DataFrame(X_boot, columns=feature_cols)
-                model.fit(X_boot_df, y_boot)
+                model.fit(X_boot, y_boot)
                 
                 # Get feature importances directly
                 importances = model.feature_importances_
@@ -364,7 +360,7 @@ class RobustSelectionMixin:
         if len(X_train) == 0 or len(X_val) == 0:
             self.print_info("Not enough data for permutation importance validation.")
             return {
-                'validated_features': [],
+                'selected_features': [],
                 'permutation_importance': pd.DataFrame(),
                 'baseline_score': 0,
                 'n_repeats': n_repeats,
@@ -420,7 +416,7 @@ class RobustSelectionMixin:
                        f"out of {len(selected_features)}")
         
         result = {
-            'validated_features': important_features,
+            'selected_features': important_features,
             'permutation_importance': perm_importance_df,
             'baseline_score': baseline_score,
             'n_repeats': n_repeats,
@@ -519,6 +515,11 @@ class RobustSelectionMixin:
         Returns:
             Dictionary with selected features, optimal number, and rankings.
         """
+        # supress warnings
+        import warnings
+        warnings.filterwarnings("ignore", category=UserWarning)
+        warnings.filterwarnings("ignore", message="X does not have valid feature names")
+        
         self.print_info(f"Starting RFECV feature selection with {method}...")
 
         # Prepare data using stationary target
@@ -544,24 +545,19 @@ class RobustSelectionMixin:
             estimator=base_model,
             step=step,
             cv=tscv,
-            scoring='neg_mean_absolute_error', # Using MAE for scoring
+            scoring='neg_mean_absolute_error',
             min_features_to_select=min_features_to_select,
             n_jobs=-1
         )
         
         self.print_info(f"Fitting RFECV... This may take a while.")
-        # --- FIX: Pass a DataFrame with feature names to suppress LGBM warning ---
         X_df = pd.DataFrame(X, columns=feature_names)
-        
-        # Suppress the specific benign warning from LGBM within RFECV
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names, but LGBMRegressor was fitted with feature names",
-                category=UserWarning
+                "ignore",
+                message="X does not have valid feature names, but LGBMRegressor was fitted with feature names"
             )
             rfecv.fit(X_df, y)
-
         self.print_info(f"RFECV fitting completed.")
 
         # Get selected features
@@ -717,7 +713,7 @@ class RobustSelectionMixin:
             pfi_results = self.permutation_importance_validation(
                 train_df, val_df, final_features, n_repeats=n_repeats_permutation
             )
-            # You could potentially use PFI results to further prune the feature list
+            # --- FIX: Overwrite the feature list with the final validated set from PFI ---
             final_features = pfi_results.get('selected_features', final_features)
 
         # Step 5: Final result compilation

@@ -44,7 +44,7 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
             sf = StatsForecast(models=stat_models, freq='D', verbose=True)
             cv_df = sf.cross_validation(
                 h=HORIZON,
-                df=train_df[['unique_id', 'ds', 'y']],
+                df=train_df,
                 n_windows=CV_N_WINDOWS,
                 step_size=CV_STEP_SIZE,
                 input_size=INPUT_SIZE,

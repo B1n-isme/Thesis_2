@@ -10,12 +10,16 @@ from config.base import (
 from src.utils.utils import get_historical_exogenous_features, print_data_info
 
 
-def load_and_prepare_data():
+def load_and_prepare_data(data_path=None):
     """Load and prepare the dataset for forecasting."""
     print("Loading and preparing data...")
     
+    # Use provided data_path or default to DATA_PATH
+    if data_path is None:
+        data_path = DATA_PATH
+    
     # Load data
-    df = pd.read_parquet(DATA_PATH)
+    df = pd.read_parquet(data_path)
     
     # Rename columns
     df = df.rename(columns={DATE_COLUMN: DATE_RENAMED, TARGET_COLUMN: TARGET_RENAMED})
@@ -53,15 +57,16 @@ def split_data(df, horizon, test_length_multiplier):
     return train_df, test_df
 
 
-def prepare_data(horizon, test_length_multiplier):
+def prepare_data(horizon, test_length_multiplier, data_path=None):
     """Complete data preparation pipeline.
     
     Args:
         horizon (int): Forecast horizon in days
         test_length_multiplier (int): Multiplier to determine test set length
+        data_path (str, optional): Path to data file. Defaults to DATA_PATH.
     """
     # Load and prepare data
-    df = load_and_prepare_data()
+    df = load_and_prepare_data(data_path=data_path)
     
     # Get historical exogenous features
     hist_exog_list = get_historical_exogenous_features(df)
@@ -77,13 +82,14 @@ def prepare_data(horizon, test_length_multiplier):
     return train_df, test_df, hist_exog_list
 
 
-def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict]:
+def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER, data_path: str = DATA_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict]:
     """
     Enhanced data preparation for the pipeline with detailed logging and metadata.
     
     Args:
         horizon (int, optional): Forecast horizon in days. Defaults to HORIZON.
         test_length_multiplier (int, optional): Multiplier for test set length. Defaults to TEST_LENGTH_MULTIPLIER.
+        data_path (str, optional): Path to data file. Defaults to DATA_PATH.
     
     Returns:
         Tuple of (train_df, test_df, hist_exog_list, data_info_dict)
@@ -93,7 +99,8 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
     
     train_df, test_df, hist_exog_list = prepare_data(
         horizon=horizon,
-        test_length_multiplier=test_length_multiplier
+        test_length_multiplier=test_length_multiplier,
+        data_path=data_path
     )
     
     data_info = {

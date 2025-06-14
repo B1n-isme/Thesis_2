@@ -1,13 +1,15 @@
 from src.pipelines.feature_selection_pipeline import FeatureSelector
 from src.dataset.data_preparation import prepare_pipeline_data
 import pandas as pd
+from config.base import RAW_DATA_PATH
+
 
 def main():
     """
     Main function to run the feature selection pipeline.
     """
     # 1. Load data
-    train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data()
+    train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(data_path=RAW_DATA_PATH)
     
     # For the purpose of feature selection, we can temporarily combine
     # train and test to have a complete dataframe, as the selector's
