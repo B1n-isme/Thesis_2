@@ -10,14 +10,15 @@ from pathlib import Path
 import json
 from datetime import datetime
 
-# Configuration
-from config.base import HORIZON, PLOT_DIR, FINAL_DIR
+# Configuration and local imports
+from config.base import HORIZON
 
 def create_unified_forecast_plot(
     train_df: pd.DataFrame, 
     test_df: pd.DataFrame, 
     all_forecasts_data: Dict,
-    horizon: int
+    horizon: int,
+    plot_dir: Path
 ):
     """Create unified forecast plot showing all models.
     
@@ -106,14 +107,14 @@ def create_unified_forecast_plot(
         ax.annotate('Train/Test Split', xy=(split_date, ax.get_ylim()[1]), xytext=(10, -10), textcoords='offset points', fontsize=10, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', facecolor='red', alpha=0.1), ha='left', va='top')
     
     if all_forecasts_data and 'models' in all_forecasts_data:
-        info_text = f"Models Compared: {len(all_forecasts_data['models'])}Test Period: {len(test_df)} days\n"
+        info_text = f"Models Compared: {len(all_forecasts_data['models'])} \nTest Period: {len(test_df)} days\n"
         rolling_models = [name for name, data in all_forecasts_data['models'].items() if data.get('forecast_method') == 'rolling_forecast']
         if rolling_models:
             info_text += f"Rolling Forecast: {len(rolling_models)} models"
         ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8))
     
     plt.tight_layout()
-    plot_path = FINAL_DIR / f'unified_{horizon}d.png'
+    plot_path = plot_dir / f'unified_{horizon}d.png'
     plt.savefig(plot_path, dpi=400, bbox_inches='tight', facecolor='white')
     plt.show()
     print(f"   • Forecast plot saved: {plot_path}")
@@ -122,7 +123,8 @@ def create_separate_probabilistic_forecast_plots(
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
     all_forecasts_data: Dict,
-    horizon: int
+    horizon: int,
+    plot_dir: Path
 ):
     """Create separate probabilistic forecast plots for each model.
     
@@ -208,61 +210,61 @@ def create_separate_probabilistic_forecast_plots(
                 ax.annotate('Train/Test Split', xy=(split_date, ax.get_ylim()[1]), xytext=(10, -10), textcoords='offset points', fontsize=10, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', facecolor='red', alpha=0.1), ha='left', va='top')
 
             plt.tight_layout()
-            plot_path = PLOT_DIR / f'{model_name}_{horizon}d.png'
+            plot_path = plot_dir / f'{model_name}_{horizon}d.png'
             plt.savefig(plot_path, dpi=400, bbox_inches='tight', facecolor='white')
             plt.close(fig) # Close the figure to free up memory
             print(f"   • Probabilistic forecast plot for {model_name} saved: {plot_path}")
         else:
             print(f"Warning: Probabilistic forecast data (mean, lo, hi) not found for model: {model_name}. Skipping probabilistic plot.")
 
-def create_visualizations_step(train_df: pd.DataFrame, test_df: pd.DataFrame, all_forecasts_data: Dict, horizon: int):
+def create_visualizations_step(train_df: pd.DataFrame, test_df: pd.DataFrame, all_forecasts_data: Dict, horizon: int, plot_dir: Path):
     """Step 3: Create forecast visualizations wrapper."""
-    print("\n📈 STEP 3: CREATING VISUALIZATIONS")
-    print("-" * 40)
     if not all_forecasts_data:
         print("❌ No forecasts available for plotting")
         return
     try:
-        create_unified_forecast_plot(train_df, test_df, all_forecasts_data, horizon)
-        create_separate_probabilistic_forecast_plots(train_df, test_df, all_forecasts_data, horizon)
+        plot_dir.mkdir(parents=True, exist_ok=True)
+        print(f"   • Saving plots to: {plot_dir}")
+        create_unified_forecast_plot(train_df, test_df, all_forecasts_data, horizon, plot_dir)
+        create_separate_probabilistic_forecast_plots(train_df, test_df, all_forecasts_data, horizon, plot_dir)
         print("✅ Forecast visualizations created successfully")
     except Exception as e:
         print(f"❌ Error creating visualizations: {str(e)}")
 
-def main():
-    # Dummy data for testing
-    dates = pd.to_datetime(pd.date_range(start='2022-01-01', periods=100, freq='D'))
-    train_df = pd.DataFrame({
-        'ds': dates[:80],
-        'y': np.random.rand(80) * 100 + 1000,
-        'unique_id': ['1']*80
-    })
-    test_df = pd.DataFrame({
-        'ds': dates[80:],
-        'y': np.random.rand(20) * 100 + 1000,
-        'unique_id': ['1']*20
-    })
+# def main():
+#     # Dummy data for testing
+#     dates = pd.to_datetime(pd.date_range(start='2022-01-01', periods=100, freq='D'))
+#     train_df = pd.DataFrame({
+#         'ds': dates[:80],
+#         'y': np.random.rand(80) * 100 + 1000,
+#         'unique_id': ['1']*80
+#     })
+#     test_df = pd.DataFrame({
+#         'ds': dates[80:],
+#         'y': np.random.rand(20) * 100 + 1000,
+#         'unique_id': ['1']*20
+#     })
 
-    # Load forecast_results.json
-    try:
-        with open('forecast_results.json', 'r') as f:
-            all_forecasts_data = json.load(f)
-    except FileNotFoundError:
-        print("Error: forecast_results.json not found. Please ensure it's in the same directory.")
-        return
-    except json.JSONDecodeError:
-        print("Error: Could not decode forecast_results.json. Check file format.")
-        return
+#     # Load forecast_results.json
+#     try:
+#         with open('forecast_results.json', 'r') as f:
+#             all_forecasts_data = json.load(f)
+#     except FileNotFoundError:
+#         print("Error: forecast_results.json not found. Please ensure it's in the same directory.")
+#         return
+#     except json.JSONDecodeError:
+#         print("Error: Could not decode forecast_results.json. Check file format.")
+#         return
 
-    if 'common' in all_forecasts_data and 'ds' in all_forecasts_data['common']:
-        all_forecasts_data['common']['ds'] = pd.to_datetime(all_forecasts_data['common']['ds'])
+#     if 'common' in all_forecasts_data and 'ds' in all_forecasts_data['common']:
+#         all_forecasts_data['common']['ds'] = pd.to_datetime(all_forecasts_data['common']['ds'])
 
-    # Use HORIZON from config instead of timestamp
-    horizon = HORIZON
+#     # Use HORIZON from config instead of timestamp
+#     horizon = HORIZON
 
-    print("Starting visualization test with dummy data...")
-    create_visualizations_step(train_df, test_df, all_forecasts_data, horizon)
-    print("Visualization test complete.")
+#     print("Starting visualization test with dummy data...")
+#     create_visualizations_step(train_df, test_df, all_forecasts_data, horizon)
+#     print("Visualization test complete.")
 
-if __name__ == "__main__":
-    main() 
+# if __name__ == "__main__":
+#     main() 

@@ -22,11 +22,31 @@ from utilsforecast.compat import DataFrame
 import optuna
 import time
 import pickle
-from config.base import PI_N_WINDOWS_FOR_CONFORMAL
+from config.base import PI_N_WINDOWS_FOR_CONFORMAL, RESULTS_DIR, HORIZON
+from neuralforecast import NeuralForecast
+from statsforecast import StatsForecast
 
 if TYPE_CHECKING:
     from neuralforecast import NeuralForecast
     from neuralforecast.utils import PredictionIntervals
+
+
+def get_horizon_directories():
+    """Get the appropriate directories based on the HORIZON parameter."""
+    from config.base import (
+        CV_7D_DIR, CV_14D_DIR, CV_30D_DIR,
+        FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR,
+        PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR
+    )
+    
+    if HORIZON == 7:
+        return CV_7D_DIR, FINAL_7D_DIR, PLOT_7D_DIR
+    elif HORIZON == 14:
+        return CV_14D_DIR, FINAL_14D_DIR, PLOT_14D_DIR
+    elif HORIZON == 30:
+        return CV_30D_DIR, FINAL_30D_DIR, PLOT_30D_DIR
+    else:
+        raise ValueError(f"Unsupported HORIZON value: {HORIZON}. Supported values are 7, 14, 30.")
 
 
 def seed_everything(seed=42):
@@ -84,24 +104,19 @@ def get_historical_exogenous_features(df, exclude_cols=None):
     hist_exog_list = [col for col in all_cols if col not in exclude_cols]
     return hist_exog_list
 
-def calculate_metrics_old(df: pd.DataFrame, model_name: str) -> Dict:
+def calculate_metrics_1(df: pd.DataFrame) -> Dict:
     """Calculate metrics from cross-validation results."""
-    try:
-        if model_name not in df.columns:
-            return {'error': f'Model {model_name} not found in CV results'}
-        y_true, y_pred = df['y'].values, df[model_name].values
-        mask = ~(np.isnan(y_true) | np.isnan(y_pred))
-        y_true_clean, y_pred_clean = y_true[mask], y_pred[mask]
-        if len(y_true_clean) == 0:
-            return {'error': 'No valid predictions for metric calculation'}
-        return {
-            'mae': np.mean(np.abs(y_true_clean - y_pred_clean)),
-            'rmse': np.sqrt(np.mean((y_true_clean - y_pred_clean) ** 2)),
-            'mape': np.mean(np.abs((y_true_clean - y_pred_clean) / y_true_clean)) * 100,
-            'smape': np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_clean) + np.abs(y_pred_clean))) * 100
-        }
-    except Exception as e:
-        return {'error': f'Error calculating metrics: {str(e)}'}
+    y_true, y_pred = df['y'].values, df['pred'].values
+    mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+    y_true_clean, y_pred_clean = y_true[mask], y_pred[mask]
+    if len(y_true_clean) == 0:
+        return {'error': 'No valid predictions for metric calculation'}
+    return {
+        'mae': np.mean(np.abs(y_true_clean - y_pred_clean)),
+        'rmse': np.sqrt(np.mean((y_true_clean - y_pred_clean) ** 2)),
+        'mape': np.mean(np.abs((y_true_clean - y_pred_clean) / y_true_clean)) * 100,
+        'smape': np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_clean) + np.abs(y_pred_clean))) * 100
+    }
 
 def calculate_metrics(cv_df: pd.DataFrame, model_names: List[str]) -> Dict[str, Dict]:
     """Calculate metrics from cross-validation results using utilsforecast's evaluate method for multiple models."""
@@ -311,38 +326,39 @@ def save_best_configurations(fitted_objects: Dict, save_dir: str = None) -> Dict
     
     return all_best_configs
 
-def extract_auto_model_names_from_columns(columns: List[str]) -> List[str]:
+def extract_model_names_from_columns(columns: List[str]) -> List[str]:
     """
-    Extract model names from dataframe columns that start with 'Auto' prefix.
-    Handles prediction interval suffixes like '-lo-90', '-hi-95', etc.
+    Extract model names from dataframe columns, handling both Auto and normal models.
+    Handles prediction interval suffixes like '-lo-90', '-hi-95', '-median', etc.
     
     Args:
         columns: List of column names from dataframe
         
     Returns:
-        List of unique model names that start with 'Auto'
+        List of unique model names (Auto or normal)
     """
-    auto_model_names = set()
+    model_names = set()
+    ignore_cols = {'unique_id', 'ds', 'y', 'cutoff'}
     
     for col in columns:
-        # Skip non-Auto columns
-        if not col.startswith('Auto'):
+        if col in ignore_cols:
             continue
             
-        # Extract base model name (remove prediction interval suffixes)
+        # Extract base model name by removing suffixes
         if '-lo-' in col:
             base_name = col.split('-lo-')[0]
         elif '-hi-' in col:
             base_name = col.split('-hi-')[0]
+        elif '-median' in col:
+            base_name = col.split('-median')[0]
         else:
             base_name = col
             
-        # Only add if it starts with 'Auto'
-        if base_name.startswith('Auto'):
-            auto_model_names.add(base_name)
+        # Only add if it's either Auto or non-ignored normal model
+        if base_name.startswith('Auto') or (not base_name.startswith('Auto') and base_name not in ignore_cols):
+            model_names.add(base_name)
     
-    return sorted(list(auto_model_names))
-
+    return sorted(list(model_names))
 
 class NumpyEncoder(json.JSONEncoder):
     """ Custom encoder for numpy data types """
@@ -385,6 +401,19 @@ def load_json_to_dict(file_path: Path) -> Dict:
     """
     with open(file_path, 'r') as f:
         return json.load(f)
+
+def load_yaml_to_dict(file_path: Path) -> Dict[str, Any]:
+    """
+    Loads a YAML file into a dictionary.
+
+    Args:
+        file_path (Path): The path to the input YAML file.
+
+    Returns:
+        Dict: The loaded dictionary.
+    """
+    with open(file_path, 'r') as f:
+        return yaml.safe_load(f)
 
 def rolling_forecast_neural_all_models(
     nf_model: "NeuralForecast",
@@ -485,7 +514,6 @@ def my_init_config(trial: optuna.Trial):
     }
 
 
-
 def my_fit_config(trial: optuna.Trial):
     if trial.suggest_int('use_id', 0, 1):
         static_features = ['unique_id']
@@ -495,16 +523,12 @@ def my_fit_config(trial: optuna.Trial):
         'static_features': static_features
     }
 
-def custom_mse_loss(df: DataFrame, train_df: DataFrame) -> float:
+def custom_mae_loss(df: DataFrame, train_df: DataFrame) -> float:
     """
-    Calculates Mean Squared Error.
+    Calculates Mean Absolute Error.
     'df' contains predictions in a column named 'model' and actuals in 'target_col'.
-    'train_df' is the training data for the current window (can be ignored for simple MSE).
+    'train_df' is the training data for the current window (can be ignored for simple MAE).
     """
-    # Assuming your target column is 'y' and predictions are in 'model'
-    # (as per the default in mlforecast_objective)
-    # You might need to adjust column names based on your specific setup or if you
-    # modify the objective function.
     actuals = df['y'].to_numpy()
     predictions = df['model'].to_numpy()
-    return np.mean((actuals - predictions) ** 2)
+    return np.mean(np.abs(actuals - predictions))

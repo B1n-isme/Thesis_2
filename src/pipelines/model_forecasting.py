@@ -17,9 +17,19 @@ from statsforecast.utils import ConformalIntervals
 from mlforecast.auto import AutoMLForecast
 from mlforecast.utils import PredictionIntervals as MLPredictionIntervals
 
-from src.utils.utils import calculate_metrics, save_best_configurations, extract_auto_model_names_from_columns, rolling_forecast_neural_all_models
-from src.utils.utils import save_dict_to_json, load_json_to_dict, process_cv_results
-from src.pipelines.model_evaluation import CV_DIR
+from src.utils.utils import (
+    calculate_metrics, 
+    save_best_configurations, 
+    extract_model_names_from_columns,
+    rolling_forecast_neural_all_models,
+    save_dict_to_json, 
+    load_json_to_dict, 
+    process_cv_results,
+    get_horizon_directories
+)
+
+# Get dynamic directories based on HORIZON
+CV_DIR, FINAL_DIR, _ = get_horizon_directories()
 
 def perform_final_fit_predict(
     stats_models: List,
@@ -75,8 +85,8 @@ def perform_final_fit_predict(
             
             stat_forecasts_df = sf.forecast(
                 h=h,
-                df=train_df[['unique_id', 'ds', 'y']],
-                X_df=X_df_stats[['unique_id', 'ds']],
+                df=train_df,
+                X_df=X_df_stats,
                 level=LEVELS,
                 prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
             )
@@ -99,7 +109,7 @@ def perform_final_fit_predict(
         fit_start_time_ml = time.time()
         ml_model_metadata = {}
         try:
-            from src.utils.utils import my_init_config, my_fit_config, custom_mse_loss
+            from src.utils.utils import my_init_config, my_fit_config, custom_mae_loss
             
             ml = AutoMLForecast(
                 models=ml_models,
@@ -123,7 +133,7 @@ def perform_final_fit_predict(
                 fitted=True,
                 refit=True,
                 optimize_kwargs={'timeout': 60},
-                loss=custom_mse_loss,
+                loss=custom_mae_loss,
                 prediction_intervals=MLPredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL, h=HORIZON)
             )
 
@@ -137,7 +147,7 @@ def perform_final_fit_predict(
 
             print(ml_cv_df)
             
-            auto_model_names = extract_auto_model_names_from_columns(ml_cv_df.columns.tolist())
+            auto_model_names = extract_model_names_from_columns(ml_cv_df.columns.tolist())
             if not auto_model_names:
                 print("  ! Warning: No 'Auto' model columns found in ML CV dataframe.")
             else:
@@ -272,6 +282,7 @@ def perform_final_fit_predict(
         print(f"  Merging NeuralForecast results ({len(neural_forecasts_df)} rows)")
         consolidated_forecasts_df = consolidated_forecasts_df.merge(neural_forecasts_df, how='left', on=['unique_id', 'ds'])
 
+    print(consolidated_forecasts_df)
     print(f"  Consolidated forecast dataframe shape: {consolidated_forecasts_df.shape}")
     
     # Store consolidated forecasts for visualization
@@ -285,7 +296,7 @@ def perform_final_fit_predict(
     evaluation_method = "rolling_forecast" if use_rolling else "direct_forecast"
     
     # Extract Auto model names directly from consolidated dataframe (all models have Auto prefix)
-    auto_model_names = extract_auto_model_names_from_columns(consolidated_forecasts_df.columns.tolist())
+    auto_model_names = extract_model_names_from_columns(consolidated_forecasts_df.columns.tolist())
     
     print(f"  Found {len(auto_model_names)} Auto models in consolidated dataframe: {auto_model_names}")
     
@@ -352,9 +363,9 @@ def perform_final_fit_predict(
                 'mae': np.nan, 'rmse': np.nan, 'mape': np.nan, 'smape': np.nan
             })
     
-    # Save best configurations to the specified directory if it exists
-    if final_model_config_dir:
-        save_best_configurations(fitted_objects, final_model_config_dir)
+    # # Save best configurations to the specified directory if it exists
+    # if final_model_config_dir:
+    #     save_best_configurations(fitted_objects, final_model_config_dir)
 
     final_results_df = pd.DataFrame(final_results)
     
@@ -372,21 +383,23 @@ def perform_final_fit_predict(
 if __name__ == "__main__":
     from src.models.statsforecast.models import get_statistical_models
     from src.models.mlforecast.models import get_ml_models
-    from src.models.neuralforecast.models import get_neural_models
+    from src.models.neuralforecast.models import get_normal_neural_models
     
     from src.pipelines.model_evaluation import prepare_pipeline_data
 
     # Get data and models
     train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(horizon=HORIZON, test_length_multiplier=TEST_LENGTH_MULTIPLIER)
-    stat_models = get_statistical_models(season_length=7)
-    ml_models = get_ml_models()
-    neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
+    # stat_models = get_statistical_models(season_length=7)
+    # ml_models = get_ml_models()
+    # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
+    print(CV_DIR)
+    neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf2.yaml", hist_exog_list=hist_exog_list)
     
     # Perform final fit and predict
     final_results_df, final_plot_results_dict, ml_cv_results_df = perform_final_fit_predict(
         stats_models= [],
-        ml_models=ml_models,
-        neural_models= [],
+        ml_models=[],
+        neural_models= neural_models,
         train_df=train_df,
         test_df=test_df,
         final_model_config_dir=FINAL_DIR,
@@ -396,7 +409,10 @@ if __name__ == "__main__":
     timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
 
     # Save final results to CSV with timestamp
-    final_results_df.to_csv(FINAL_DIR / f"metrics_results_{timestamp}.csv", index=False)
+    final_results_path = FINAL_DIR / f"metrics_results_{timestamp}.csv"
+    print(f"Saving final results to {final_results_path}...")
+    final_results_df.to_csv(final_results_path, index=False)
+    print(f"  ✓ Final results saved successfully.")
 
     # Save final plot results to JSON with timestamp
     plot_results_path = FINAL_DIR / f"final_plot_results_{timestamp}.json"
@@ -408,6 +424,9 @@ if __name__ == "__main__":
         print(f"  ✗ Error saving plot results: {e}")
 
     # save ml_cv_results_df to csv
-    ml_cv_results_df.to_csv(CV_DIR / f"cv_metrics_{timestamp}.csv", index=False)
+    if ml_cv_results_df is not None and not ml_cv_results_df.empty:
+        ml_cv_results_df.to_csv(CV_DIR / f"cv_metrics_{timestamp}.csv", index=False)
+    else:
+        print("  ✗ No ML CV results to save.")
 
  

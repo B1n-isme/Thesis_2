@@ -1,0 +1,170 @@
+AutoXGBoost:
+  model_params:
+    n_estimators: 883
+    max_depth: 11
+    learning_rate: 0.024376795198947098
+    subsample: 0.7724415914984484
+    colsample_bytree: 0.7118273996694524
+    reg_lambda: 0.02285024529881051
+    reg_alpha: 0.00020327735256716562
+    min_child_weight: 23
+    enable_categorical: true
+  mlf_init_params:
+    lags:
+    - 30
+    target_transforms: null
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+    date_features: null
+    num_threads: 4
+  mlf_fit_params:
+    static_features:
+    - unique_id
+AutoCatBoost:
+  model_params:
+    cat_features:
+    - unique_id
+    n_estimators: 2583
+    depth: 8
+    learning_rate: 0.008998074031163381
+    subsample: 0.6322778060523135
+    colsample_bylevel: 0.86454021366053
+    min_data_in_leaf: 48
+    silent: true
+  mlf_init_params:
+    lags:
+    - 7
+    - 14
+    target_transforms:
+    - !!python/object:mlforecast.target_transforms.Differences
+      differences:
+      - 1
+      - 7
+    - !!python/object:mlforecast.target_transforms.LocalStandardScaler {}
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+      7:
+      - !!python/object:mlforecast.lag_transforms.RollingMean
+        window_size: 7
+        min_samples: 1
+      30:
+      - !!python/object:mlforecast.lag_transforms.RollingMean
+        window_size: 7
+        min_samples: 1
+    date_features: null
+    num_threads: 4
+  mlf_fit_params:
+    static_features:
+    - unique_id
+AutoLightGBM:
+  model_params:
+    objective: l1
+    n_estimators: 309
+    learning_rate: 0.03182891594456767
+    num_leaves: 39
+    lambda_l1: 0.0001900685260338709
+    lambda_l2: 1.7493291708447136e-06
+    feature_fraction: 0.5794847918227599
+    bagging_fraction: 0.5551875705821525
+    bagging_freq: 5
+    verbosity: -1
+  mlf_init_params:
+    lags:
+    - 7
+    - 14
+    target_transforms:
+    - !!python/object:mlforecast.target_transforms.Differences
+      differences:
+      - 1
+      - 7
+      num_threads: 4
+      fitted_: []
+      fitted_indptr_: null
+      scalers_:
+      - !!python/object:coreforecast.scalers.Difference
+        d: 1
+        tails_: !!python/object/apply:numpy._core.multiarray._reconstruct
+          args:
+          - &id001 !!python/name:numpy.ndarray ''
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 1
+          - &id002 !!python/object/apply:numpy.dtype
+            args:
+            - f8
+            - false
+            - true
+            state: !!python/tuple
+            - 3
+            - <
+            - null
+            - null
+            - null
+            - -1
+            - -1
+            - 0
+          - false
+          - !!binary |
+            AAAAgKf28EA=
+      - !!python/object:coreforecast.scalers.Difference
+        d: 7
+        tails_: !!python/object/apply:numpy._core.multiarray._reconstruct
+          args:
+          - *id001
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 7
+          - *id002
+          - false
+          - !!binary |
+            AAAAAIBEd0AAou4D0JSMQACvCP7X6Z5AwMWnAHj5pUAALj4FQM93wCAdrP+zmKDAAAAAAMDlhsA=
+    - !!python/object:mlforecast.target_transforms.LocalStandardScaler
+      num_threads: 4
+      scaler_: !!python/object:coreforecast.scalers.LocalStandardScaler
+        stats_: !!python/object/apply:numpy._core.multiarray._reconstruct
+          args:
+          - *id001
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 1
+            - 2
+          - *id002
+          - false
+          - !!binary |
+            QGoUBQdp8D/zyGpIN42WQA==
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+      7:
+      - !!python/object:mlforecast.lag_transforms.RollingMean
+        window_size: 7
+        min_samples: 1
+      30:
+      - !!python/object:mlforecast.lag_transforms.RollingMean
+        window_size: 7
+        min_samples: 1
+    date_features: null
+    num_threads: 4
+  mlf_fit_params:
+    static_features:
+    - unique_id

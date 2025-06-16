@@ -4,7 +4,6 @@ import catboost as cat
 import optuna
 import pandas as pd
 from typing import List, Dict, Any, Optional
-from mlforecast import MLForecast
 from mlforecast.auto import AutoModel
 from src.models.mlforecast.auto_cfg import lgb_auto_cfg, xgb_auto_cfg, cat_auto_cfg
 from src.dataset.data_preparation import prepare_pipeline_data

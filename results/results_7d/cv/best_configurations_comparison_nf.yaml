@@ -1,0 +1,166 @@
+AutoTFT:
+  input_size: 28
+  learning_rate: 0.0005
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 64
+  windows_batch_size: 512
+  val_check_steps: 50
+  random_seed: 19
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Crude_Price
+  - btc_rsi_14
+  - Gold_Volatility
+  - btc_sma_14_50_ratio
+  - bearish_sentiment
+  - btc_sma_21_slope
+  - Puell_cbbi
+  - Oil_Volatility
+  - Fear Greed
+  - bullish_sentiment
+  - regulations_sentiment
+  - marketcap_sentiment
+  - volume_sentiment
+  - hash_rate_blockchain
+  - btc_macd_diff
+  - btc_trading_volume
+  hidden_size: 128
+  n_rnn_layers: 2
+  n_head: 8
+AutoiTransformer:
+  input_size: 42
+  learning_rate: 0.0005
+  scaler_type: robust
+  max_steps: 50
+  batch_size: 64
+  windows_batch_size: 512
+  val_check_steps: 50
+  random_seed: 12
+  accelerator: gpu
+  logger: false
+  hidden_size: 128
+  n_heads: 8
+  n_series: 1
+AutoNBEATSx:
+  input_size: 28
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 32
+  windows_batch_size: 512
+  val_check_steps: 50
+  random_seed: 1
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Crude_Price
+  - btc_rsi_14
+  - Gold_Volatility
+  - btc_sma_14_50_ratio
+  - bearish_sentiment
+  - btc_sma_21_slope
+  - Puell_cbbi
+  - Oil_Volatility
+  - Fear Greed
+  - bullish_sentiment
+  - regulations_sentiment
+  - marketcap_sentiment
+  - volume_sentiment
+  - hash_rate_blockchain
+  - btc_macd_diff
+  - btc_trading_volume
+AutoTSMixerx:
+  input_size: 42
+  learning_rate: 0.0001
+  scaler_type: robust
+  max_steps: 200
+  batch_size: 64
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 2
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Crude_Price
+  - btc_rsi_14
+  - Gold_Volatility
+  - btc_sma_14_50_ratio
+  - bearish_sentiment
+  - btc_sma_21_slope
+  - Puell_cbbi
+  - Oil_Volatility
+  - Fear Greed
+  - bullish_sentiment
+  - regulations_sentiment
+  - marketcap_sentiment
+  - volume_sentiment
+  - hash_rate_blockchain
+  - btc_macd_diff
+  - btc_trading_volume
+  n_block: 2
+  ff_dim: 256
+  dropout: 0.1101428340195405
+  n_series: 1
+AutoBiTCN:
+  input_size: 28
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 100
+  batch_size: 64
+  windows_batch_size: 256
+  val_check_steps: 50
+  random_seed: 4
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Crude_Price
+  - btc_rsi_14
+  - Gold_Volatility
+  - btc_sma_14_50_ratio
+  - bearish_sentiment
+  - btc_sma_21_slope
+  - Puell_cbbi
+  - Oil_Volatility
+  - Fear Greed
+  - bullish_sentiment
+  - regulations_sentiment
+  - marketcap_sentiment
+  - volume_sentiment
+  - hash_rate_blockchain
+  - btc_macd_diff
+  - btc_trading_volume
+  hidden_size: 32
+  dropout: 0.4622653034419947
+AutoKAN:
+  input_size: 42
+  learning_rate: 0.0005
+  scaler_type: robust
+  max_steps: 100
+  batch_size: 16
+  windows_batch_size: 256
+  val_check_steps: 50
+  random_seed: 10
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Crude_Price
+  - btc_rsi_14
+  - Gold_Volatility
+  - btc_sma_14_50_ratio
+  - bearish_sentiment
+  - btc_sma_21_slope
+  - Puell_cbbi
+  - Oil_Volatility
+  - Fear Greed
+  - bullish_sentiment
+  - regulations_sentiment
+  - marketcap_sentiment
+  - volume_sentiment
+  - hash_rate_blockchain
+  - btc_macd_diff
+  - btc_trading_volume
+  grid_size: 15
+  spline_order: 3
+  hidden_size: 64

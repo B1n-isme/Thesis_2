@@ -2,161 +2,177 @@
 
 This document provides a comprehensive workflow diagram for the feature selection strategy used in the Bitcoin price forecasting project.
 
+B1 --> B2["Split df into Train & Validation Sets"];
+
 ## Complete Feature Selection Workflow
 
 ```mermaid
 graph TD
-    A[Start: main function] --> B{Load Data}
-    B --> C[prepare_pipeline_data]
-    C --> D{Combine train + test datasets}
-    D --> E[Initialize FeatureSelector]
-    E --> F[run_complete_feature_selection_strategy]
-    
-    subgraph Main["FeatureSelector Main Process"]
-        F --> G{Sort DataFrame by ds}
-        G --> H[Split into Train/Validation<br/>90% train, 10% validation]
-        H --> I[robust_comprehensive_selection]
-        I --> J[_generate_feature_recommendations]
-        J --> K[Return results dictionary]
+    A["Start: Input DataFrame (df)"] --> B{Data Preparation};
+    B --> B1["Create Stationary Target (log(price).diff())"];
+
+    B1 --> C{Run Primary Selection Methods};
+
+    subgraph C_Methods [Primary Selection Methods - Parallel]
+        direction LR
+        C1_Start --> C1_SHAP{SHAP-Based Importance};
+        C1_SHAP --> C1_SHAP_Loop["For each tree_method (XGB, LGBM, RF)"];
+        C1_SHAP_Loop --> C1_SHAP_Align["Prepare Aligned Data (stationary target)"];
+        C1_SHAP_Align --> C1_SHAP_CV["Time Series CV"];
+        C1_SHAP_CV --> C1_SHAP_Train["Train Model"];
+        C1_SHAP_Train --> C1_SHAP_Calc["Calculate SHAP Values"];
+        C1_SHAP_Calc --> C1_SHAP_Select["Select Features (SHAP percentile)"];
+        C1_SHAP_Select --> C_Collect_SHAP["Collect SHAP Selections"];
+
+        C1_Start --> C2_AE{"Autoencoder (AE) Reconstruction Error"};
+        C2_AE --> C2_AE_Loop["For each original feature"];
+        C2_AE_Loop --> C2_AE_Train["Train AE (LSTM/Transformer) on single feature"];
+        C2_AE_Train --> C2_AE_Error["Calc Reconstruction Error (validation)"];
+        C2_AE_Error --> C2_AE_Loop;
+        C2_AE_Loop -- All features processed --> C2_AE_Select["Select Top K features (lowest error)"];
+        C2_AE_Select --> C_Collect_AE["Collect AE Selections"];
+
+        C1_Start --> C3_RFECV{"Recursive Feature Elimination (RFECV)"};
+        C3_RFECV --> C3_RFECV_Loop["For each tree_method"];
+        C3_RFECV_Loop --> C3_RFECV_Align["Prepare Aligned Data (stationary target)"];
+        C3_RFECV_Align --> C3_RFECV_Init["Initialize RFECV (TimeSeriesSplit)"];
+        C3_RFECV_Init --> C3_RFECV_Fit["Fit RFECV"];
+        C3_RFECV_Fit --> C3_RFECV_Select["Get Selected Features"];
+        C3_RFECV_Select --> C_Collect_RFECV["Collect RFECV Selections"];
+
+        C1_Start --> C4_Stability{"Stability Selection"};
+        C4_Stability --> C4_Stability_Loop["For each tree_method"];
+        C4_Stability_Loop --> C4_Stability_Align["Prepare Aligned Data (stationary target)"];
+        C4_Stability_Align --> C4_Stability_Bootstrap["Bootstrap Sampling (time-aware)"];
+        C4_Stability_Bootstrap --> C4_Stability_Train["Train Model on Sample"];
+        C4_Stability_Train --> C4_Stability_Importances["Get Feature Importances"];
+        C4_Stability_Importances --> C4_Stability_Bootstrap;
+        C4_Stability_Bootstrap -- All bootstraps done --> C4_Stability_Aggregate["Aggregate Frequencies"];
+        C4_Stability_Aggregate --> C4_Stability_Select["Select Features (frequency threshold)"];
+        C4_Stability_Select --> C_Collect_Stability["Collect Stability Selections"];
     end
-    
-    subgraph Selection["Robust Comprehensive Selection"]
-        I --> L{SHAP-based Selection}
-        I --> M{Autoencoder Selection}
-        I --> N{Generate Robust Recommendations}
-        I --> O{Handle Multicollinearity}
-        I --> P{Permutation Importance Validation}
-        
-        L --> L1[XGBoost SHAP Analysis]
-        L --> L2[LightGBM SHAP Analysis]
-        L --> L3[Random Forest SHAP Analysis]
-        
-        M --> M1[LSTM Autoencoder]
-        M --> M2[Transformer Autoencoder]
-        M --> M3[Reconstruction Error Analysis]
-        
-        N --> N1[Aggregate Feature Counts]
-        N --> N2[Calculate Combined Scores]
-        N --> N3[Assess CV Stability]
-        N --> N4[Apply Consensus Criteria]
-        
-        O --> O1[Calculate VIF]
-        O --> O2[Hierarchical Clustering]
-        O --> O3[Remove Collinear Features]
-        
-        P --> P1[Time Series Cross-Validation]
-        P --> P2[Permutation Feature Importance]
-        P --> P3[Statistical Significance Test]
-    end
-    
-    subgraph SHAP["SHAP-based Feature Selection Details"]
-        L1 --> S1[Time Series CV Split]
-        S1 --> S2[Train XGBoost Models]
-        S2 --> S3[Calculate SHAP Values]
-        S3 --> S4[Aggregate across CV folds]
-        S4 --> S5[Select top percentile features]
-        S5 --> S6[Assess CV stability]
-        
-        L2 --> T1[Time Series CV Split]
-        T1 --> T2[Train LightGBM Models]
-        T2 --> T3[Calculate SHAP Values]
-        T3 --> T4[Aggregate across CV folds]
-        T4 --> T5[Select top percentile features]
-        T5 --> T6[Assess CV stability]
-        
-        L3 --> U1[Time Series CV Split]
-        U1 --> U2[Train Random Forest Models]
-        U2 --> U3[Calculate Feature Importance]
-        U3 --> U4[Aggregate across CV folds]
-        U4 --> U5[Select top percentile features]
-        U5 --> U6[Assess CV stability]
-    end
-    
-    subgraph AE["Autoencoder Selection Details"]
-        M1 --> AE1[Prepare sequence data]
-        AE1 --> AE2[Train LSTM Autoencoder]
-        AE2 --> AE3[Calculate reconstruction errors]
-        AE3 --> AE4[Rank features by error contribution]
-        AE4 --> AE5[Select top-k features]
-        
-        M2 --> AE6[Prepare sequence data]
-        AE6 --> AE7[Train Transformer Autoencoder]
-        AE7 --> AE8[Calculate reconstruction errors]
-        AE8 --> AE9[Rank features by error contribution]
-        AE9 --> AE10[Select top-k features]
-    end
-    
-    K --> Q[Print Results Summary]
-    Q --> R[Extract consensus_features]
-    R --> S[Filter original datasets]
-    S --> T[Save to Parquet file]
-    T --> U[End]
-    
-    style A fill:#e1f5fe
-    style U fill:#e8f5e8
-    style F fill:#fff3e0
-    style I fill:#fce4ec
-    style L fill:#f3e5f5
-    style M fill:#e0f2f1
-    style N fill:#fff8e1
+
+    C --> C1_Start["Start Primary Selections"];
+    C_Collect_SHAP --> D{"Generate Consensus Features"};
+    C_Collect_AE --> D;
+    C_Collect_RFECV --> D;
+    C_Collect_Stability --> D;
+
+    D --> D1["Aggregate Votes & Scores from All Methods"];
+    D1 --> D2["Select Features (min_votes threshold)"];
+    D2 --> E{"Handle Multicollinearity"};
+    E --> E1["Input: Consensus Features"];
+    E1 --> E2["Correlation Clustering (Spearman)"];
+    E2 --> E3["Select Cluster Representative (best combined_score)"];
+    E3 --> E4["Iterative VIF Check (remove high VIF features)"];
+    E4 --> F{"Permutation Importance Validation (PFI)"};
+
+    F --> F1["Input: Features from Collinearity Step (or Consensus)"];
+    F1 --> F2["Prepare Aligned Data (Original Target, Selected Features)"];
+    F2 --> F3["Train Model (e.g., XGBoost)"];
+    F3 --> F4["Calculate PFI on Validation Set"];
+    F4 --> F5["Select Features (positive importance score)"];
+    F5 --> G;
+
+    G --> H["End: Output Final Feature List"];
+
+    style C_Methods fill:#f9f,stroke:#333,stroke-width:2px
+
+
 ```
 
-## Key Components Explained
+Here are the guidelines for robust feature selection using tree-based methods and autoencoders, tailored for your Bitcoin price forecasting project:
 
-### 1. Data Preparation Phase
-- **Load Data**: Uses `prepare_pipeline_data()` to load training and testing datasets
-- **Combine Datasets**: Temporarily combines train and test data for comprehensive feature analysis
-- **Internal Splitting**: The FeatureSelector handles proper train/validation splitting internally to prevent data leakage
+**Comprehensive Guidelines for Robust Feature Selection**
 
-### 2. Robust Comprehensive Selection
-This is the core of the feature selection strategy, implementing multiple complementary approaches:
+**I. Foundational Pre-processing (Critical Prerequisites)**
 
-#### A. SHAP-based Selection
-- **XGBoost SHAP**: Tree-based model with SHAP value analysis
-- **LightGBM SHAP**: Gradient boosting with SHAP interpretability
-- **Random Forest SHAP**: Ensemble method with feature importance
-- **Time Series CV**: Uses TimeSeriesSplit for temporal data integrity
-- **Stability Assessment**: Evaluates feature consistency across CV folds
+1.  **Handle Non-Stationarity (Absolutely Essential):**
+    *   **Action:** Transform your target variable (Bitcoin closing price) and all time-series exogenous variables to achieve stationarity *before* any feature selection.
+        *   Common methods: Differencing (e.g., `price_t - price_{t-1}`), log transformations followed by differencing (`log(price_t) - log(price_{t-1})`).
+        *   Consider fractional differencing if simple differencing over-corrects or induces too much noise.
+    *   **Verification:** Use statistical tests like Augmented Dickey-Fuller (ADF) or Kwiatkowski-Phillips-Schmidt-Shin (KPSS) to confirm stationarity.
+    *   **Why:** Applying selection methods to non-stationary data leads to spurious correlations and unreliable feature importance.
 
-#### B. Autoencoder Selection
-- **LSTM Autoencoder**: Captures temporal dependencies in feature reconstruction
-- **Transformer Autoencoder**: Attention-based feature learning
-- **Reconstruction Error**: Identifies features most critical for data reconstruction
-- **Top-k Selection**: Selects features with highest reconstruction importance
+2.  **Strict Temporal Data Splitting (Prevent Look-Ahead Bias):**
+    *   **Action:** Divide your data chronologically into training, validation (for feature selection and hyperparameter tuning), and a final hold-out test set.
+    *   **Tool:** Use `sklearn.model_selection.TimeSeriesSplit` for all cross-validation procedures within your feature selection process. This ensures that training folds always precede validation folds.
+    *   **Why:** Prevents future information from leaking into the past, which would give an overly optimistic and unrealistic assessment of feature predictive power.
 
-#### C. Consensus Generation
-- **Feature Aggregation**: Combines results from all selection methods
-- **Scoring System**: Calculates combined importance scores
-- **Stability Criteria**: Requires CV stability > 0.6
-- **Consensus Threshold**: Features must be selected by ≥2 methods
+3.  **Data Scaling:**
+    *   **Action:** Scale your features. This is particularly important for autoencoders and can also benefit some tree-based models.
+        *   Common methods: `MinMaxScaler` (to \[0, 1]) or `StandardScaler` (zero mean, unit variance).
+    *   **Procedure:** Fit scalers *only* on the training data of each `TimeSeriesSplit` fold and then use the *fitted* scaler to transform the corresponding validation fold (and later, the test set using the scaler fitted on the full training set).
+    *   **Why:** Ensures consistent feature magnitudes, aiding model convergence and preventing features with larger values from dominating.
 
-### 3. Post-processing Steps
+4.  **Address Multicollinearity (Recommended):**
+    *   **Action (Optional but good practice before tree-based methods if not solely relying on SHAP):**
+        *   Calculate a correlation matrix for your features.
+        *   Use Variance Inflation Factor (VIF) to identify highly collinear features.
+    *   **Strategy:** If severe multicollinearity is detected, consider removing one of the highly correlated features or combining them (e.g., via PCA on that small subset, though this creates new features).
+    *   **Why:** While tree models can handle some multicollinearity for prediction, feature importance scores (especially default Gini importance) can be unreliably distributed among collinear features. SHAP values are generally more robust to this.
 
-#### A. Multicollinearity Handling
-- **VIF Calculation**: Identifies highly correlated features
-- **Hierarchical Clustering**: Groups similar features
-- **Intelligent Removal**: Keeps most important features from correlated groups
+**II. Robust Feature Selection Workflow**
 
-#### B. Permutation Importance Validation
-- **Final Validation**: Tests selected features on held-out validation set
-- **Statistical Significance**: Ensures features have meaningful predictive power
-- **Robustness Check**: Confirms feature importance across multiple permutations
+This workflow leverages tree-based methods and autoencoders within a stability-enhancing framework.
 
-### 4. Output Generation
-- **Results Summary**: Comprehensive analysis of feature selection process
-- **Consensus Features**: Final list of recommended features
-- **Data Export**: Filtered datasets saved to `data/final/final_feature_selected_data.parquet`
+1.  **Core Principle: Time-Aware Iterative Selection & Validation:**
+    *   All selection steps must be performed within the `TimeSeriesSplit` cross-validation framework.
 
-## Benefits of This Approach
+2.  **Component A: Tree-Based Feature Selection (e.g., XGBoost, LightGBM, Random Forest)**
+    *   **Model Training:** Within each `TimeSeriesSplit` fold, train a tree-based model on the training portion to predict your (stationary) target variable.
+    *   **Importance Metric - SHAP Values (Recommended):**
+        *   Calculate SHAP values for each feature on the validation portion of the fold. SHAP values provide more consistent and reliable feature importance estimates compared to default impurity-based importances.
+        *   Compute the mean absolute SHAP value for each feature across all instances in the validation fold.
+    *   **Aggregation:** Store the mean absolute SHAP values for each feature from each fold.
 
-1. **Multi-method Consensus**: Reduces selection bias by combining multiple techniques
-2. **Time Series Aware**: Prevents data leakage through proper temporal splitting
-3. **Robustness**: Cross-validation and stability assessments ensure reliable selections
-4. **Interpretability**: SHAP values provide clear feature importance explanations
-5. **Deep Learning Ready**: Autoencoder methods prepare features for neural network models
-6. **Collinearity Handling**: Prevents redundant features from entering final models
-7. **Validation**: Permutation importance provides final confirmation of feature utility
+3.  **Component B: Autoencoder-Based Feature Analysis (for selecting *original* features)**
+    *   **Objective:** Identify original features that are most crucial for the autoencoder to reconstruct the input data accurately.
+    *   **Architecture:** Design an autoencoder (e.g., a simple MLP-based autoencoder or LSTM-based if features have strong temporal dependencies *within themselves* that you want to capture for reconstruction).
+    *   **Training:** Train the autoencoder on the training portion of each `TimeSeriesSplit` fold to minimize reconstruction error.
+    *   **Feature Importance Derivation (choose one or more):**
+        1.  **Reconstruction Error Sensitivity:** For each feature in the validation data of a fold:
+            *   Temporarily corrupt the feature (e.g., by permuting its values or replacing it with noise).
+            *   Measure the increase in the autoencoder's reconstruction error for the validation set.
+            *   Features causing a larger increase in error are considered more important.
+        2.  **Gradient-Based (More complex):** Analyze the gradients of the reconstruction error with respect to the input features.
+    *   **Aggregation:** Store the importance scores for each feature from each fold.
 
-This comprehensive workflow ensures that only the most predictive, stable, and non-redundant features are selected for your Bitcoin price forecasting models.
+4.  **Component C: Stability Selection (Enhancing Robustness)**
+    *   **Procedure:**
+        1.  For each `TimeSeriesSplit` fold:
+            *   Perform bootstrapping: Create multiple (e.g., 30-50) bootstrap samples of the *training data* for that fold.
+            *   For each bootstrap sample, run your chosen feature selection method(s) (e.g., tree-based with SHAP, autoencoder analysis).
+            *   Record the top N features or the importance scores for all features.
+        2.  **Aggregation across Bootstraps:** For each fold, calculate the frequency with which each feature is selected (if using a fixed N) or the average importance score across all bootstrap runs.
+    *   **Cross-Fold Aggregation:** After processing all `TimeSeriesSplit` folds, average the stability-enhanced importance scores (or selection frequencies) for each feature across all folds.
+    *   **Selection Criterion:** Select features that consistently exhibit high importance or are frequently selected across folds and bootstrap runs (e.g., features selected in >80% of bootstrap runs and present in the top X% of features in most folds).
 
+5.  **Combining Evidence (If using both Tree-Based and Autoencoder methods):**
+    *   **Intersection:** Select features deemed important by *both* methods. This is conservative but yields high-confidence features.
+    *   **Rank Aggregation:** Rank features based on SHAP values and autoencoder importance. Combine ranks (e.g., average rank) and select top features.
+    *   **Weighted Scoring:** Assign weights to the importance scores from each method and combine them.
 
+**III. Final Validation of the Selected Feature Set**
+
+1.  **Permutation Feature Importance (on a Held-Out Validation Set):**
+    *   **Action:**
+        1.  Train your *final candidate forecasting model* (this could be one of the tree-based models used for selection, or your intended deep learning model) using the selected feature subset on the *entire training set*.
+        2.  Evaluate this model on a separate, *held-out validation set* (not the final test set) using a relevant metric (e.g., RMSE, MAE, or a financial metric like Sharpe Ratio if predicting returns).
+        3.  For each feature in the selected subset:
+            *   Shuffle (permute) the values of only that feature in the validation set.
+            *   Re-evaluate the trained model on this shuffled validation set.
+            *   The drop in performance indicates the feature's importance.
+    *   **Why:** Directly measures a feature's contribution to the *specific model's* predictive performance on unseen data. Features causing a significant performance drop when permuted are valuable.
+
+2.  **Out-of-Sample Performance with Downstream Model:**
+    *   The ultimate validation is the performance of your final Bitcoin forecasting DL model using the selected features on the *held-out test set*. Compare this against benchmarks (e.g., model with all features, model with features selected by simpler methods).
+
+**IV. Iteration and Refinement**
+
+*   Feature selection is often an iterative process. The results from validation might lead you to:
+    *   Adjust thresholds for SHAP values or stability selection.
+    *   Revisit pre-processing steps.
+    *   Try different model architectures for selection.
+
+By following these guidelines, you can create a robust and defensible feature selection pipeline that respects the temporal nature of your Bitcoin data and leverages the strengths of both tree-based methods and autoencoders. Remember to document every step and decision.

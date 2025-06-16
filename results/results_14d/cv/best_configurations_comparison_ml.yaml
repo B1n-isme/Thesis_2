@@ -1,0 +1,139 @@
+AutoXGBoost:
+  model_params:
+    n_estimators: 883
+    max_depth: 11
+    learning_rate: 0.024376795198947098
+    subsample: 0.7724415914984484
+    colsample_bytree: 0.7118273996694524
+    reg_lambda: 0.02285024529881051
+    reg_alpha: 0.00020327735256716562
+    min_child_weight: 23
+    enable_categorical: true
+  mlf_init_params:
+    lags:
+    - 7
+    - 14
+    target_transforms: null
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+    date_features: null
+    num_threads: 2
+  mlf_fit_params:
+    static_features:
+    - unique_id
+AutoCatBoost:
+  model_params:
+    cat_features:
+    - unique_id
+    n_estimators: 1655
+    depth: 5
+    learning_rate: 0.02968092728356274
+    subsample: 0.5716766437045232
+    colsample_bylevel: 0.9668013502297503
+    min_data_in_leaf: 55
+    silent: true
+  mlf_init_params:
+    lags:
+    - 7
+    - 14
+    target_transforms:
+    - !!python/object:mlforecast.target_transforms.Differences
+      differences:
+      - 1
+    - !!python/object:mlforecast.target_transforms.LocalStandardScaler {}
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+      7:
+      - !!python/object:mlforecast.lag_transforms.RollingMean
+        window_size: 7
+        min_samples: 1
+    date_features: null
+    num_threads: 2
+  mlf_fit_params:
+    static_features:
+    - unique_id
+AutoLightGBM:
+  model_params:
+    objective: huber
+    n_estimators: 1028
+    learning_rate: 0.05024208696383743
+    num_leaves: 22
+    lambda_l1: 3.936067134905281e-06
+    lambda_l2: 1.2674610286708946e-07
+    feature_fraction: 0.6480700987610725
+    bagging_fraction: 0.559363859477122
+    bagging_freq: 3
+    verbosity: -1
+  mlf_init_params:
+    lags:
+    - 7
+    target_transforms:
+    - !!python/object:mlforecast.target_transforms.Differences
+      differences:
+      - 1
+      num_threads: 2
+      fitted_: []
+      fitted_indptr_: null
+      scalers_:
+      - !!python/object:coreforecast.scalers.Difference
+        d: 1
+        tails_: !!python/object/apply:numpy._core.multiarray._reconstruct
+          args:
+          - &id001 !!python/name:numpy.ndarray ''
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 1
+          - &id002 !!python/object/apply:numpy.dtype
+            args:
+            - f8
+            - false
+            - true
+            state: !!python/tuple
+            - 3
+            - <
+            - null
+            - null
+            - null
+            - -1
+            - -1
+            - 0
+          - false
+          - !!binary |
+            VFInoMnp+UA=
+    - !!python/object:mlforecast.target_transforms.LocalStandardScaler
+      num_threads: 2
+      scaler_: !!python/object:coreforecast.scalers.LocalStandardScaler
+        stats_: !!python/object/apply:numpy._core.multiarray._reconstruct
+          args:
+          - *id001
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 1
+            - 2
+          - *id002
+          - false
+          - !!binary |
+            wSqXcpYVQkDq98MNS4WQQA==
+    lag_transforms:
+      1:
+      - !!python/object:mlforecast.lag_transforms.ExponentiallyWeightedMean
+        alpha: 0.9
+    date_features: null
+    num_threads: 2
+  mlf_fit_params:
+    static_features:
+    - unique_id

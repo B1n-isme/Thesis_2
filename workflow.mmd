@@ -1,0 +1,92 @@
+graph TD
+    A["Start: Input DataFrame (df)"] --> B{Data Preparation};
+    B --> B1["Create Stationary Target (log(price).diff())"];
+
+    B1 --> C{Run Primary Selection Methods};
+
+    subgraph C_Methods [Primary Selection Methods - Parallel]
+        direction LR
+        C1_Start --> C1_SHAP{SHAP-Based Importance};
+        C1_SHAP --> C1_SHAP_Loop["For each tree_method (XGB, LGBM, RF)"];
+        C1_SHAP_Loop --> C1_SHAP_Align["Prepare Aligned Data (stationary target)"];
+        C1_SHAP_Align --> C1_SHAP_CV["Time Series CV"];
+        C1_SHAP_CV --> C1_SHAP_Train["Train Model"];
+        C1_SHAP_Train --> C1_SHAP_Calc["Calculate SHAP Values"];
+        C1_SHAP_Calc --> C1_SHAP_Select["Select Features (SHAP percentile)"];
+        C1_SHAP_Select --> C_Collect_SHAP["Collect SHAP Selections"];
+
+        C1_Start --> C2_AE{"Autoencoder (AE) Reconstruction Error"};
+        C2_AE --> C2_AE_Loop["For each original feature"];
+        C2_AE_Loop --> C2_AE_Train["Train AE (LSTM/Transformer) on single feature"];
+        C2_AE_Train --> C2_AE_Error["Calc Reconstruction Error (validation)"];
+        C2_AE_Error --> C2_AE_Loop;
+        C2_AE_Loop -- All features processed --> C2_AE_Select["Select Top K features (lowest error)"];
+        C2_AE_Select --> C_Collect_AE["Collect AE Selections"];
+
+        C1_Start --> C3_RFECV{"Recursive Feature Elimination (RFECV)"};
+        C3_RFECV --> C3_RFECV_Loop["For each tree_method"];
+        C3_RFECV_Loop --> C3_RFECV_Align["Prepare Aligned Data (stationary target)"];
+        C3_RFECV_Align --> C3_RFECV_Init["Initialize RFECV (TimeSeriesSplit)"];
+        C3_RFECV_Init --> C3_RFECV_Fit["Fit RFECV"];
+        C3_RFECV_Fit --> C3_RFECV_Select["Get Selected Features"];
+        C3_RFECV_Select --> C_Collect_RFECV["Collect RFECV Selections"];
+
+        C1_Start --> C4_Stability{"Stability Selection"};
+        C4_Stability --> C4_Stability_Loop["For each tree_method"];
+        C4_Stability_Loop --> C4_Stability_Align["Prepare Aligned Data (stationary target)"];
+        C4_Stability_Align --> C4_Stability_Bootstrap["Bootstrap Sampling (time-aware)"];
+        C4_Stability_Bootstrap --> C4_Stability_Train["Train Model on Sample"];
+        C4_Stability_Train --> C4_Stability_Importances["Get Feature Importances"];
+        C4_Stability_Importances --> C4_Stability_Bootstrap;
+        C4_Stability_Bootstrap -- All bootstraps done --> C4_Stability_Aggregate["Aggregate Frequencies"];
+        C4_Stability_Aggregate --> C4_Stability_Select["Select Features (frequency threshold)"];
+        C4_Stability_Select --> C_Collect_Stability["Collect Stability Selections"];
+    end
+
+    C --> C1_Start["Start Primary Selections"];
+    C_Collect_SHAP --> D{"Generate Consensus Features"};
+    C_Collect_AE --> D;
+    C_Collect_RFECV --> D;
+    C_Collect_Stability --> D;
+
+    D --> D1["Aggregate Votes & Scores from All Methods"];
+    D1 --> D2["Select Features (min_votes threshold)"];
+    D2 --> E{"Handle Multicollinearity"};
+    E --> E1["Input: Consensus Features"];
+    E1 --> E2["Correlation Clustering (Spearman)"];
+    E2 --> E3["Select Cluster Representative (best combined_score)"];
+    E3 --> E4["Iterative VIF Check (remove high VIF features)"];
+    E4 --> F{"Permutation Importance Validation (PFI)"};
+
+    F --> F1["Input: Features from Collinearity Step (or Consensus)"];
+    F1 --> F2["Prepare Aligned Data (Original Target, Selected Features)"];
+    F2 --> F3["Train Model (e.g., XGBoost)"];
+    F3 --> F4["Calculate PFI on Validation Set"];
+    F4 --> F5["Select Features (positive importance score)"];
+    F5 --> G;
+
+    G --> H["End: Output Final Feature List"];
+
+    %% Styles for groups and important node types
+    style A fill:#e0f7fa,stroke:#0277bd,stroke-width:2px,color:#000
+    style B fill:#b2ebf2,stroke:#0097a7,stroke-width:2px
+    style B1 fill:#b2ebf2,stroke:#0097a7,stroke-width:2px
+
+    style C_Methods fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+
+    style C1_Start fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
+    style C1_SHAP fill:#ffe0b2,stroke:#ef6c00
+    style C2_AE fill:#dcedc8,stroke:#7cb342
+    style C3_RFECV fill:#f0f4c3,stroke:#c0ca33
+    style C4_Stability fill:#d1c4e9,stroke:#7e57c2
+
+    style D fill:#ffe082,stroke:#ff6f00,stroke-width:2px
+    style D1,D2 fill:#fff59d,stroke:#fbc02d
+    style E fill:#b2dfdb,stroke:#00695c
+    style E1,E2,E3,E4 fill:#e0f2f1,stroke:#00897b
+
+    style F fill:#d7ccc8,stroke:#5d4037
+    style F1,F2,F3,F4,F5 fill:#efebe9,stroke:#6d4c41
+
+    style G,H fill:#c8e6c9,stroke:#2e7d32
+

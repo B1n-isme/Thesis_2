@@ -1,0 +1,55 @@
+🚀 BITCOIN FORECASTING PIPELINE - SUMMARY REPORT
+============================================================
+
+📅 Generated: 2025-06-16 05:00:52
+🎯 Forecast Horizon: 7 days
+📊 Dataset: 2922 samples
+🏋️  Training Set: 2915 samples (N/A to N/A)
+🧪 Test Set: 7 samples (N/A to N/A)
+
+🤖 MODEL INVENTORY
+----------------------------------------
+📈 Statistical Models: 3
+🤖 ML Models: 3
+🧠 Neural Models: 6
+🎯 Total Models Evaluated: 12
+
+🏆 TOP 10 PERFORMING MODELS (by MAE)
+----------------------------------------
+ 1. TSMixerx
+    MAE: 2039.0002 | RMSE: 2378.6765 | MAPE: 2.144828047759729% | Time: 0.0096895694732666s
+
+ 2. AutoCatBoost
+    MAE: 2701.9595 | RMSE: 2918.7863 | MAPE: 2.868616198452709% | Time: 0.0124132633209228s
+
+ 3. BiTCN
+    MAE: 2763.3808 | RMSE: 2984.0052 | MAPE: 2.9286534160215862% | Time: 0.0117616653442382s
+
+ 4. TFT
+    MAE: 2802.4195 | RMSE: 2979.9997 | MAPE: 2.9772539156899693% | Time: 0.0099720954895019s
+
+ 5. AutoXGBoost
+    MAE: 3341.2054 | RMSE: 3588.2040 | MAPE: 3.549369789414588% | Time: 0.0115118026733398s
+
+ 6. AutoARIMA
+    MAE: 3666.4643 | RMSE: 3909.3329 | MAPE: 3.896848227164568% | Time: 0.0111124515533447s
+
+ 7. AutoTheta
+    MAE: 3858.4220 | RMSE: 4215.6847 | MAPE: 4.106963842957807% | Time: 0.0103843212127685s
+
+ 8. AutoLightGBM
+    MAE: 3896.3837 | RMSE: 4159.0226 | MAPE: 4.141136633599825% | Time: 0.0118820667266845s
+
+ 9. iTransformer
+    MAE: 3945.8904 | RMSE: 4250.7271 | MAPE: 4.195975854125035% | Time: 0.0096838474273681s
+
+10. AutoETS
+    MAE: 3957.0943 | RMSE: 4290.5528 | MAPE: 4.210235428665303% | Time: 0.0104124546051025s
+
+
+📊 PERFORMANCE SUMMARY
+----------------------------------------
+✅ Successful Models: 12/12
+🥇 Best MAE: 2039.0002
+🥉 Worst MAE: 5902.5983
+📊 Average MAE: 3714.9687

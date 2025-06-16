@@ -21,13 +21,15 @@ from mlforecast.utils import PredictionIntervals as MLPredictionIntervals
 from config.base import *
 from src.utils.utils import (
     calculate_metrics,
-    extract_auto_model_names_from_columns,
+    extract_model_names_from_columns,
+    save_best_configurations, 
+    process_cv_results,
+    get_horizon_directories
 )
 from src.dataset.data_preparation import prepare_pipeline_data
 
-from src.utils.utils import save_best_configurations, process_cv_results
-
-CV_DIR = Path(CV_DIR)
+# Get dynamic directories based on HORIZON
+CV_DIR, _, _ = get_horizon_directories()
 
 
 def perform_cross_validation(stat_models: List, neural_models: List, train_df: pd.DataFrame) -> Tuple[List[pd.DataFrame], Dict]:
@@ -55,7 +57,7 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
                 raise ValueError("Cross-validation returned an empty dataframe.")
             
             # Extract model names exclusively from dataframe columns
-            auto_model_names = extract_auto_model_names_from_columns(cv_df.columns.tolist())
+            auto_model_names = extract_model_names_from_columns(cv_df.columns.tolist())
             if not auto_model_names:
                 raise ValueError("No model columns with 'Auto' prefix found in the CV dataframe.")
 
@@ -89,7 +91,6 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
                 df=train_df,
                 n_windows=CV_N_WINDOWS,
                 step_size=CV_STEP_SIZE,
-                val_size=HORIZON,
                 refit=True,
                 prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL),
                 level=LEVELS,
@@ -99,7 +100,7 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
                 raise ValueError("Cross-validation returned an empty dataframe.")
             
             # Extract model names exclusively from dataframe columns
-            auto_model_names = extract_auto_model_names_from_columns(cv_df.columns.tolist())
+            auto_model_names = extract_model_names_from_columns(cv_df.columns.tolist())
             if not auto_model_names:
                 raise ValueError("No model columns with 'Auto' prefix found in the CV dataframe.")
             
@@ -136,7 +137,7 @@ if __name__ == "__main__":
     
     # This main block now demonstrates only the Stat/Neural CV part
     train_df, _, hist_exog_list, _ = prepare_pipeline_data()
-    stat_models = get_statistical_models(season_length=HORIZON)
+    stat_models = get_statistical_models(season_length=7)
     neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
     
     print("\n--- Running Standalone Stat/Neural Cross-Validation ---")

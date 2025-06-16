@@ -33,10 +33,9 @@ ROLLING_REFIT_FREQUENCY = 0  # Refit every N windows (1=every window, 3=every 3 
 
 
 # === Cross-validation Configuration ===
-CV_N_WINDOWS = 49
-# CV_STEP_SIZE = 30
+CV_N_WINDOWS = 30
 CV_STEP_SIZE = HORIZON
-INPUT_SIZE = 1095
+INPUT_SIZE = 548
 
 # === Conformal Prediction Configuration ===
 PI_N_WINDOWS_FOR_CONFORMAL = 20 
@@ -53,22 +52,24 @@ RAY_NUM_GPUS = torch.cuda.device_count() if torch.cuda.is_available() else 0
 
 # === Output Directories ===
 RESULTS_DIR = Path('results')
-CV_DIR = RESULTS_DIR / 'cv'
-FINAL_DIR = RESULTS_DIR / 'final'
-PLOT_DIR = FINAL_DIR / 'plot'
+RESULTS_7D_DIR = RESULTS_DIR / 'results_7d'
+RESULTS_14D_DIR = RESULTS_DIR / 'results_14d' 
+RESULTS_30D_DIR = RESULTS_DIR / 'results_30d'
 
-MODELS_DIR = RESULTS_DIR / 'models'
-BEST_HYPERPARAMETERS_CSV = RESULTS_DIR / 'best_hyperparameters.json'
+CV_7D_DIR = RESULTS_7D_DIR / 'cv'
+CV_14D_DIR = RESULTS_14D_DIR / 'cv'
+CV_30D_DIR = RESULTS_30D_DIR / 'cv'
 
-def __post_init__(self):
-        """Set default values that depend on other attributes."""
-        # Create output directories
-        self.results_dir.mkdir(parents=True, exist_ok=True)
-        self.hpo_dir.mkdir(parents=True, exist_ok=True)
-        self.PLOT_DIR.mkdir(parents=True, exist_ok=True)
-        self.final_dir.mkdir(parents=True, exist_ok=True)
-        self.models_dir.mkdir(parents=True, exist_ok=True)
+FINAL_7D_DIR = RESULTS_7D_DIR / 'final'
+FINAL_14D_DIR = RESULTS_14D_DIR / 'final'
+FINAL_30D_DIR = RESULTS_30D_DIR / 'final'
 
+PLOT_7D_DIR = FINAL_7D_DIR / 'plots'
+PLOT_14D_DIR = FINAL_14D_DIR / 'plots'
+PLOT_30D_DIR = FINAL_30D_DIR / 'plots'
+
+for path in [CV_7D_DIR, CV_14D_DIR, CV_30D_DIR, FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR, PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR]:
+    path.mkdir(parents=True, exist_ok=True)
 
 # For initial baseline establishment (as recommended in algo.txt)
 BASELINE = ['random', 'hyperopt']

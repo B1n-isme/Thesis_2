@@ -31,14 +31,13 @@ from src.models.mlforecast.models import get_ml_models
 from src.models.neuralforecast.models import get_neural_models
 
 # Pipeline Step Modules
-from src.pipelines.pipeline_setup import setup_environment
 from src.dataset.data_preparation import prepare_pipeline_data
 from src.pipelines.results_processing import (
     display_top_models,
     generate_summary_report,
 )
 from src.pipelines.visualization import create_visualizations_step
-from src.utils.utils import load_json_to_dict
+from src.utils.utils import get_horizon_directories, load_json_to_dict
 
 
 class BitcoinAnalysisPipeline:
@@ -48,39 +47,33 @@ class BitcoinAnalysisPipeline:
 
     def __init__(self):
         self.pipeline_results = {}  # Stores various results and info from pipeline steps
-        self.timestamp = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh")
-        self.all_forecasts_data = {}  # Stores raw forecasts for plotting
+        self.cv_dir = None
+        self.final_dir = None
+        self.plot_dir = None
 
     def _load_results(self):
-        """Loads the latest CV and forecast results from the results directory."""
-        print("\n🔎 STEP 1: LOADING PRE-COMPUTED RESULTS")
+        """Loads the latest holdout metrics and forecast results."""
+        print("\n🔎 STEP 2: LOADING PRE-COMPUTED RESULTS")
         print("-" * 40)
 
-        # Load CV results
-        # cv_dir_path = Path(CV_DIR)
-        # list_of_cv_files = sorted(
-        #     cv_dir_path.glob("cv_metrics_*.csv"), key=lambda p: p.stat().st_mtime, reverse=True
-        # )
-        # if not list_of_cv_files:
-        #     raise FileNotFoundError(f"No CV result files found in {CV_DIR}")
-        # latest_cv_file = list_of_cv_files[0]
-        # print(f"Loading latest CV results from: {latest_cv_file}")
+        # Set directories based on horizon
+        self.cv_dir, self.final_dir, self.plot_dir = get_horizon_directories()
+        print(f"  ✓ Using directories for {HORIZON}d horizon:")
+        print(f"    CV: {self.cv_dir}")
+        print(f"    Final: {self.final_dir}")
+        print(f"    Plot: {self.plot_dir}")
 
-        cv_metrics_df = pd.read_csv(CV_DIR / "cv_metrics.csv")
+        # Load holdout metrics from the final results directory
+        metrics_results_path = self.final_dir / "metrics_results.csv"
+        metrics_df = pd.read_csv(metrics_results_path)
+        print(f"  ✓ Holdout metrics loaded from: {metrics_results_path}")
 
         # Load forecast data for plotting
-        # list_of_plot_files = sorted(
-        #     FINAL_DIR.glob("final_plot_results_*.json"), key=lambda p: p.stat().st_mtime, reverse=True
-        # )
-        # if not list_of_plot_files:
-        #     raise FileNotFoundError(f"No plot result files found in {FINAL_DIR}")
-        # latest_plot_file = list_of_plot_files[0]
-        # print(f"Loading latest plot results from: {latest_plot_file}")
+        final_plot_results_path = self.final_dir / f"final_plot_results.json"
+        all_forecasts_data = load_json_to_dict(final_plot_results_path)
+        print(f"  ✓ Plot data loaded from: {final_plot_results_path}")
 
-        self.all_forecasts_data = load_json_to_dict(FINAL_DIR / "final_plot_results.json")
-        print("  ✓ Plot data loaded successfully.")
-
-        return cv_metrics_df
+        return metrics_df, all_forecasts_data
 
     def _get_workflow_info(self, hist_exog_list: List[str]) -> Dict:
         """Reconstructs the workflow info dictionary for the summary report."""
@@ -106,8 +99,6 @@ class BitcoinAnalysisPipeline:
         start_time = time.time()
 
         try:
-            setup_environment(self.timestamp)
-
             # We still need the data for context and plotting
             train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data()
             self.pipeline_results["data_preparation_info"] = data_info
@@ -115,24 +106,18 @@ class BitcoinAnalysisPipeline:
             # This info is needed for the report
             self.pipeline_results["auto_models_workflow_info"] = self._get_workflow_info(hist_exog_list)
 
-            cv_metrics_df = self._load_results()
-
-            print("\n📈 STEP 2: DISPLAYING TOP MODELS")
-            print("-" * 40)
-            top_model_names = display_top_models(
-                cv_metrics_df, "Cross-Validation Model Rankings", top_n=10
-            )
-
+            metrics_df, all_forecasts_data = self._load_results()
+            
             print("\n🎨 STEP 3: CREATING VISUALIZATIONS")
             print("-" * 40)
             create_visualizations_step(
-                train_df, test_df, self.all_forecasts_data, HORIZON
+                train_df, test_df, all_forecasts_data, HORIZON, self.plot_dir
             )
 
             print("\n📝 STEP 4: GENERATING SUMMARY REPORT")
             print("-" * 40)
             summary_report_str = generate_summary_report(
-                cv_metrics_df,
+                metrics_df,
                 HORIZON,
                 self.pipeline_results["data_preparation_info"],
                 self.pipeline_results["auto_models_workflow_info"],
@@ -145,8 +130,7 @@ class BitcoinAnalysisPipeline:
 
             return {
                 "status": "success",
-                "results_dataframe": cv_metrics_df,
-                "top_models_list": top_model_names,
+                "results_dataframe": metrics_df,
                 "summary_report_text": summary_report_str,
                 "pipeline_execution_details": self.pipeline_results,
             }
@@ -169,8 +153,8 @@ def main():
     run_outcome = pipeline.run_analysis_pipeline()
 
     if run_outcome["status"] == "success":
-        print("\n📋 PIPELINE SUMMARY:")
-        print(run_outcome["summary_report_text"])
+        print("\n📋 PIPELINE SUCCEEDED")
+        print("Summary report and visualizations have been saved to the 'results' directory.")
         sys.exit(0)
     else:
         print(f"\n❌ Pipeline execution failed: {run_outcome['error_message']}")

@@ -12,7 +12,9 @@ def get_statistical_models(season_length: int = 7) -> List[Any]:
     Get optimized statistical models for Bitcoin forecasting.
     
     Args:
-        season_length: Seasonal period (default 7 for weekly patterns)
+        season_length: Seasonal period. This is the length of a full seasonal
+            cycle in the data (e.g., 7 for daily data with weekly patterns).
+            It is a property of the data, not the forecast horizon.
         
     Returns:
         List of statistical model instances

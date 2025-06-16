@@ -1,21 +1,5 @@
 import optuna
 
-
-# def lgb_auto_cfg(trial: optuna.Trial) -> dict:
-#     """Generate LightGBM-specific hyperparameter configuration using native parameter names only."""
-#     return {
-#         # "bagging_freq": 1,
-#         "learning_rate": trial.suggest_float("lgb_learning_rate", 1e-4, 0.3, log=True),
-#         "verbosity": -1,  # Silent mode
-#         # "n_estimators": trial.suggest_int("n_estimators", 100, 2500, log=True),
-#         # "lambda_l1": trial.suggest_float("lgb_lambda_l1", 1e-8, 20.0, log=True),
-#         # "lambda_l2": trial.suggest_float("lgb_lambda_l2", 1e-8, 20.0, log=True),
-#         "num_leaves": trial.suggest_int("lgb_num_leaves", 31, 256, log=True),
-#         # "feature_fraction": trial.suggest_float("lgb_feature_fraction", 0.4, 1.0),
-#         # "bagging_fraction": trial.suggest_float("lgb_bagging_fraction", 0.4, 1.0),
-#         "objective": trial.suggest_categorical("objective", ["l1", "l2"]),
-#     }
-
 def lgb_auto_cfg(trial: optuna.Trial) -> dict:
     """
     Refined LightGBM hyperparameter configuration for volatile time series.

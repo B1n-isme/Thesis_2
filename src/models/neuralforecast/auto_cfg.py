@@ -54,6 +54,19 @@ def neural_auto_cfg(h: int) -> Dict[str, Dict]:
         "dropout": tune.uniform(0.1, 0.5),
     }
 
+    # BiTCN config 
+    bitcn_config = {
+        "hidden_size": tune.choice([64, 128, 256]),
+        "dropout": tune.uniform(0.1, 0.5),
+    }
+
+    # KAN config 
+    kan_config = {
+        "grid_size": tune.choice([5, 10, 15]),
+        "spline_order": tune.choice([2, 3, 4]),
+        "hidden_size": tune.choice([64, 128, 256]),
+    }
+
     return {
         "nhits": nhits_config,
         "nbeats": nbeats_config,
@@ -61,4 +74,6 @@ def neural_auto_cfg(h: int) -> Dict[str, Dict]:
         "tft": tft_config,
         "transformer": transformer_config,
         "tsmixer": tsmixer_config,
+        "bitcn": bitcn_config,
+        "kan": kan_config,
     }
