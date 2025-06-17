@@ -109,7 +109,7 @@ def get_neural_models(
         AutoNBEATSx(**init_config, config=configs["nbeats"]),
         AutoTSMixerx(**init_config, n_series=1, config=configs["tsmixer"]),
         AutoBiTCN(**init_config, config=configs["bitcn"]),
-        AutoKAN(**init_config, config=configs["kan"]),
+        # AutoKAN(**init_config, config=configs["kan"]),
     ]
 
     return models
@@ -140,7 +140,7 @@ def get_normal_neural_models(
         "TSMixerx": TSMixerx,
         "iTransformer": iTransformer,
         "BiTCN": BiTCN,
-        "KAN": KAN,
+        # "KAN": KAN,
     }
 
     # Add "Auto" prefixed versions to map to the same models for flexibility

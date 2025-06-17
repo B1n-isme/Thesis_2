@@ -116,13 +116,14 @@ class BitcoinAnalysisPipeline:
 
             print("\n📝 STEP 4: GENERATING SUMMARY REPORT")
             print("-" * 40)
-            summary_report_str = generate_summary_report(
-                metrics_df,
-                HORIZON,
-                self.pipeline_results["data_preparation_info"],
-                self.pipeline_results["auto_models_workflow_info"],
-                RESULTS_DIR,
-            )
+            summary_report_str = ""
+            # summary_report_str = generate_summary_report(
+            #     metrics_df,
+            #     HORIZON,
+            #     self.pipeline_results["data_preparation_info"],
+            #     self.pipeline_results["auto_models_workflow_info"],
+            #     RESULTS_DIR,
+            # )
 
             execution_time = time.time() - start_time
             print(f"\n✅ Analysis pipeline completed in {execution_time:.1f} seconds")

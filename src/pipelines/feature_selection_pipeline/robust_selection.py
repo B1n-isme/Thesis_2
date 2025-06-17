@@ -15,11 +15,23 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from statsmodels.api import add_constant
+from pathlib import Path
 
 from config.base import HORIZON
 
 class RobustSelectionMixin:
     """Mixin for robust feature selection methods."""
+
+    def _save_feature_list(self, features: List[str], filename: str, results_dir: Optional[str] = None):
+        """Helper to save a list of features to a file."""
+        if results_dir:
+            output_path = Path(results_dir) / filename
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w') as f:
+                f.write(f"# Total features: {len(features)}\n")
+                for feature in sorted(features):
+                    f.write(f"{feature}\n")
+            self.print_info(f"Saved feature list to {output_path}")
 
     def _prepare_aligned_data(self, df: pd.DataFrame, 
                             features: Optional[List[str]] = None,
@@ -585,51 +597,42 @@ class RobustSelectionMixin:
         return result
 
     def _run_shap_step(self, train_df, tree_methods, shap_percentile, tree_n_estimators):
-        """Helper to run the SHAP-based selection step."""
-        self.print_info("\n--- Running Step: SHAP-Based Importance ---")
+        """Helper to run SHAP selection for multiple tree methods."""
         shap_results = {}
-        selections = {}
         for method in tree_methods:
-            shap_results[method] = self.shap_based_feature_selection(
-                train_df,
-                method=method,
-                shap_threshold_percentile=shap_percentile,
+            res = self.shap_based_feature_selection(
+                train_df, method=method, shap_threshold_percentile=shap_percentile,
                 n_estimators=tree_n_estimators
             )
-            selections[f'{method}_shap'] = shap_results[method]['selected_features']
-        return shap_results, selections
+            shap_results[f'{method}_shap'] = res
+        return shap_results
 
     def _run_autoencoder_step(self, train_df, val_df, ae_method, ae_top_k, ae_epochs):
-        """Helper to run the Autoencoder-based selection step."""
-        self.print_info("\n--- Running Step: Autoencoder Reconstruction Error ---")
-        ae_results = self.autoencoder_selection_with_reconstruction_error(
+        """Helper to run Autoencoder selection."""
+        ae_results = {}
+        res = self.autoencoder_selection_with_reconstruction_error(
             train_df, val_df, ae_method=ae_method, top_k_features=ae_top_k, epochs=ae_epochs
         )
-        selections = {'autoencoder': ae_results.get('selected_features', [])}
-        return ae_results, selections
+        ae_results[f'{ae_method}_autoencoder'] = res
+        return ae_results
 
     def _run_rfecv_step(self, train_df, tree_methods, tree_n_estimators):
-        """Helper to run the RFECV-based selection step."""
-        self.print_info("\n--- Running Step: Recursive Feature Elimination (RFECV) ---")
+        """Helper to run RFECV selection for multiple tree methods."""
         rfecv_results = {}
-        selections = {}
         for method in tree_methods:
-            rfecv_model_params = {'n_estimators': min(100, tree_n_estimators)}
-            rfecv_results[method] = self.tree_based_rfecv_selection(
-                train_df, method=method, **rfecv_model_params
+            res = self.tree_based_rfecv_selection(
+                train_df, method=method, n_estimators=tree_n_estimators
             )
-            selections[f'{method}_rfecv'] = rfecv_results[method]['selected_features']
-        return rfecv_results, selections
+            rfecv_results[f'{method}_rfecv'] = res
+        return rfecv_results
 
     def _run_stability_step(self, train_df, tree_methods):
-        """Helper to run the Stability Selection step."""
-        self.print_info("\n--- Running Step: Stability Selection ---")
+        """Helper to run Stability selection for multiple tree methods."""
         stability_results = {}
-        selections = {}
         for method in tree_methods:
-            stability_results[method] = self.stability_selection(train_df, method=method)
-            selections[f'{method}_stability'] = stability_results[method]['selected_features']
-        return stability_results, selections
+            res = self.stability_selection(train_df, method=method)
+            stability_results[f'{method}_stability'] = res
+        return stability_results
 
     def robust_comprehensive_selection(self, train_df: pd.DataFrame, val_df: pd.DataFrame,
                                      tree_methods: List[str] = ['xgboost', 'lightgbm'],
@@ -644,95 +647,115 @@ class RobustSelectionMixin:
                                      ae_top_k: int = 40,
                                      n_repeats_permutation: int = 10,
                                      tree_n_estimators: int = 200,
-                                     ae_epochs: int = 50) -> Dict[str, Any]:
+                                     ae_epochs: int = 50,
+                                     results_dir: Optional[str] = None) -> Dict[str, Any]:
         """
-        Orchestrates the full suite of robust selection methods.
-        """
-        all_selections = {}
-        step_results = {}
-        shap_results, ae_results, rfecv_results, stability_results = {}, {}, {}, {}
+        Main orchestration method for robust feature selection.
 
-        # Step 1: Run primary selection methods
+        Args:
+            train_df (pd.DataFrame): Training data.
+            val_df (pd.DataFrame): Validation data.
+            tree_methods (List[str]): Tree-based models to use.
+            use_shap (bool): Whether to use SHAP selection.
+            use_rfecv (bool): Whether to use RFECV.
+            use_stability_selection (bool): Whether to use Stability Selection.
+            use_autoencoder (bool): Whether to use Autoencoder selection.
+            ae_method (str): Autoencoder architecture ('lstm' or 'transformer').
+            use_permutation (bool): Whether to run permutation importance validation.
+            remove_collinearity (bool): Whether to handle multicollinearity.
+            shap_percentile (float): SHAP value percentile for feature selection.
+            ae_top_k (int): Number of top features from Autoencoder to select.
+            n_repeats_permutation (int): Number of repeats for permutation importance.
+            tree_n_estimators (int): Number of estimators for tree models.
+            ae_epochs (int): Number of epochs for Autoencoder training.
+            results_dir (Optional[str]): Directory to save intermediate results.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing selection results.
+        """
+        self.print_info("Starting robust comprehensive selection...")
+        all_results = {}
+        all_selected_features = defaultdict(list)
+
+        # Step 1: Run primary selection methods in parallel if possible
+        # For simplicity, running them sequentially here.
         if use_shap:
-            shap_results, selections = self._run_shap_step(
-                train_df, tree_methods, shap_percentile, tree_n_estimators
-            )
-            all_selections.update(selections)
-            step_results['shap'] = shap_results
-        
+            shap_results = self._run_shap_step(train_df, tree_methods, shap_percentile, tree_n_estimators)
+            all_results.update(shap_results)
+            for method, res in shap_results.items():
+                self._save_feature_list(res['selected_features'], f"1_{method}_features.txt", results_dir)
+
+
         if use_autoencoder:
-            ae_results, selections = self._run_autoencoder_step(
-                train_df, val_df, ae_method, ae_top_k, ae_epochs
-            )
-            all_selections.update(selections)
-            step_results['autoencoder'] = ae_results
+            ae_results = self._run_autoencoder_step(train_df, val_df, ae_method, ae_top_k, ae_epochs)
+            all_results.update(ae_results)
+            for method, res in ae_results.items():
+                self._save_feature_list(res['selected_features'], f"1_{method}_features.txt", results_dir)
 
         if use_rfecv:
-            rfecv_results, selections = self._run_rfecv_step(
-                train_df, tree_methods, tree_n_estimators
-            )
-            all_selections.update(selections)
-            step_results['rfecv'] = rfecv_results
+            rfecv_results = self._run_rfecv_step(train_df, tree_methods, tree_n_estimators)
+            all_results.update(rfecv_results)
+            for method, res in rfecv_results.items():
+                self._save_feature_list(res['selected_features'], f"1_{method}_features.txt", results_dir)
 
         if use_stability_selection:
-            stability_results, selections = self._run_stability_step(train_df, tree_methods)
-            all_selections.update(selections)
-            step_results['stability'] = stability_results
+            stability_results = self._run_stability_step(train_df, tree_methods)
+            all_results.update(stability_results)
+            for method, res in stability_results.items():
+                self._save_feature_list(res['selected_features'], f"1_{method}_features.txt", results_dir)
 
-        # Step 2: Generate consensus features from all methods
-        self.print_info("\n--- Generating Consensus Features ---")
-        interim_recommendations = self._generate_robust_recommendations(step_results)
-        consensus_features = interim_recommendations.get('consensus_features', [])
+        # Step 2: Generate recommendations from the primary selections
+        recommendations = self._generate_robust_recommendations(all_results)
+        consensus_features = recommendations.get('consensus_features', [])
+        self.print_info(f"Generated {len(consensus_features)} consensus features.")
+        self._save_feature_list(consensus_features, "2_consensus_features.txt", results_dir)
         
-        if not consensus_features:
-            self.print_info("No features reached consensus. Aborting further steps.")
-            return {
-                'final_recommendations': interim_recommendations,
-                'shap_results': shap_results, 
-                'ae_results': ae_results, 
-                'rfecv_results': rfecv_results,
-                'stability_results': stability_results,
-            }
-
-        # Step 3: Handle Multicollinearity among consensus features
-        collinearity_results = {}
-        if remove_collinearity:
-            self.print_info("\n--- Handling Multicollinearity ---")
-            recommendation_df = interim_recommendations.get('feature_counts')
-            final_features = self.handle_multicollinearity(
-                train_df, consensus_features, recommendation_df
-            )
-            collinearity_results = {'final_features_after_check': final_features}
-        else:
-            final_features = consensus_features
-
-        # Step 4: Final validation using Permutation Importance
-        pfi_results = {}
-        if use_permutation:
-            self.print_info("\n--- Running Permutation Importance Validation ---")
-            pfi_results = self.permutation_importance_validation(
-                train_df, val_df, final_features, n_repeats=n_repeats_permutation
-            )
-            # --- FIX: Overwrite the feature list with the final validated set from PFI ---
-            final_features = pfi_results.get('selected_features', final_features)
-
-        # Step 5: Final result compilation
-        final_recommendations = {
-            'initial_consensus': consensus_features,
-            'feature_counts': interim_recommendations.get('feature_counts'),
-            'consensus_features': final_features, # Final list after all pruning
+        # Keep track of consensus results
+        self.step_results['consensus'] = {
+            'features': consensus_features,
+            'details': recommendations.get('feature_counts')
         }
         
-        return {
-            "final_recommendations": final_recommendations,
-            "step_results": {
-                'shap': shap_results,
-                'autoencoder': ae_results,
-                'rfecv': rfecv_results,
-                'stability': stability_results,
-                'collinearity': collinearity_results,
-                'permutation_importance': pfi_results
+        features_after_consensus = consensus_features
+
+        # Step 3: Handle multicollinearity
+        if remove_collinearity and features_after_consensus:
+            features_after_collinearity = self.handle_multicollinearity(
+                train_df, features_after_consensus, recommendations['feature_counts']
+            )
+            self.print_info(f"Reduced to {len(features_after_collinearity)} features after handling multicollinearity.")
+            self._save_feature_list(features_after_collinearity, "3_after_multicollinearity_features.txt", results_dir)
+        else:
+            features_after_collinearity = features_after_consensus
+            
+        self.step_results['collinearity'] = {'features': features_after_collinearity}
+
+        # Step 4: Permutation Importance Validation
+        if use_permutation and features_after_collinearity:
+            pfi_results = self.permutation_importance_validation(
+                train_df, val_df, features_after_collinearity, n_repeats=n_repeats_permutation
+            )
+            final_features = pfi_results['selected_features']
+            self.print_info(f"Validated to {len(final_features)} features with PFI.")
+            self._save_feature_list(final_features, "4_final_pfi_features.txt", results_dir)
+            self.step_results['pfi'] = {
+                'features': final_features,
+                'importance': pfi_results['pfi_importance']
             }
+        else:
+            final_features = features_after_collinearity
+            self.print_info("Skipping permutation importance, using features from previous step.")
+            self._save_feature_list(final_features, "4_final_features_no_pfi.txt", results_dir)
+
+        self.print_info("Robust comprehensive selection finished.")
+
+        return {
+            'initial_selections': all_results,
+            'final_recommendations': {
+                'consensus_features': final_features,
+                'feature_counts': recommendations.get('feature_counts')
+            },
+            'step_by_step_results': self.step_results
         }
 
     def _generate_robust_recommendations(self, all_results: Dict[str, Dict], 

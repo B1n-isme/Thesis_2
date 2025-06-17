@@ -25,6 +25,6 @@ CV_DIR, FINAL_DIR, PLOT_DIR = get_horizon_directories()
 # print("\nFirst few rows of updated data:")
 # print(metrics_df[['model_name', 'training_time']].head()) 
 
-metrics_df = pd.read_csv('results/results_7d/final/metrics_results.csv')
+metrics_df = pd.read_csv('results/results_30d/final/metrics_results.csv')
 
 print(metrics_df[['model_name', 'training_time']]) 

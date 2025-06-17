@@ -203,7 +203,7 @@ def perform_final_fit_predict(
             fit_start_time = time.time()
             nf.fit(
                 train_df, 
-                val_size=HORIZON if HORIZON > 0 else None, 
+                # val_size=HORIZON if HORIZON > 0 else None, 
                 prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
             )
             total_neural_fit_time = time.time() - fit_start_time
@@ -383,7 +383,7 @@ def perform_final_fit_predict(
 if __name__ == "__main__":
     from src.models.statsforecast.models import get_statistical_models
     from src.models.mlforecast.models import get_ml_models
-    from src.models.neuralforecast.models import get_normal_neural_models
+    from src.models.neuralforecast.models import get_neural_models, get_normal_neural_models
     
     from src.pipelines.model_evaluation import prepare_pipeline_data
 
@@ -392,8 +392,7 @@ if __name__ == "__main__":
     # stat_models = get_statistical_models(season_length=7)
     # ml_models = get_ml_models()
     # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
-    print(CV_DIR)
-    neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf2.yaml", hist_exog_list=hist_exog_list)
+    neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf.yaml", hist_exog_list=hist_exog_list)
     
     # Perform final fit and predict
     final_results_df, final_plot_results_dict, ml_cv_results_df = perform_final_fit_predict(

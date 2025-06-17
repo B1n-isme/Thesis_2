@@ -22,7 +22,7 @@ TARGET_RENAMED = 'y'
 UNIQUE_ID_VALUE = 'Bitcoin'
 
 # === Forecasting Configuration ===
-HORIZON = 7
+HORIZON = 30
 LEVELS = [95]
 TEST_LENGTH_MULTIPLIER = 1
 SEED = 42

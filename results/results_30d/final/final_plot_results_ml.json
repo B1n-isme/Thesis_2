@@ -66,7 +66,7 @@
         ]
     },
     "models": {
-        "AutoCatBoost": {
+        "CatBoost": {
             "predictions": {
                 "mean": [
                     95216.80970272709,
@@ -171,7 +171,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "AutoLightGBM": {
+        "LightGBM": {
             "predictions": {
                 "mean": [
                     93978.7107322998,
@@ -276,7 +276,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "AutoXGBoost": {
+        "XGBoost": {
             "predictions": {
                 "mean": [
                     89457.1015625,

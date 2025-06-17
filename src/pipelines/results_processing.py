@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple
+from tabulate import tabulate
 
 from config.base import HORIZON
 from src.utils.utils import get_horizon_directories
@@ -35,6 +36,32 @@ def display_top_models(metrics_df: pd.DataFrame, title: str) -> None:
         print(f"{i:2d}. {model_name}")
         print(f"    MAE: {mae:.4f} | RMSE: {rmse:.4f} | MAPE: {mape}% | Time: {training_time}s")
         print()
+
+
+def _get_top_n_by_metric_lines(df: pd.DataFrame, metric: str, n: int = 3) -> List[str]:
+    """Generates formatted lines for top N models by a given metric."""
+    lines = []
+    
+    metric_df = df.dropna(subset=[metric])
+    if metric_df.empty:
+        lines.append(f"  No models with valid '{metric}' values to rank.")
+        return lines
+
+    top_n_df = metric_df.nsmallest(n, metric)
+    
+    for i, (_, row) in enumerate(top_n_df.iterrows(), 1):
+        model_name = row['model_name']
+        mae = row['mae']
+        rmse = row['rmse'] 
+        mape_str = f"{row['mape']:.4f}%" if pd.notna(row['mape']) else 'N/A'
+        time_str = f"{row['training_time']:.2f}s" if pd.notna(row['training_time']) else 'N/A'
+        
+        lines.extend([
+            f"{i:2d}. {model_name}",
+            f"    MAE: {mae:.4f} | RMSE: {rmse:.4f} | MAPE: {mape_str} | Time: {time_str}",
+            ""
+        ])
+    return lines
 
 
 def generate_summary_report(
@@ -73,26 +100,38 @@ def generate_summary_report(
     ]
     
     if not valid_results.empty:
-        # Sort by MAE
-        ranked_models = valid_results.sort_values('mae')
-        
         report_lines.extend([
-            "🏆 MODEL PERFORMANCE RANKING (by MAE)",
-            "-" * 40,
+            "📊 FULL MODEL PERFORMANCE METRICS",
+            "-" * 50,
         ])
         
-        for i, (_, row) in enumerate(ranked_models.iterrows(), 1):
-            model_name = row['model_name']
-            mae = row['mae']
-            rmse = row['rmse'] 
-            mape = row['mape'] if pd.notna(row['mape']) else 'N/A'
-            training_time = row['training_time'] if pd.notna(row['training_time']) else 'N/A'
-            
-            report_lines.extend([
-                f"{i:2d}. {model_name}",
-                f"    MAE: {mae:.4f} | RMSE: {rmse:.4f} | MAPE: {mape}% | Time: {training_time}s",
-                ""
-            ])
+        table_df = valid_results[['model_name', 'mae', 'rmse', 'mape', 'training_time']].copy()
+        table_df.columns = ['Model', 'MAE', 'RMSE', 'MAPE (%)', 'Time (s)']
+        table_df['MAE'] = table_df['MAE'].map('{:.4f}'.format)
+        table_df['RMSE'] = table_df['RMSE'].map('{:.4f}'.format)
+        table_df['MAPE (%)'] = table_df['MAPE (%)'].map(lambda x: f'{x:.4f}' if pd.notna(x) else 'N/A')
+        table_df['Time (s)'] = table_df['Time (s)'].map(lambda x: f'{x:.2f}' if pd.notna(x) else 'N/A')
+        
+        report_lines.append(tabulate(table_df, headers='keys', tablefmt='psql', showindex=False))
+        report_lines.append("\n")
+
+        report_lines.extend([
+            "🏆 TOP 3 MODELS BY MAE (lower is better)",
+            "-" * 50,
+        ])
+        report_lines.extend(_get_top_n_by_metric_lines(valid_results, 'mae', 3))
+
+        report_lines.extend([
+            "🏆 TOP 3 MODELS BY RMSE (lower is better)",
+            "-" * 50,
+        ])
+        report_lines.extend(_get_top_n_by_metric_lines(valid_results, 'rmse', 3))
+
+        report_lines.extend([
+            "🏆 TOP 3 MODELS BY MAPE (lower is better)",
+            "-" * 50,
+        ])
+        report_lines.extend(_get_top_n_by_metric_lines(valid_results, 'mape', 3))
         
         # Overall statistics
         successful_models = len(valid_results)

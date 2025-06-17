@@ -81,7 +81,8 @@ class FeatureSelector(
 
     def run_complete_feature_selection_strategy(self, df: pd.DataFrame,
                                                target_col: str = 'y',
-                                               step3_params: Optional[Dict] = None) -> Dict[str, Any]:
+                                               step3_params: Optional[Dict] = None,
+                                               results_dir: Optional[str] = None) -> Dict[str, Any]:
         """
         Orchestrates the robust feature selection strategy (formerly Step 3).
         This is the main entry point for the feature selection process.
@@ -109,7 +110,7 @@ class FeatureSelector(
         # The robust_comprehensive_selection function now handles all steps and
         # returns the final results in the correct format.
         selection_results = self.robust_comprehensive_selection(
-            train_df, val_df, **step3_params
+            train_df, val_df, results_dir=results_dir, **step3_params
         )
         
         self.print_info("Complete feature selection strategy finished.")

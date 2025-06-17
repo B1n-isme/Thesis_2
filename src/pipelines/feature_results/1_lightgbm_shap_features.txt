@@ -1,0 +1,21 @@
+# Total features: 20
+DJI
+EURUSD
+active_addresses_blockchain
+bearish_sentiment
+btc_atr_14
+btc_close_ema_21_dist
+btc_ema_14_slope
+btc_macd_diff
+btc_rsi_14
+btc_sma_14_slope
+btc_trading_volume
+btc_volatility_index
+community_social_sentiment
+estimated_transaction_volume_usd_blockchain
+hash_rate_blockchain
+news_events_sentiment
+problem_malicious_sentiment
+regulations_sentiment
+risk_uncertainty_sentiment
+volume_sentiment

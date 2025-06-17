@@ -20,7 +20,7 @@
         ]
     },
     "models": {
-        "AutoARIMA": {
+        "SARIMAX": {
             "predictions": {
                 "mean": [
                     99981.88921543169,
@@ -56,7 +56,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "AutoETS": {
+        "ETS": {
             "predictions": {
                 "mean": [
                     98553.68537294184,
@@ -92,7 +92,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "AutoTheta": {
+        "Theta": {
             "predictions": {
                 "mean": [
                     98697.3782040367,

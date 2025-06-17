@@ -195,6 +195,25 @@ def create_separate_probabilistic_forecast_plots(
                 label=f'Prediction Interval ({lo_key}%)'
             )
 
+            # Adjust Y-axis to focus on the mean and actuals if intervals are too wide
+            all_y_values = np.concatenate([
+                combined_actuals['y'].values,
+                np.array(mean_predictions)
+            ])
+            np_lo_predictions = np.array(lo_predictions)
+            np_hi_predictions = np.array(hi_predictions)
+
+            interval_range = np_hi_predictions.max() - np_lo_predictions.min()
+            main_range = all_y_values.max() - all_y_values.min()
+
+            # Heuristic: if interval is > 20x larger than main data range, adjust axis
+            if main_range > 0 and (interval_range / main_range) > 20:
+                y_min = all_y_values.min()
+                y_max = all_y_values.max()
+                padding = (y_max - y_min) * 0.2  # 20% padding
+                ax.set_ylim(y_min - padding, y_max + padding)
+                print(f"   • Note: Y-axis for {model_name} was clipped to show detail due to wide prediction intervals.")
+
             ax.set_title(f'{model_name} Forecast ({forecast_method})\nHorizon: {horizon} days | Test Period: {len(test_df)} days', fontsize=14, fontweight='bold')
             ax.set_xlabel('Date', fontsize=12)
             ax.set_ylabel('Bitcoin Price (USD)', fontsize=12)

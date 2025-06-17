@@ -2,6 +2,7 @@ from src.pipelines.feature_selection_pipeline import FeatureSelector
 from src.dataset.data_preparation import prepare_pipeline_data
 import pandas as pd
 from config.base import RAW_DATA_PATH
+from pathlib import Path
 
 
 def main():
@@ -19,10 +20,16 @@ def main():
 
     # 2. Initialize the selector
     selector = FeatureSelector(random_state=42, verbose=True)
+    
+    # Define the directory for saving intermediate results
+    results_dir = "src/pipelines/feature_results"
+    Path(results_dir).mkdir(parents=True, exist_ok=True)
+    print(f"Intermediate feature selection results will be saved to: {results_dir}")
 
     # 3. Define enhanced parameters for a deeper search
     # Increase estimators for tree models and epochs for autoencoder for more robust results.
     deep_search_params = {
+        'tree_methods': ['xgboost', 'lightgbm', 'random_forest'], # Explicitly include all tree methods
         'tree_n_estimators': 500,  # Increased from default 200
         'ae_epochs': 100,          # Increased from default 50
         'use_rfecv': True,         # Enable RFECV for optimal feature number detection
@@ -35,7 +42,8 @@ def main():
     results = selector.run_complete_feature_selection_strategy(
         df=full_df,
         target_col='y',
-        step3_params=deep_search_params
+        step3_params=deep_search_params,
+        results_dir=results_dir
     )
 
     # 5. Print and review the results

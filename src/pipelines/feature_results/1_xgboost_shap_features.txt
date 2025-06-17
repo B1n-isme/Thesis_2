@@ -1,0 +1,21 @@
+# Total features: 20
+DJI
+DXY
+EURUSD
+GSPC
+Gold_Price
+IXIC
+Oil_Brent_Price
+Oil_Crude_Price
+active_addresses_blockchain
+btc_atr_14
+btc_macd_diff
+btc_rsi_14
+btc_sma_5
+btc_trading_volume
+btc_volatility_index
+community_social_sentiment
+estimated_transaction_volume_usd_blockchain
+hash_rate_blockchain
+positive_sentiment
+problem_malicious_sentiment
