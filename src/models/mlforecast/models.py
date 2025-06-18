@@ -30,7 +30,7 @@ def create_cat_config(trial: optuna.Trial) -> dict:
 def get_ml_models() -> Dict[str, Any]:
     """Returns a dictionary of ML models for AutoMLForecast."""
     return {
-        'AutoXGBoost': AutoModel(model=xgb.XGBRegressor(), config=create_xgb_config),
-        'AutoCatBoost': AutoModel(model=cat.CatBoostRegressor(), config=create_cat_config),
+        # 'AutoXGBoost': AutoModel(model=xgb.XGBRegressor(), config=create_xgb_config),
+        # 'AutoCatBoost': AutoModel(model=cat.CatBoostRegressor(), config=create_cat_config),
         'AutoLightGBM': AutoModel(model=lgb.LGBMRegressor(), config=create_lgb_config),
     }

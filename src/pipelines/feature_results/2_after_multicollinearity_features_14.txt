@@ -1,21 +1,31 @@
-# Total features: 20
-DJI
+# Total features: 30
+CBOE_Volatility
+EM_ETF
 EURUSD
+Fear Greed
+Gold_Volatility
+Oil_Crude_Price
+Oil_Volatility
+PiCycle_cbbi
+Puell_cbbi
+RHODL_cbbi
 active_addresses_blockchain
 bearish_sentiment
-btc_atr_14
+btc_bb_width
 btc_close_ema_21_dist
-btc_ema_14_slope
+btc_close_ema_21_dist_norm
 btc_macd_diff
 btc_rsi_14
+btc_sma_14_50_ratio
 btc_sma_14_slope
+btc_sma_50_slope
 btc_trading_volume
 btc_volatility_index
-community_social_sentiment
+bullish_sentiment
 estimated_transaction_volume_usd_blockchain
 hash_rate_blockchain
-news_events_sentiment
+market_narrative_sentiment
+marketcap_sentiment
 problem_malicious_sentiment
 regulations_sentiment
-risk_uncertainty_sentiment
 volume_sentiment

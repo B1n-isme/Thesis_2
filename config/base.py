@@ -12,20 +12,20 @@ from ray.tune.search.hebo import HEBOSearch
 from ray.tune.search.optuna import OptunaSearch
 from typing import Any
 
-# === Data Configuration ===
-RAW_DATA_PATH = 'data/final/dataset.parquet'
-DATA_PATH = 'data/final/final_feature_selected_data.parquet'
-DATE_COLUMN = 'Date'
-DATE_RENAMED = 'ds'
-TARGET_COLUMN = 'btc_close'
-TARGET_RENAMED = 'y'
-UNIQUE_ID_VALUE = 'Bitcoin'
-
 # === Forecasting Configuration ===
 HORIZON = 30
 LEVELS = [95]
 TEST_LENGTH_MULTIPLIER = 1
 SEED = 42
+
+# === Data Configuration ===
+RAW_DATA_PATH = 'data/final/dataset.parquet'
+DATA_PATH = f'data/final/feature_selection_{HORIZON}.parquet'
+DATE_COLUMN = 'Date'
+DATE_RENAMED = 'ds'
+TARGET_COLUMN = 'btc_close'
+TARGET_RENAMED = 'y'
+UNIQUE_ID_VALUE = 'Bitcoin'
 
 # === Rolling Forecast Configuration ===
 ENABLE_ROLLING_FORECAST = True  # Enable rolling forecast for neural models when horizon < test_length

@@ -1,0 +1,29 @@
+# Total features: 28
+CBOE_Volatility
+DJI
+DXY
+EM_ETF
+EURUSD
+Fear Greed
+GSPC
+Gold_Price
+Gold_Volatility
+MVRV_cbbi
+Oil_Brent_Price
+Oil_Crude_Price
+RHODL_cbbi
+Trolololo_cbbi
+active_addresses_blockchain
+bearish_sentiment
+btc_atr_14
+btc_bb_mid
+btc_bb_width
+btc_volatility_index
+community_social_sentiment
+core_technology_sentiment
+development_ecosystem_sentiment
+market_narrative_sentiment
+marketcap_sentiment
+problem_malicious_sentiment
+risk_uncertainty_sentiment
+volume_sentiment

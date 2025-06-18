@@ -17,7 +17,6 @@ from sklearn.feature_selection import SelectFromModel, VarianceThreshold
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-from sklearn.model_selection import TimeSeriesSplit
 from sklearn.utils import resample
 from sklearn.inspection import permutation_importance
 from sklearn.cluster import AgglomerativeClustering
@@ -32,7 +31,6 @@ import shap
 from collections import defaultdict, Counter
 
 # Local imports from the new package structure
-from .autoencoder import AutoencoderSelectionMixin, LSTMAutoEncoder, TransformerAutoEncoder
 from .robust_selection import RobustSelectionMixin
 
 # Local imports from the project
@@ -43,7 +41,6 @@ from src.utils.utils import seed_everything
 warnings.filterwarnings('ignore')
 
 class FeatureSelector(
-    AutoencoderSelectionMixin,
     RobustSelectionMixin,
 ):
     """
@@ -53,16 +50,18 @@ class FeatureSelector(
     through a modular, mixin-based architecture.
     """
     
-    def __init__(self, random_state: int = SEED, verbose: bool = True):
+    def __init__(self, random_state: int = SEED, verbose: bool = True, use_gpu: bool = False):
         """
         Initialize the FeatureSelector.
         
         Args:
             random_state: Random seed for reproducibility
             verbose: Whether to print progress information
+            use_gpu: Whether to attempt to use GPU for acceleration
         """
         self.random_state = random_state
         self.verbose = verbose
+        self.use_gpu = use_gpu
         self.fitted_selectors = {}
         self.feature_rankings = {}
         self.selected_features = {}
@@ -110,7 +109,7 @@ class FeatureSelector(
         # The robust_comprehensive_selection function now handles all steps and
         # returns the final results in the correct format.
         selection_results = self.robust_comprehensive_selection(
-            train_df, val_df, results_dir=results_dir, **step3_params
+            train_df, val_df, results_dir=results_dir, use_gpu=self.use_gpu, **step3_params
         )
         
         self.print_info("Complete feature selection strategy finished.")
@@ -138,7 +137,6 @@ class FeatureSelector(
         save_path.mkdir(parents=True, exist_ok=True)
         
         joblib.dump(self.fitted_selectors, save_path / "fitted_selectors.pkl")
-        joblib.dump(self.autoencoder_features, save_path / "autoencoder_features.pkl")
         self.print_info(f"Models saved to {save_dir}")
 
     def get_optimal_features(self, method: str = 'auto') -> List[str]:

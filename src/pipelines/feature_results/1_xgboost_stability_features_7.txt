@@ -1,0 +1,33 @@
+# Total features: 32
+2YMA_cbbi
+CBOE_Volatility
+DXY
+EURUSD
+Fear Greed
+GSPC
+Gold_Share
+IXIC
+NYFANG
+Oil_Crude_Price
+Oil_Volatility
+Puell_cbbi
+RUPL_cbbi
+active_trading_sentiment
+bearish_sentiment
+btc_ema_21
+btc_ema_50_slope
+btc_macd
+btc_sma_50_slope
+bullish_sentiment
+community_social_sentiment
+core_technology_sentiment
+development_ecosystem_sentiment
+hash_rate_blockchain
+marketcap_sentiment
+miner_revenue_blockchain
+news_events_sentiment
+positive_sentiment
+price_sentiment
+regulations_sentiment
+risk_uncertainty_sentiment
+volume_sentiment
