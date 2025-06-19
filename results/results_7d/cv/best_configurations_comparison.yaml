@@ -1,0 +1,116 @@
+AutoNBEATSx:
+  input_size: 42
+  learning_rate: 0.001
+  scaler_type: robust
+  max_steps: 200
+  batch_size: 64
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 17
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Volatility
+  - marketcap_sentiment
+  - EM_ETF
+  - btc_volatility_index
+  - btc_sma_50_slope
+  - btc_bb_width
+  - Gold_Volatility
+  - Fear Greed
+  - bearish_sentiment
+  - RHODL_cbbi
+  - btc_macd_diff
+  - btc_close_ema_21_dist_norm
+  - active_addresses_blockchain
+  - btc_trading_volume
+  - core_technology_sentiment
+  - bullish_sentiment
+  - volume_sentiment
+  - btc_sma_21_slope
+  - market_narrative_sentiment
+  - hash_rate_blockchain
+AutoTSMixerx:
+  input_size: 42
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 16
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 6
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Volatility
+  - marketcap_sentiment
+  - EM_ETF
+  - btc_volatility_index
+  - btc_sma_50_slope
+  - btc_bb_width
+  - Gold_Volatility
+  - Fear Greed
+  - bearish_sentiment
+  - RHODL_cbbi
+  - btc_macd_diff
+  - btc_close_ema_21_dist_norm
+  - active_addresses_blockchain
+  - btc_trading_volume
+  - core_technology_sentiment
+  - bullish_sentiment
+  - volume_sentiment
+  - btc_sma_21_slope
+  - market_narrative_sentiment
+  - hash_rate_blockchain
+  n_block: 2
+  ff_dim: 64
+  dropout: 0.7031761215618136
+  n_series: 1
+AutoiTransformer:
+  input_size: 42
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 64
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 17
+  accelerator: gpu
+  logger: false
+  hidden_size: 256
+  n_heads: 8
+  n_series: 1
+AutoBiTCN:
+  input_size: 42
+  learning_rate: 0.001
+  scaler_type: robust
+  max_steps: 100
+  batch_size: 32
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 6
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - Oil_Volatility
+  - marketcap_sentiment
+  - EM_ETF
+  - btc_volatility_index
+  - btc_sma_50_slope
+  - btc_bb_width
+  - Gold_Volatility
+  - Fear Greed
+  - bearish_sentiment
+  - RHODL_cbbi
+  - btc_macd_diff
+  - btc_close_ema_21_dist_norm
+  - active_addresses_blockchain
+  - btc_trading_volume
+  - core_technology_sentiment
+  - bullish_sentiment
+  - volume_sentiment
+  - btc_sma_21_slope
+  - market_narrative_sentiment
+  - hash_rate_blockchain
+  hidden_size: 32
+  dropout: 0.7031761215618136

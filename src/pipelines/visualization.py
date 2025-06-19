@@ -9,9 +9,12 @@ from typing import Dict
 from pathlib import Path
 import json
 from datetime import datetime
+import glob
 
 # Configuration and local imports
 from config.base import HORIZON
+from src.utils.utils import get_horizon_directories
+from src.dataset.data_preparation import prepare_pipeline_data
 
 def create_unified_forecast_plot(
     train_df: pd.DataFrame, 
@@ -250,6 +253,173 @@ def create_visualizations_step(train_df: pd.DataFrame, test_df: pd.DataFrame, al
     except Exception as e:
         print(f"❌ Error creating visualizations: {str(e)}")
 
+def create_cv_individual_plots(cv_dir: Path, horizon: int):
+    """
+    Create individual cross-validation plots for each model from merged CV results.
+    Uses complete actual values from prepare_pipeline_data() for better visual comparison.
+    
+    Args:
+        cv_dir: Directory containing CV results
+        horizon: Forecast horizon in days
+    """
+    print(f"📊 Creating cross-validation plots for {horizon}d horizon...")
+    
+    # Read merged CV results
+    cv_file = cv_dir / 'cv_df.csv'
+    
+    if not cv_file.exists():
+        print(f"❌ Required CV file not found: {cv_file}")
+        return
+    
+    try:
+        # Get complete training data for actual values
+        print(f"   • Loading complete training data...")
+        train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(horizon=horizon)
+        
+        # Read CV data
+        df_merged = pd.read_csv(cv_file)
+        
+        print(f"   • Loaded merged CV data: {cv_file.name}")
+        print(f"   • Complete training data: {len(train_df):,} samples")
+        print(f"   • CV data shape: {df_merged.shape}")
+        
+        # Convert date columns
+        df_merged['ds'] = pd.to_datetime(df_merged['ds'])
+        df_merged['cutoff'] = pd.to_datetime(df_merged['cutoff'])
+        train_df['ds'] = pd.to_datetime(train_df['ds'])
+        
+        # Identify model columns (exclude metadata columns)
+        exclude_cols = {'unique_id', 'ds', 'cutoff', 'y'}
+        model_cols = [col for col in df_merged.columns if col not in exclude_cols and not col.endswith('-lo-95') and not col.endswith('-hi-95')]
+        
+        print(f"   • Found models: {model_cols}")
+        
+        # Create plots directory inside cv_dir
+        cv_plot_dir = cv_dir / 'plot'
+        cv_plot_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create individual plot for each model
+        for model_name in model_cols:
+            create_single_cv_plot(df_merged, model_name, cv_plot_dir, horizon, train_df)
+            
+        print(f"✅ Cross-validation plots created successfully in {cv_plot_dir}")
+        
+    except Exception as e:
+        print(f"❌ Error creating CV plots: {str(e)}")
+
+def create_single_cv_plot(df: pd.DataFrame, model_name: str, plot_dir: Path, horizon: int, train_df: pd.DataFrame):
+    """
+    Create a single cross-validation plot for a specific model.
+    
+    Args:
+        df: Merged DataFrame with all CV results
+        model_name: Name of the model to plot
+        plot_dir: Directory to save plots
+        horizon: Forecast horizon in days
+        train_df: Complete training DataFrame with actual values
+    """
+    plt.style.use('default')
+    fig, ax = plt.subplots(figsize=(16, 10))
+    
+    # Get unique cutoff dates (CV windows)
+    cutoff_dates = sorted(df['cutoff'].unique())
+    
+    # Use a color palette for different CV windows
+    colors = plt.cm.tab20(np.linspace(0, 1, len(cutoff_dates)))
+    
+    # Get CV prediction date range
+    cv_start_date = df['ds'].min()
+    cv_end_date = df['ds'].max()
+    
+    # Get last 20 days of training data before CV starts
+    context_days = 20
+    context_start_date = cv_start_date - pd.Timedelta(days=context_days)
+    
+    # Filter training data for context period
+    context_train = train_df[
+        (train_df['ds'] >= context_start_date) & 
+        (train_df['ds'] < cv_start_date)
+    ].copy()
+    
+    # Get actual values for CV prediction period from train_df
+    cv_actual = train_df[
+        (train_df['ds'] >= cv_start_date) & 
+        (train_df['ds'] <= cv_end_date)
+    ].copy()
+    
+    # Combine context and CV actual data for continuous line
+    combined_actual = pd.concat([context_train, cv_actual], ignore_index=True).sort_values('ds')
+    
+    # Plot focused actual values line (last 20 days + CV period)
+    ax.plot(combined_actual['ds'], combined_actual['y'], 
+           color='black', linewidth=2.5, label='Actual Values', alpha=0.9, zorder=10)
+    
+    # Plot each CV window predictions
+    for i, cutoff_date in enumerate(cutoff_dates):
+        window_data = df[df['cutoff'] == cutoff_date].sort_values('ds')
+        
+        # Plot model predictions
+        ax.plot(window_data['ds'], window_data[model_name], 
+               color=colors[i], linewidth=1.5, alpha=0.7, 
+               label=f'CV Window {i+1}' if i < 5 else None)  # Only label first 5 windows
+        
+        # # Add prediction intervals if available
+        # lo_col = f'{model_name}-lo-95'
+        # hi_col = f'{model_name}-hi-95'
+        # if lo_col in window_data.columns and hi_col in window_data.columns:
+        #     ax.fill_between(window_data['ds'], window_data[lo_col], window_data[hi_col],
+        #                    color=colors[i], alpha=0.1)
+    
+    # Styling
+    ax.set_title(f'{model_name} - Cross-Validation Results\n{len(cutoff_dates)} CV Windows | Horizon: {horizon} days', 
+                fontsize=14, fontweight='bold')
+    ax.set_xlabel('Date', fontsize=12)
+    ax.set_ylabel('Bitcoin Price (USD)', fontsize=12)
+    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+    
+    # Legend (only show subset to avoid cluttering)
+    handles, labels = ax.get_legend_handles_labels()
+    if len(handles) > 10:  # If too many handles, show only actual + first few CV windows
+        ax.legend(handles[:6], labels[:6], bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+    else:
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+    
+    # Format dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+    
+    # Add info text
+    info_text = f"Model: {model_name}\nCV Windows: {len(cutoff_dates)}\nHorizon: {horizon} days"
+    ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=10, 
+           verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8))
+    
+    plt.tight_layout()
+    
+    # Save plot
+    plot_path = plot_dir / f'{model_name}_cv_{horizon}d.png'
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close(fig)
+    
+    print(f"   • Saved CV plot: {plot_path.name}")
+
+def create_cv_visualizations_main():
+    """
+    Main function to create cross-validation visualizations using current horizon configuration.
+    """
+    print("🚀 Starting Cross-Validation Visualization...")
+    
+    # Get directories based on current HORIZON
+    cv_dir, final_dir, plot_dir = get_horizon_directories()
+    
+    print(f"   • Using horizon: {HORIZON} days")
+    print(f"   • CV directory: {cv_dir}")
+    
+    # Create CV plots
+    create_cv_individual_plots(cv_dir, HORIZON)
+    
+    print("✅ Cross-validation visualization complete!")
+
 # def main():
 #     # Dummy data for testing
 #     dates = pd.to_datetime(pd.date_range(start='2022-01-01', periods=100, freq='D'))
@@ -285,5 +455,5 @@ def create_visualizations_step(train_df: pd.DataFrame, test_df: pd.DataFrame, al
 #     create_visualizations_step(train_df, test_df, all_forecasts_data, horizon)
 #     print("Visualization test complete.")
 
-# if __name__ == "__main__":
-#     main() 
+if __name__ == "__main__":
+    create_cv_visualizations_main() 

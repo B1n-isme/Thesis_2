@@ -35,39 +35,22 @@ class RobustSelectionMixin:
     def _prepare_aligned_data(self, df: pd.DataFrame, 
                             features: Optional[List[str]] = None,
                             horizon: int = 1,
-                            drop_na: bool = True,
-                            use_stationary_target: bool = False) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+                            drop_na: bool = True) -> Tuple[np.ndarray, np.ndarray, List[str]]:
         """
         Unified data preparation function with perfect alignment of features and target.
-        
-        Args:
-            df: Input dataframe with time series data
-            features: Specific features to use (if None, use all non-meta columns)
-            horizon: Forecasting horizon (number of steps ahead)
-            drop_na: Whether to drop NaN values after alignment
-            use_stationary_target: Whether to use stationary target for analysis (if available)
-            
-        Returns:
-            Tuple of (X, y, feature_names) arrays with perfect alignment
+        This version uses the raw 'y' column as the target.
         """
         # Sort by date to ensure proper order
         df_sorted = df.sort_values('ds').copy()
         
-        # Choose target column based on availability and preference
-        target_col = 'y'  # Default to original target
-        if use_stationary_target and 'target_stationary' in df_sorted.columns:
-            target_col = 'target_stationary'
+        target_col = 'y'
         
-        # Get feature columns (exclude metadata and target only)
+        # Get feature columns
         if features is None:
-            # All columns except metadata and the original 'y' are potential features
-            base_features = [col for col in df_sorted.columns if col not in ['unique_id', 'ds', 'y']]
+            # All columns except metadata and the target are potential features
+            feature_cols = [col for col in df_sorted.columns if col not in ['unique_id', 'ds', 'y']]
         else:
-            base_features = features
-        
-        # --- FIX: Ensure the selected target is not also in the feature list ---
-        # This prevents a downstream error when the target column is duplicated.
-        feature_cols = [f for f in base_features if f != target_col]
+            feature_cols = features
         
         # Create working dataframe with only needed columns
         work_df = df_sorted[[target_col] + feature_cols].copy()
@@ -112,7 +95,7 @@ class RobustSelectionMixin:
             self.print_info("GPU requested but not available. Falling back to CPU.")
         
         X, y, feature_names = self._prepare_aligned_data(
-            train_df, horizon=HORIZON, use_stationary_target=True
+            train_df, horizon=HORIZON
         )
         
         # Track feature selection frequency
@@ -134,7 +117,7 @@ class RobustSelectionMixin:
                 # Direct model training on bootstrap sample using aligned data preparation
                 bootstrap_df = train_df.iloc[start_idx:end_idx].copy()
                 X_boot, y_boot, feature_cols_boot = self._prepare_aligned_data(
-                    bootstrap_df, features=feature_names, horizon=HORIZON, use_stationary_target=True
+                    bootstrap_df, features=feature_names, horizon=HORIZON
                 )
                 
                 if X_boot.shape[0] == 0:
@@ -298,83 +281,22 @@ class RobustSelectionMixin:
         
         return features_for_vif
     
-    def permutation_importance_validation(self, train_df: pd.DataFrame, val_df: pd.DataFrame,
-                                        selected_features: List[str],
-                                        n_repeats: int = 10,
-                                        use_gpu: bool = False) -> Dict[str, Any]:
-        """
-        Validates features using permutation importance on a hold-out set.
-        This uses a LightGBM model by default.
-        """
-        self.print_info(f"Starting Permutation Importance Validation with LightGBM...")
-
-        if not selected_features:
-            self.print_info("No features to validate, skipping PFI.")
-            return {'selected_features': [], 'pfi_importance': pd.DataFrame()}
-            
-        # Align data using the original 'y' target for validation
-        X_train, y_train, feature_names = self._prepare_aligned_data(
-            train_df, features=selected_features, horizon=HORIZON, use_stationary_target=False
-        )
-        X_val, y_val, _ = self._prepare_aligned_data(
-            val_df, features=selected_features, horizon=HORIZON, use_stationary_target=False
-        )
-        
-        gpu_available = use_gpu and torch.cuda.is_available()
-        params = {'random_state': self.random_state, 'n_jobs': -1, 'verbosity': -1}
-        if gpu_available:
-            params['device'] = 'gpu'
-            self.print_info("Using GPU for PFI LightGBM.")
-
-        model = lgb.LGBMRegressor(**params)
-        model.fit(X_train, y_train)
-        
-        # Calculate permutation importance
-        pfi_result = permutation_importance(
-            model, X_val, y_val, 
-            n_repeats=n_repeats, 
-            random_state=self.random_state, 
-            scoring='neg_mean_absolute_error',
-            n_jobs=-1
-        )
-        
-        # Process results
-        pfi_importance_df = pd.DataFrame({
-            'feature': feature_names,
-            'importance_mean': pfi_result.importances_mean,
-            'importance_std': pfi_result.importances_std,
-        }).sort_values('importance_mean', ascending=False)
-        
-        # Select features with positive importance
-        final_features = pfi_importance_df[
-            pfi_importance_df['importance_mean'] > 0
-        ]['feature'].tolist()
-        
-        self.print_info(f"PFI validation selected {len(final_features)} features with positive importance.")
-        
-        return {
-            'selected_features': final_features,
-            'pfi_importance': pfi_importance_df,
-        }
-
     def robust_comprehensive_selection(self, train_df: pd.DataFrame, val_df: pd.DataFrame,
                                      tree_methods: List[str] = ['xgboost', 'lightgbm', 'random_forest'],
                                      min_consensus_level: int = 1,
-                                     n_repeats_permutation: int = 10,
+                                     handle_multicollinearity_flag: bool = False,
                                      results_dir: Optional[str] = None,
                                      use_gpu: bool = False,
                                      **kwargs) -> Dict[str, Any]:
         """
-        Orchestrates a robust, multi-stage feature selection pipeline.
+        Orchestrates a simplified feature selection pipeline.
         
         Workflow:
-        1.  Run Stability Selection with multiple tree-based models.
-        2.  Create a consensus list of features and calculate average stability scores.
-        3.  Perform multicollinearity reduction, using stability scores to break ties.
-        4.  Run Permutation Feature Importance (PFI) on the filtered set for final validation.
-        5.  Return final recommendations and detailed intermediate results.
+        1.  Run Stability Selection with multiple tree-based models on the raw 'y' target.
+        2.  Create a consensus list of features based on how many models selected them.
+        3.  Optionally, perform multicollinearity reduction.
         """
-        self.print_info("--- Starting Robust Comprehensive Selection ---")
+        self.print_info("--- Starting Simplified Comprehensive Selection ---")
         
         # --- Step 1: Stability Selection ---
         stability_results = {}
@@ -385,26 +307,9 @@ class RobustSelectionMixin:
             stability_results[method] = result
             self._save_feature_list(result['selected_features'], f"1_{method}_stability_features_{HORIZON}.txt", results_dir)
 
-        # --- Step 2: Create Consensus and Prepare for Multicollinearity Reduction ---
-        self.print_info("\n--- Step 2: Aggregating Stability Results ---")
+        # --- Step 2: Create Consensus ---
+        self.print_info("\n--- Step 2: Aggregating Stability Results & Building Consensus ---")
         
-        # Combine all frequency dataframes
-        all_freq_dfs = [res['selection_frequency'].rename(columns={'frequency': f'frequency_{method}'}) 
-                        for method, res in stability_results.items()]
-        
-        # Merge all dataframes on 'feature', filling NaNs with 0
-        merged_freq_df = all_freq_dfs[0]
-        for df in all_freq_dfs[1:]:
-            merged_freq_df = pd.merge(merged_freq_df, df, on='feature', how='outer')
-        merged_freq_df = merged_freq_df.fillna(0)
-        
-        # Calculate average and max stability scores
-        freq_cols = [f'frequency_{method}' for method in tree_methods]
-        merged_freq_df['frequency_stability_avg'] = merged_freq_df[freq_cols].mean(axis=1)
-        
-        # --- Step 2b: Build Consensus List ---
-        self.print_info(f"\nBuilding consensus list with min_consensus_level={min_consensus_level}")
-
         # Get the list of stable features from each model
         stable_features_per_model = [res['selected_features'] for res in stability_results.values()]
 
@@ -418,71 +323,55 @@ class RobustSelectionMixin:
             feature for feature, count in feature_counts.items()
             if count >= min_consensus_level
         ]
-
-        # Filter the merged_freq_df to only include these consensus features
-        merged_freq_df = merged_freq_df[merged_freq_df['feature'].isin(initial_consensus_features)]
-        
         self.print_info(f"Found {len(initial_consensus_features)} consensus features selected by at least {min_consensus_level} model(s).")
         self._save_feature_list(initial_consensus_features, f"1_initial_stable_features_{HORIZON}.txt", results_dir)
         
-        # --- Step 3: Multicollinearity Reduction ---
-        self.print_info("\n--- Step 3: Handling Multicollinearity ---")
+        final_features = initial_consensus_features
         
-        # Prepare data for VIF (use the training set part)
-        _, _, feature_names = self._prepare_aligned_data(train_df, features=initial_consensus_features, use_stationary_target=True)
-        data_for_vif = train_df[feature_names].copy()
-        
-        features_after_multicollinearity = self.handle_multicollinearity(
-            features_to_check=initial_consensus_features,
-            stability_scores=merged_freq_df.set_index('feature'),
-            data_for_vif=data_for_vif,
-            corr_threshold=kwargs.get('corr_threshold', 0.9),
-            vif_threshold=kwargs.get('vif_threshold', 10.0)
-        )
-        self._save_feature_list(features_after_multicollinearity, f"2_after_multicollinearity_features_{HORIZON}.txt", results_dir)
+        # --- Step 3: Multicollinearity Reduction (Optional) ---
+        if handle_multicollinearity_flag:
+            self.print_info("\n--- Step 3: Handling Multicollinearity ---")
+            
+            # Combine all frequency dataframes for tie-breaking
+            all_freq_dfs = [res['selection_frequency'].rename(columns={'frequency': f'frequency_{method}'}) 
+                            for method, res in stability_results.items()]
+            merged_freq_df = all_freq_dfs[0]
+            for df in all_freq_dfs[1:]:
+                merged_freq_df = pd.merge(merged_freq_df, df, on='feature', how='outer')
+            merged_freq_df = merged_freq_df.fillna(0)
+            freq_cols = [f'frequency_{method}' for method in tree_methods]
+            merged_freq_df['frequency_stability_avg'] = merged_freq_df[freq_cols].mean(axis=1)
 
-        # --- Step 4: Permutation Importance Validation ---
-        self.print_info("\n--- Step 4: Permutation Importance Final Validation ---")
-        pfi_results = self.permutation_importance_validation(
-            train_df,
-            val_df,
-            selected_features=features_after_multicollinearity,
-            n_repeats=n_repeats_permutation,
-            use_gpu=use_gpu
-        )
-        final_features = pfi_results['selected_features']
-        self._save_feature_list(final_features, f"3_final_pfi_features_{HORIZON}.txt", results_dir)
+            # Prepare data for VIF (use the training set part)
+            _, _, feature_names = self._prepare_aligned_data(train_df, features=initial_consensus_features)
+            data_for_vif = train_df[feature_names].copy()
+            
+            features_after_multicollinearity = self.handle_multicollinearity(
+                features_to_check=initial_consensus_features,
+                stability_scores=merged_freq_df.set_index('feature'),
+                data_for_vif=data_for_vif,
+                corr_threshold=kwargs.get('corr_threshold', 0.9),
+                vif_threshold=kwargs.get('vif_threshold', 10.0)
+            )
+            self._save_feature_list(features_after_multicollinearity, f"2_after_multicollinearity_features_{HORIZON}.txt", results_dir)
+            final_features = features_after_multicollinearity
+        else:
+            self.print_info("\n--- Step 3: Skipping Multicollinearity Reduction ---")
         
-        # --- Step 5: Final Recommendations and Reporting ---
+        # --- Step 4: Final Recommendations and Reporting ---
         self.print_info("\n--- Finalizing Results ---")
         
         # Create a final recommendation DataFrame
-        final_recommendation_df = merged_freq_df[merged_freq_df['feature'].isin(final_features)].copy()
-        
-        # Add a column indicating if it passed multicollinearity and PFI
-        final_recommendation_df['passed_multicollinearity'] = final_recommendation_df['feature'].isin(features_after_multicollinearity)
-        final_recommendation_df['passed_pfi'] = final_recommendation_df['feature'].isin(final_features)
-        
-        # Add PFI scores
-        pfi_scores = pfi_results['pfi_importance'].set_index('feature')
-        final_recommendation_df = final_recommendation_df.merge(pfi_scores, on='feature', how='left')
+        final_recommendation_df = pd.DataFrame({
+            'feature': final_features
+        })
 
-        # Final count of features from each major model
-        final_counts = Counter(final_recommendation_df['feature'].tolist())
-        
         # Build final results package
         results_package = {
             'initial_stability_results': stability_results,
-            'multicollinearity_results': {
-                'features_before': initial_consensus_features,
-                'features_after': features_after_multicollinearity
-            },
-            'pfi_results': pfi_results,
             'final_recommendations': {
                 'consensus_features': final_features,
-                'feature_counts': final_recommendation_df.sort_values(
-                    'importance_mean', ascending=False
-                ).reset_index(drop=True)
+                'feature_counts': final_recommendation_df
             }
         }
         
@@ -496,6 +385,7 @@ class RobustSelectionMixin:
             train_df=train_df,
             val_df=val_df,
             tree_methods=['xgboost', 'lightgbm', 'random_forest'],
-            n_repeats_permutation=10,
+            min_consensus_level=1,
+            handle_multicollinearity_flag=True,
             use_gpu=True
         ) 

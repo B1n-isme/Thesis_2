@@ -24,9 +24,10 @@ def main():
     # Parameters are mainly for Stability Selection and PFI.
     selection_params = {
         'tree_methods': ['xgboost', 'lightgbm', 'random_forest'],
+        'min_consensus_level': 1,
+        'handle_multicollinearity_flag': False,
         'n_bootstrap': 50,          # For Stability Selection
-        'selection_threshold': 0.6, # For Stability Selection
-        'n_repeats_permutation': 10 # For PFI
+        'selection_threshold': 0.6 # For Stability Selection
     }
 
     # 4. Run the complete feature selection strategy

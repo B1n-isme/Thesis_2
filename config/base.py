@@ -13,7 +13,7 @@ from ray.tune.search.optuna import OptunaSearch
 from typing import Any
 
 # === Forecasting Configuration ===
-HORIZON = 30
+HORIZON = 90
 LEVELS = [95]
 TEST_LENGTH_MULTIPLIER = 1
 SEED = 42
@@ -55,20 +55,30 @@ RESULTS_DIR = Path('results')
 RESULTS_7D_DIR = RESULTS_DIR / 'results_7d'
 RESULTS_14D_DIR = RESULTS_DIR / 'results_14d' 
 RESULTS_30D_DIR = RESULTS_DIR / 'results_30d'
+RESULTS_60D_DIR = RESULTS_DIR / 'results_60d'
+RESULTS_90D_DIR = RESULTS_DIR / 'results_90d'
 
 CV_7D_DIR = RESULTS_7D_DIR / 'cv'
 CV_14D_DIR = RESULTS_14D_DIR / 'cv'
 CV_30D_DIR = RESULTS_30D_DIR / 'cv'
+CV_60D_DIR = RESULTS_60D_DIR / 'cv'
+CV_90D_DIR = RESULTS_90D_DIR / 'cv'
 
 FINAL_7D_DIR = RESULTS_7D_DIR / 'final'
 FINAL_14D_DIR = RESULTS_14D_DIR / 'final'
 FINAL_30D_DIR = RESULTS_30D_DIR / 'final'
+FINAL_60D_DIR = RESULTS_60D_DIR / 'final'
+FINAL_90D_DIR = RESULTS_90D_DIR / 'final'
 
 PLOT_7D_DIR = FINAL_7D_DIR / 'plots'
 PLOT_14D_DIR = FINAL_14D_DIR / 'plots'
 PLOT_30D_DIR = FINAL_30D_DIR / 'plots'
+PLOT_60D_DIR = FINAL_60D_DIR / 'plots'
+PLOT_90D_DIR = FINAL_90D_DIR / 'plots'
 
-for path in [CV_7D_DIR, CV_14D_DIR, CV_30D_DIR, FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR, PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR]:
+for path in [CV_7D_DIR, CV_14D_DIR, CV_30D_DIR, CV_60D_DIR, CV_90D_DIR, 
+             FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR, FINAL_60D_DIR, FINAL_90D_DIR,
+             PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR, PLOT_60D_DIR, PLOT_90D_DIR]:
     path.mkdir(parents=True, exist_ok=True)
 
 # For initial baseline establishment (as recommended in algo.txt)

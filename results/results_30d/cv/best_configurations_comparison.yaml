@@ -1,0 +1,107 @@
+AutoNBEATSx:
+  input_size: 60
+  learning_rate: 0.0001
+  scaler_type: robust
+  max_steps: 100
+  batch_size: 16
+  windows_batch_size: 256
+  val_check_steps: 50
+  random_seed: 19
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - btc_sma_50_slope
+  - EM_ETF
+  - Fear Greed
+  - Gold_Volatility
+  - btc_sma_21_slope
+  - btc_rsi_14
+  - miner_revenue_blockchain
+  - btc_macd_diff
+  - market_narrative_sentiment
+  - CBOE_Volatility
+  - marketcap_sentiment
+  - problem_malicious_sentiment
+  - volume_sentiment
+  - RHODL_cbbi
+  - bullish_sentiment
+  - bearish_sentiment
+  - btc_trading_volume
+AutoTSMixerx:
+  input_size: 60
+  learning_rate: 0.0001
+  scaler_type: robust
+  max_steps: 200
+  batch_size: 16
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 17
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - btc_sma_50_slope
+  - EM_ETF
+  - Fear Greed
+  - Gold_Volatility
+  - btc_sma_21_slope
+  - btc_rsi_14
+  - miner_revenue_blockchain
+  - btc_macd_diff
+  - market_narrative_sentiment
+  - CBOE_Volatility
+  - marketcap_sentiment
+  - problem_malicious_sentiment
+  - volume_sentiment
+  - RHODL_cbbi
+  - bullish_sentiment
+  - bearish_sentiment
+  - btc_trading_volume
+  n_block: 4
+  ff_dim: 64
+  dropout: 0.23595088818634719
+  n_series: 1
+AutoiTransformer:
+  input_size: 180
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 64
+  windows_batch_size: 512
+  val_check_steps: 50
+  random_seed: 14
+  accelerator: gpu
+  logger: false
+  hidden_size: 128
+  n_heads: 4
+  n_series: 1
+AutoBiTCN:
+  input_size: 60
+  learning_rate: 0.002
+  scaler_type: robust
+  max_steps: 150
+  batch_size: 32
+  windows_batch_size: 1024
+  val_check_steps: 50
+  random_seed: 17
+  accelerator: gpu
+  logger: false
+  hist_exog_list:
+  - btc_sma_50_slope
+  - EM_ETF
+  - Fear Greed
+  - Gold_Volatility
+  - btc_sma_21_slope
+  - btc_rsi_14
+  - miner_revenue_blockchain
+  - btc_macd_diff
+  - market_narrative_sentiment
+  - CBOE_Volatility
+  - marketcap_sentiment
+  - problem_malicious_sentiment
+  - volume_sentiment
+  - RHODL_cbbi
+  - bullish_sentiment
+  - bearish_sentiment
+  - btc_trading_volume
+  hidden_size: 16
+  dropout: 0.23595088818634719

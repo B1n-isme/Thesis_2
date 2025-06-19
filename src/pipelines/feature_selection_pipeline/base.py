@@ -88,21 +88,12 @@ class FeatureSelector(
         """
         self.print_info("Starting robust feature selection strategy...")
 
-        # --- Create a temporary stationary target for robust feature selection ---
-        # This is created here to avoid polluting the global dataframe.
-        # It's used only for determining feature importance.
-        df_copy = df.copy()
-        df_copy['target_stationary'] = np.log(df_copy[target_col]).diff()
-        
         # Data splitting for robust evaluation
         # Ensure 'ds' is sorted if not already
-        df_copy = df_copy.sort_values('ds').reset_index(drop=True)
-        split_idx = int(len(df_copy) * 0.9)
-        train_df = df_copy.iloc[:split_idx]
-        val_df = df_copy.iloc[split_idx:]
-
-        # train_df = df.iloc[:-HORIZON * TEST_LENGTH_MULTIPLIER]
-        # val_df = df.iloc[-HORIZON * TEST_LENGTH_MULTIPLIER:]
+        df_sorted = df.sort_values('ds').reset_index(drop=True)
+        split_idx = int(len(df_sorted) * 0.9)
+        train_df = df_sorted.iloc[:split_idx]
+        val_df = df_sorted.iloc[split_idx:]
 
         self.print_info(f"Data split into training ({len(train_df)} rows) and validation ({len(val_df)} rows).")
 

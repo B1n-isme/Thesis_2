@@ -34,9 +34,9 @@ if TYPE_CHECKING:
 def get_horizon_directories():
     """Get the appropriate directories based on the HORIZON parameter."""
     from config.base import (
-        CV_7D_DIR, CV_14D_DIR, CV_30D_DIR,
-        FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR,
-        PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR
+        CV_7D_DIR, CV_14D_DIR, CV_30D_DIR, CV_60D_DIR, CV_90D_DIR,
+        FINAL_7D_DIR, FINAL_14D_DIR, FINAL_30D_DIR, FINAL_60D_DIR, FINAL_90D_DIR,
+        PLOT_7D_DIR, PLOT_14D_DIR, PLOT_30D_DIR, PLOT_60D_DIR, PLOT_90D_DIR
     )
     
     if HORIZON == 7:
@@ -45,8 +45,12 @@ def get_horizon_directories():
         return CV_14D_DIR, FINAL_14D_DIR, PLOT_14D_DIR
     elif HORIZON == 30:
         return CV_30D_DIR, FINAL_30D_DIR, PLOT_30D_DIR
+    elif HORIZON == 60:
+        return CV_60D_DIR, FINAL_60D_DIR, PLOT_60D_DIR
+    elif HORIZON == 90:
+        return CV_90D_DIR, FINAL_90D_DIR, PLOT_90D_DIR
     else:
-        raise ValueError(f"Unsupported HORIZON value: {HORIZON}. Supported values are 7, 14, 30.")
+        raise ValueError(f"Unsupported HORIZON value: {HORIZON}. Supported values are 7, 14, 30, 60, 90.")
 
 
 def seed_everything(seed=42):
