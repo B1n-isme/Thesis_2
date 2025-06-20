@@ -1,5 +1,5 @@
 from src.pipelines.feature_selection_pipeline import FeatureSelector
-from src.dataset.data_preparation import prepare_pipeline_data
+from src.dataset.data_preparation import prepare_pipeline_data, load_and_prepare_data
 import pandas as pd
 from config.base import RAW_DATA_PATH, HORIZON
 from pathlib import Path
@@ -10,7 +10,10 @@ def main():
     Main function to run the feature selection pipeline.
     """
     # 1. Load data
-    train_df, test_df, hist_exog_list, data_info, _ = prepare_pipeline_data(data_path=RAW_DATA_PATH)
+    train_df, test_df, hist_exog_list, data_info, _ = prepare_pipeline_data(
+        data_path=RAW_DATA_PATH,
+        apply_transformations=True
+        )
 
     # 2. Initialize the selector
     selector = FeatureSelector(random_state=42, verbose=True, use_gpu=True)
@@ -60,12 +63,11 @@ def main():
     # 6. Export the final dataframes with selected features
     print("\nExporting data with selected features...")
     
-    # Filter the original train and test sets
-    final_train_df = train_df[['unique_id', 'ds', 'y'] + consensus_features]
-    final_test_df = test_df[['unique_id', 'ds', 'y'] + consensus_features]
+    # Load the original, untransformed data to ensure the final output is clean
+    full_original_df = load_and_prepare_data(data_path=RAW_DATA_PATH)
     
-    # Combine them for a final single file output
-    final_df = pd.concat([final_train_df, final_test_df])
+    # Filter the original dataframe to include only the selected features
+    final_df = full_original_df[['unique_id', 'ds', 'y'] + consensus_features]
     
     # Define output path with multicollinearity postfix if enabled
     multicoll_postfix = "_mc" if selection_params['handle_multicollinearity_flag'] else ""

@@ -274,19 +274,21 @@ def create_cv_individual_plots(cv_dir: Path, horizon: int):
     try:
         # Get complete training data for actual values
         print(f"   • Loading complete training data...")
-        train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(horizon=horizon)
+        # We need the original, untransformed data for plotting.
+        # The returned train_df would be transformed, so we use original_df instead.
+        _, _, _, _, original_df = prepare_pipeline_data(horizon=horizon, apply_transformations=True)
         
         # Read CV data
         df_merged = pd.read_csv(cv_file)
         
         print(f"   • Loaded merged CV data: {cv_file.name}")
-        print(f"   • Complete training data: {len(train_df):,} samples")
+        print(f"   • Complete training data: {len(original_df):,} samples")
         print(f"   • CV data shape: {df_merged.shape}")
         
         # Convert date columns
         df_merged['ds'] = pd.to_datetime(df_merged['ds'])
         df_merged['cutoff'] = pd.to_datetime(df_merged['cutoff'])
-        train_df['ds'] = pd.to_datetime(train_df['ds'])
+        original_df['ds'] = pd.to_datetime(original_df['ds'])
         
         # Identify model columns (exclude metadata columns)
         exclude_cols = {'unique_id', 'ds', 'cutoff', 'y'}
@@ -300,14 +302,14 @@ def create_cv_individual_plots(cv_dir: Path, horizon: int):
         
         # Create individual plot for each model
         for model_name in model_cols:
-            create_single_cv_plot(df_merged, model_name, cv_plot_dir, horizon, train_df)
+            create_single_cv_plot(df_merged, model_name, cv_plot_dir, horizon, original_df)
             
         print(f"✅ Cross-validation plots created successfully in {cv_plot_dir}")
         
     except Exception as e:
         print(f"❌ Error creating CV plots: {str(e)}")
 
-def create_single_cv_plot(df: pd.DataFrame, model_name: str, plot_dir: Path, horizon: int, train_df: pd.DataFrame):
+def create_single_cv_plot(df: pd.DataFrame, model_name: str, plot_dir: Path, horizon: int, all_data_df: pd.DataFrame):
     """
     Create a single cross-validation plot for a specific model.
     
@@ -316,7 +318,7 @@ def create_single_cv_plot(df: pd.DataFrame, model_name: str, plot_dir: Path, hor
         model_name: Name of the model to plot
         plot_dir: Directory to save plots
         horizon: Forecast horizon in days
-        train_df: Complete training DataFrame with actual values
+        all_data_df: Complete DataFrame with all actual values (untransformed)
     """
     plt.style.use('default')
     fig, ax = plt.subplots(figsize=(16, 10))
@@ -336,15 +338,15 @@ def create_single_cv_plot(df: pd.DataFrame, model_name: str, plot_dir: Path, hor
     context_start_date = cv_start_date - pd.Timedelta(days=context_days)
     
     # Filter training data for context period
-    context_train = train_df[
-        (train_df['ds'] >= context_start_date) & 
-        (train_df['ds'] < cv_start_date)
+    context_train = all_data_df[
+        (all_data_df['ds'] >= context_start_date) & 
+        (all_data_df['ds'] < cv_start_date)
     ].copy()
     
     # Get actual values for CV prediction period from train_df
-    cv_actual = train_df[
-        (train_df['ds'] >= cv_start_date) & 
-        (train_df['ds'] <= cv_end_date)
+    cv_actual = all_data_df[
+        (all_data_df['ds'] >= cv_start_date) & 
+        (all_data_df['ds'] <= cv_end_date)
     ].copy()
     
     # Combine context and CV actual data for continuous line

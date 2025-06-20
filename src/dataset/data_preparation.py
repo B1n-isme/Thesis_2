@@ -5,11 +5,12 @@ import pandas as pd
 import numpy as np
 from typing import Tuple, List, Dict
 from config.base import (
-    DATA_PATH, DATE_COLUMN, TARGET_COLUMN, TARGET_RENAMED, 
+    RAW_DATA_PATH, DATA_PATH, DATE_COLUMN, TARGET_COLUMN, TARGET_RENAMED, 
     DATE_RENAMED, UNIQUE_ID_VALUE, HORIZON, TEST_LENGTH_MULTIPLIER
 )
 from src.utils.utils import get_historical_exogenous_features, print_data_info
 from statsmodels.tsa.stattools import adfuller
+from scipy.stats import boxcox_normmax
 
 
 def load_and_prepare_data(data_path=None):
@@ -36,24 +37,77 @@ def load_and_prepare_data(data_path=None):
 
 
 def difference_non_stationary_features(df: pd.DataFrame, exog_list: List[str]) -> pd.DataFrame:
-    """Checks for stationarity in exogenous features and applies differencing if needed."""
-    print("Checking for non-stationary exogenous features...")
-    df_transformed = df.copy()
-    for col in exog_list:
-        # Cannot test stationarity on columns with NaNs, fill them before test
-        if df_transformed[col].isnull().any():
-            # Using forward fill as a simple imputation method
-            df_transformed[col] = df_transformed[col].fillna(method='ffill').fillna(method='bfill')
-            if df_transformed[col].isnull().any():
-                print(f"  - Skipping stationarity test for '{col}' due to persistent NaN values after imputation.")
-                continue
+    """
+    Applies transformations to non-stationary features based on their category,
+    as per the methodology in feature_transform.md.
 
-        p_value = adfuller(df_transformed[col].dropna())[1] # dropna just in case
+    - Raw prices, blockchain data, and trend-following indicators are tested for
+      stationarity. If non-stationary, they are transformed using log returns
+      if appropriate (checked via Box-Cox), otherwise using simple differencing.
+    - Oscillators, spreads, ratios, sentiment, and other bounded indicators are
+      kept in their raw form.
+    """
+    print("Applying transformations to non-stationary exogenous features...")
+    df_transformed = df.copy()
+
+    # Features to skip transformation (Group 4 & 5 from feature_transform.md)
+    # These are designed to be stationary or their raw value is meaningful.
+    SKIP_SUFFIXES = (
+        '_diff', '_ratio', '_slope', '_dist', '_dist_norm', 
+        '_width', '_sentiment'
+    )
+    SKIP_EXACT = {
+        'btc_rsi_14', 'Confidence_cbbi', 'Fear Greed',
+        'btc_volatility_index', 'Gold_Volatility', 'Oil_Volatility', 'CBOE_Volatility'
+    }
+
+    for col in exog_list:
+        # Check if the feature should be skipped based on its name
+        if col in SKIP_EXACT or any(col.endswith(s) for s in SKIP_SUFFIXES):
+            print(f"  - Skipping transformation for '{col}' (stationary by design).")
+            continue
+
+        # Fill NaNs for the purpose of testing.
+        series = df_transformed[col]
+        if series.isnull().any():
+            series = series.fillna(method='ffill').fillna(method='bfill')
+        
+        if series.isnull().all():
+            print(f"  - Skipping '{col}' due to all NaN values.")
+            continue
+        
+        # Stationarity Test (ADF)
+        p_value = adfuller(series.dropna())[1]
+
         if p_value > 0.05:
-            print(f"  - Feature '{col}' is non-stationary (p-value: {p_value:.4f}). Applying differencing.")
-            df_transformed[col] = df_transformed[col].diff()
-    
-    print("✅ Stationarity check complete.")
+            print(f"  - Feature '{col}' is non-stationary (p-value: {p_value:.4f}). Applying transformation.")
+            
+            # Use the original series from the copied dataframe for transformation
+            series_to_transform = df_transformed[col]
+            
+            # Check for non-positive values. Log/Box-Cox requires positive values.
+            if (series_to_transform <= 0).any():
+                print(f"    - Contains non-positive values. Applying simple differencing.")
+                df_transformed[col] = series_to_transform.diff()
+            else:
+                # Check for variance stability with Box-Cox to decide on log transform
+                try:
+                    # Find optimal lambda for Box-Cox.
+                    lambda_ = boxcox_normmax(series_to_transform.dropna())
+                    
+                    if abs(lambda_) < 0.5:  # Threshold for being "close to log"
+                        print(f"    - Box-Cox lambda ({lambda_:.2f}) suggests log transform. Applying log returns.")
+                        df_transformed[col] = np.log(series_to_transform).diff()
+                    else:
+                        print(f"    - Box-Cox lambda ({lambda_:.2f}) suggests non-log transform. Applying simple differencing.")
+                        df_transformed[col] = series_to_transform.diff()
+                except Exception as e:
+                    print(f"    - Box-Cox calculation failed for '{col}': {e}. Applying simple differencing.")
+                    df_transformed[col] = series_to_transform.diff()
+        else:
+            print(f"  - Feature '{col}' is stationary (p-value: {p_value:.4f}). No transformation needed.")
+
+    print("✅ Feature transformation process complete.")
     return df_transformed
 
 
@@ -99,45 +153,45 @@ def split_data(df, horizon, test_length_multiplier):
     return train_df, test_df
 
 
-def prepare_data(horizon, test_length_multiplier, data_path=None, apply_transformations: bool = True):
-    """Complete data preparation pipeline.
-    
-    Args:
-        horizon (int): Forecast horizon in days
-        test_length_multiplier (int): Multiplier to determine test set length
-        data_path (str, optional): Path to data file. Defaults to DATA_PATH.
-        apply_transformations (bool): If True, applies log-return and differencing.
+def load_and_process_data(
+    data_path: str,
+    horizon: int,
+    test_length_multiplier: int,
+    apply_transformations: bool
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, List[str]]:
     """
-    # Load and prepare data
+    Loads data, splits it, and optionally applies transformations.
+    
+    Returns a tuple of (train_df, test_df, original_df_for_reference, hist_exog_list).
+    """
+    # Load and perform initial preparation (renaming, etc.)
     df = load_and_prepare_data(data_path=data_path)
     
-    # Store original df for back-transformation reference, which is always untransformed
+    # Keep a copy of the original, untransformed data for reference (e.g., for back-transformation)
     original_df_for_reference = df.copy()
 
-    if apply_transformations:
-        print("Applying transformations (log-return and differencing)...")
-        # Get historical exogenous features from the original data
-        hist_exog_list = get_historical_exogenous_features(df)
-        
-        # Handle non-stationarity in exogenous features
-        df_stationary = difference_non_stationary_features(df, hist_exog_list)
-
-        # Transform target to log returns using the stationarized df
-        df_to_split = transform_target_to_log_return(df_stationary)
-        print("✅ Transformations applied.")
-    else:
-        print("Skipping transformations. Loading data as is.")
-        df_to_split = df
-
-    # Split data
-    train_df, test_df = split_data(df_to_split, horizon, test_length_multiplier)
+    # Determine the list of historical exogenous features from the loaded data
+    hist_exog_list = get_historical_exogenous_features(df)
     
-    # Reorder columns for consistency, using the final list of exogenous features
-    final_exog_list = get_historical_exogenous_features(df_to_split)
+    df_for_split = df
+    if apply_transformations:
+        # Apply differencing to non-stationary exogenous features across the entire dataset
+        # This is done before splitting to maintain consistency in feature definitions.
+        df_for_split = difference_non_stationary_features(df, hist_exog_list)
+
+    # Split the data into training and testing sets
+    train_df, test_df = split_data(df_for_split, horizon, test_length_multiplier)
+    
+    # If transformations are enabled, apply log-return transformation to the training set's target
+    if apply_transformations:
+        train_df = transform_target_to_log_return(train_df)
+
+    # Ensure consistent column order in the final dataframes
+    final_exog_list = get_historical_exogenous_features(df_for_split)
     train_df = train_df[['unique_id', 'ds', 'y'] + final_exog_list]
     test_df = test_df[['unique_id', 'ds', 'y'] + final_exog_list]
     
-    return train_df, test_df, final_exog_list, original_df_for_reference
+    return train_df, test_df, original_df_for_reference, hist_exog_list
 
 
 def prepare_pipeline_data(
@@ -161,10 +215,10 @@ def prepare_pipeline_data(
     print("\n📊 STEP 1: DATA PREPARATION")
     print("-" * 40)
     
-    train_df, test_df, hist_exog_list, original_df = prepare_data(
+    train_df, test_df, original_df, hist_exog_list = load_and_process_data(
+        data_path=data_path,
         horizon=horizon,
         test_length_multiplier=test_length_multiplier,
-        data_path=data_path,
         apply_transformations=apply_transformations
     )
     
@@ -188,16 +242,20 @@ def prepare_pipeline_data(
 def main():
     """Main function to demonstrate prepare_pipeline_data usage."""
     print("--- Running data preparation with transformations (default) ---")
-    train_df, test_df, _, _, _ = prepare_pipeline_data(apply_transformations=True)
+    train_df, test_df, _, _, _ = prepare_pipeline_data(
+        data_path=RAW_DATA_PATH, 
+        apply_transformations=True)
     print("\nTransformed training data head:")
     print(train_df.head())
     
     print("\n" + "="*50 + "\n")
 
-    print("--- Running data preparation without transformations ---")
-    train_df_no_transform, _, _, _, _ = prepare_pipeline_data(apply_transformations=False)
-    print("\nUntransformed training data head:")
-    print(train_df_no_transform.head())
+    # print("--- Running data preparation without transformations ---")
+    # train_df_no_transform, _, _, _, _ = prepare_pipeline_data(
+    #     data_path=DATA_PATH, 
+    #     apply_transformations=False)
+    # print("\nUntransformed training data head:")
+    # print(train_df_no_transform.head())
 
 
 if __name__ == "__main__":

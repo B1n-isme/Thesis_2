@@ -26,7 +26,7 @@ from src.utils.utils import (
     process_cv_results,
     get_horizon_directories
 )
-from src.dataset.data_preparation import prepare_pipeline_data, load_and_prepare_data
+from src.dataset.data_preparation import prepare_pipeline_data
 
 # Get dynamic directories based on HORIZON
 CV_DIR, _, _ = get_horizon_directories()
@@ -156,6 +156,9 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
             auto_model_names = extract_model_names_from_columns(cv_df.columns.tolist())
             if not auto_model_names:
                 raise ValueError("No model columns with 'Auto' prefix found in the CV dataframe.")
+
+            # Back-transform predictions from log-return to price
+            cv_df = back_transform_log_returns(cv_df, original_df, auto_model_names)
             
             fitted_objects['neural'] = nf
             all_cv_dfs.append(cv_df)
@@ -190,7 +193,7 @@ if __name__ == "__main__":
     from src.models.neuralforecast.models import get_neural_models
     
     # This main block now demonstrates only the Stat/Neural CV part
-    train_df, _, hist_exog_list, _, original_df = prepare_pipeline_data()
+    train_df, _, hist_exog_list, _, original_df = prepare_pipeline_data(apply_transformations=True)
     stat_models = get_statistical_models(season_length=7)
     # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
     

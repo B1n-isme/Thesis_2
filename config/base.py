@@ -13,14 +13,14 @@ from ray.tune.search.optuna import OptunaSearch
 from typing import Any
 
 # === Forecasting Configuration ===
-HORIZON = 7
+HORIZON = 14
 LEVELS = [95]
 TEST_LENGTH_MULTIPLIER = 1
 SEED = 42
 
 # === Data Configuration ===
-RAW_DATA_PATH = 'data/final/dataset.parquet'
-DATA_PATH = f'data/final/feature_selection_{HORIZON}.parquet'
+RAW_DATA_PATH = 'data/final/raw_dataset.parquet'
+DATA_PATH = f'data/final/feature_selection_{HORIZON}_mc.parquet'
 DATE_COLUMN = 'Date'
 DATE_RENAMED = 'ds'
 TARGET_COLUMN = 'btc_close'

@@ -122,6 +122,17 @@ def calculate_metrics_1(df: pd.DataFrame) -> Dict:
         'smape': np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_clean) + np.abs(y_pred_clean))) * 100
     }
 
+
+# Hit Ratio (Directional Accuracy)
+# Compares the direction (up/down) of the point forecast to the actual movement. Only the forecasted and actual values are needed to determine if the direction was predicted correctly.
+# Profit/Loss (PnL)
+# Simulates trading outcomes using the point forecast as the trading signal. The actual and predicted prices are used to compute hypothetical returns.
+# Sharpe Ratio
+# Uses the series of returns generated from point forecasts (as trading signals or portfolio weights) to calculate risk-adjusted return. Only point forecasts and actual prices are needed.
+# Maximum Drawdown (MDD)
+# Evaluates the largest peak-to-trough loss in a simulated portfolio based on point forecast-driven trades or allocations.
+# Heteroskedasticity-Adjusted MSE (HMSE)
+# This is a variant of MSE that weights errors by realized volatility, but still requires only the point forecast and actual value for each period, plus a volatility estimate.
 def calculate_metrics(cv_df: pd.DataFrame, model_names: List[str]) -> Dict[str, Dict]:
     """Calculate metrics from cross-validation results using utilsforecast's evaluate method for multiple models."""
     try:
@@ -170,11 +181,44 @@ def calculate_metrics(cv_df: pd.DataFrame, model_names: List[str]) -> Dict[str, 
                 aggregated_metrics['mape'] = np.nan
                 aggregated_metrics['smape'] = np.nan
             
+            # --- New Metrics for Financial Time Series ---
+            # Directional Accuracy and Theil's U
+            if 'y_lag1' not in cv_df_clean.columns:
+                cv_df_clean['y_lag1'] = cv_df_clean.sort_values(by=['unique_id', 'ds']).groupby('unique_id')['y'].shift(1)
+
+            y_lag1 = cv_df_clean['y_lag1'].values
+            
+            # Create a mask to handle NaNs from shifting and in predictions
+            da_mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isnan(y_lag1))
+            y_true_da, y_pred_da, y_lag1_da = y_true[da_mask], y_pred[da_mask], y_lag1[da_mask]
+
+            if len(y_true_da) > 0:
+                # Directional Accuracy (DA)
+                true_direction = np.sign(y_true_da - y_lag1_da)
+                pred_direction = np.sign(y_pred_da - y_lag1_da)
+                aggregated_metrics['da'] = np.mean(true_direction == pred_direction) * 100
+
+                # Theil's U statistic
+                rmse_model = aggregated_metrics.get('rmse')
+                if rmse_model is not None and not np.isnan(rmse_model):
+                    rmse_naive = np.sqrt(np.mean((y_true_da - y_lag1_da)**2))
+                    if rmse_naive > 0:
+                        aggregated_metrics['theil_u'] = rmse_model / rmse_naive
+                    else:
+                        aggregated_metrics['theil_u'] = np.nan
+                else:
+                    aggregated_metrics['theil_u'] = np.nan
+            else:
+                aggregated_metrics['da'] = np.nan
+                aggregated_metrics['theil_u'] = np.nan
+
             results[model_name] = {
                 'mae': aggregated_metrics['mae'],
                 'rmse': aggregated_metrics['rmse'], 
                 'mape': aggregated_metrics['mape'],
-                'smape': aggregated_metrics['smape']
+                'smape': aggregated_metrics['smape'],
+                'da': aggregated_metrics.get('da'),
+                'theil_u': aggregated_metrics.get('theil_u')
             }
         
         return results
@@ -216,6 +260,7 @@ def process_cv_results(consolidated_cv_df: pd.DataFrame, all_cv_metadata: Dict) 
             'error': meta.get('error', np.nan),
             'mae': meta.get('mae', np.nan), 'rmse': meta.get('rmse', np.nan),
             'mape': meta.get('mape', np.nan), 'smape': meta.get('smape', np.nan),
+            'da': meta.get('da', np.nan), 'theil_u': meta.get('theil_u', np.nan),
         }
         cv_results.append(result_entry)
     
