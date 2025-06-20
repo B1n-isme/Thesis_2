@@ -99,41 +99,53 @@ def split_data(df, horizon, test_length_multiplier):
     return train_df, test_df
 
 
-def prepare_data(horizon, test_length_multiplier, data_path=None):
+def prepare_data(horizon, test_length_multiplier, data_path=None, apply_transformations: bool = True):
     """Complete data preparation pipeline.
     
     Args:
         horizon (int): Forecast horizon in days
         test_length_multiplier (int): Multiplier to determine test set length
         data_path (str, optional): Path to data file. Defaults to DATA_PATH.
+        apply_transformations (bool): If True, applies log-return and differencing.
     """
     # Load and prepare data
     df = load_and_prepare_data(data_path=data_path)
     
-    # Store original df for back-transformation reference
+    # Store original df for back-transformation reference, which is always untransformed
     original_df_for_reference = df.copy()
 
-    # Get historical exogenous features from the original data
-    hist_exog_list = get_historical_exogenous_features(df)
-    
-    # Handle non-stationarity in exogenous features
-    df_stationary = difference_non_stationary_features(df, hist_exog_list)
+    if apply_transformations:
+        print("Applying transformations (log-return and differencing)...")
+        # Get historical exogenous features from the original data
+        hist_exog_list = get_historical_exogenous_features(df)
+        
+        # Handle non-stationarity in exogenous features
+        df_stationary = difference_non_stationary_features(df, hist_exog_list)
 
-    # Transform target to log returns using the stationarized df
-    df_log_transformed = transform_target_to_log_return(df_stationary)
-    
+        # Transform target to log returns using the stationarized df
+        df_to_split = transform_target_to_log_return(df_stationary)
+        print("✅ Transformations applied.")
+    else:
+        print("Skipping transformations. Loading data as is.")
+        df_to_split = df
+
     # Split data
-    train_df, test_df = split_data(df_log_transformed, horizon, test_length_multiplier)
+    train_df, test_df = split_data(df_to_split, horizon, test_length_multiplier)
     
     # Reorder columns for consistency, using the final list of exogenous features
-    final_exog_list = get_historical_exogenous_features(df_log_transformed)
+    final_exog_list = get_historical_exogenous_features(df_to_split)
     train_df = train_df[['unique_id', 'ds', 'y'] + final_exog_list]
     test_df = test_df[['unique_id', 'ds', 'y'] + final_exog_list]
     
     return train_df, test_df, final_exog_list, original_df_for_reference
 
 
-def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER, data_path: str = DATA_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict, pd.DataFrame]:
+def prepare_pipeline_data(
+    horizon: int = HORIZON, 
+    test_length_multiplier: int = TEST_LENGTH_MULTIPLIER, 
+    data_path: str = DATA_PATH, 
+    apply_transformations: bool = True
+) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict, pd.DataFrame]:
     """
     Enhanced data preparation for the pipeline with detailed logging and metadata.
     
@@ -141,6 +153,7 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
         horizon (int, optional): Forecast horizon in days. Defaults to HORIZON.
         test_length_multiplier (int, optional): Multiplier for test set length. Defaults to TEST_LENGTH_MULTIPLIER.
         data_path (str, optional): Path to data file. Defaults to DATA_PATH.
+        apply_transformations (bool, optional): If False, skips log-return and differencing. Defaults to True.
     
     Returns:
         Tuple of (train_df, test_df, hist_exog_list, data_info_dict, original_df)
@@ -151,7 +164,8 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
     train_df, test_df, hist_exog_list, original_df = prepare_data(
         horizon=horizon,
         test_length_multiplier=test_length_multiplier,
-        data_path=data_path
+        data_path=data_path,
+        apply_transformations=apply_transformations
     )
     
     data_info = {
@@ -173,17 +187,17 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
 
 def main():
     """Main function to demonstrate prepare_pipeline_data usage."""
-    print("Running data preparation pipeline...")
-    train_df, test_df, hist_exog, data_info, original_df = prepare_pipeline_data()
+    print("--- Running data preparation with transformations (default) ---")
+    train_df, test_df, _, _, _ = prepare_pipeline_data(apply_transformations=True)
+    print("\nTransformed training data head:")
+    print(train_df.head())
     
-    print("\nData Info:")
-    for k, v in data_info.items():
-        print(f"{k}: {v}")
-    
-    print("\nTraining data columns:")
-    print(train_df.columns.tolist())
-    print("\nTest data columns:")
-    print(test_df.columns.tolist())
+    print("\n" + "="*50 + "\n")
+
+    print("--- Running data preparation without transformations ---")
+    train_df_no_transform, _, _, _, _ = prepare_pipeline_data(apply_transformations=False)
+    print("\nUntransformed training data head:")
+    print(train_df_no_transform.head())
 
 
 if __name__ == "__main__":
