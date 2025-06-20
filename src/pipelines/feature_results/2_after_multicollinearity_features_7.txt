@@ -1,6 +1,5 @@
-# Total features: 31
+# Total features: 30
 CBOE_Volatility
-Confidence_cbbi
 DJI
 DXY
 EM_ETF
@@ -8,25 +7,25 @@ EURUSD
 Fear Greed
 Gold_Price
 Gold_Share
+IXIC
 MVRV_cbbi
 Oil_Brent_Price
+Oil_Crude_Price
 Oil_Volatility
 RHODL_cbbi
 ReserveRisk_cbbi
 active_addresses_blockchain
 bearish_sentiment
 btc_atr_14
+btc_bb_low
 btc_bb_width
-btc_close_ema_21_dist_norm
 btc_ema_5
+btc_sma_5
+btc_sma_50
+btc_trading_volume
 core_technology_sentiment
-development_ecosystem_sentiment
 estimated_transaction_volume_usd_blockchain
-market_narrative_sentiment
 marketcap_sentiment
 miner_revenue_blockchain
-news_events_sentiment
-positive_sentiment
-price_sentiment
 regulations_sentiment
-risk_uncertainty_sentiment
+volume_sentiment

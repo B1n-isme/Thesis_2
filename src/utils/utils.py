@@ -227,40 +227,31 @@ def calculate_metrics(cv_df: pd.DataFrame, model_names: List[str]) -> Dict[str, 
         # Return error for all models if calculation fails
         return {model_name: {'error': f'Error calculating metrics: {str(e)}'} for model_name in model_names}
 
-def process_cv_results(consolidated_cv_df: pd.DataFrame, all_cv_metadata: Dict) -> pd.DataFrame:
+def process_cv_results(consolidated_cv_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates metrics on a consolidated CV dataframe and returns a final results dataframe.
     """
     if consolidated_cv_df is None or consolidated_cv_df.empty:
-        # Create a results df from metadata even if no CV was successful
-        cv_results_df = pd.DataFrame(list(all_cv_metadata.values()))
-        if 'model_name' not in cv_results_df.columns and all_cv_metadata:
-            cv_results_df['model_name'] = list(all_cv_metadata.keys())
-        return cv_results_df
+        return pd.DataFrame()
 
     print("Processing consolidated CV results for metric calculation...")
     
-    successful_models = [name for name, meta in all_cv_metadata.items() if meta['status'] == 'success']
-    if successful_models:
-        metrics_results = calculate_metrics(consolidated_cv_df, successful_models)
-        for model_name, metrics in metrics_results.items():
-            if model_name in all_cv_metadata:
-                if 'error' in metrics:
-                    all_cv_metadata[model_name]['status'] = 'metrics_error'
-                    all_cv_metadata[model_name]['error'] = metrics['error']
-                else:
-                    all_cv_metadata[model_name].update(metrics)
+    # Get model names from columns (excluding standard columns)
+    standard_cols = {'unique_id', 'ds', 'cutoff', 'y'}
+    model_names = [col for col in consolidated_cv_df.columns if col not in standard_cols]
+    
+    metrics_results = calculate_metrics(consolidated_cv_df, model_names)
     
     cv_results = []
-    for model_name, meta in all_cv_metadata.items():
+    for model_name, metrics in metrics_results.items():
         result_entry = {
             'model_name': model_name,
-            'training_time': meta.get('training_time', 0),
-            'status': meta.get('status', 'unknown'),
-            'error': meta.get('error', np.nan),
-            'mae': meta.get('mae', np.nan), 'rmse': meta.get('rmse', np.nan),
-            'mape': meta.get('mape', np.nan), 'smape': meta.get('smape', np.nan),
-            'da': meta.get('da', np.nan), 'theil_u': meta.get('theil_u', np.nan),
+            'mae': metrics.get('mae', np.nan),
+            'rmse': metrics.get('rmse', np.nan),
+            'mape': metrics.get('mape', np.nan),
+            'smape': metrics.get('smape', np.nan),
+            'da': metrics.get('da', np.nan),
+            'theil_u': metrics.get('theil_u', np.nan)
         }
         cv_results.append(result_entry)
     

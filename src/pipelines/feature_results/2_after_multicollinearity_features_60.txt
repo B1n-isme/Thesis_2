@@ -1,11 +1,13 @@
-# Total features: 34
+# Total features: 33
 CBOE_Volatility
+DJI
 DXY
+EM_ETF
 EURUSD
 Fear Greed
-Gold_Price
 Gold_Volatility
 MVRV_cbbi
+NYFANG
 Oil_Brent_Price
 Oil_Crude_Price
 Oil_Volatility
@@ -13,23 +15,20 @@ PiCycle_cbbi
 RHODL_cbbi
 RUPL_cbbi
 ReserveRisk_cbbi
+Trolololo_cbbi
 active_addresses_blockchain
 btc_atr_14
+btc_bb_low
 btc_bb_width
-btc_rsi_14
+btc_ema_5
 btc_sma_14_50_ratio
 btc_sma_5
-btc_sma_50_slope
+btc_sma_50
 btc_trading_volume
-community_social_sentiment
-core_technology_sentiment
-development_ecosystem_sentiment
+btc_volatility_index
+bullish_sentiment
 estimated_transaction_volume_usd_blockchain
+marketcap_sentiment
 miner_revenue_blockchain
-negative_sentiment
-news_events_sentiment
-price_sentiment
 problem_malicious_sentiment
-regulations_sentiment
-risk_uncertainty_sentiment
 volume_sentiment

@@ -1,4 +1,4 @@
-# Total features: 37
+# Total features: 36
 CBOE_Volatility
 DJI
 DXY
@@ -9,6 +9,7 @@ Gold_Price
 Gold_Share
 Gold_Volatility
 MVRV_cbbi
+NYFANG
 Oil_Brent_Price
 Oil_Volatility
 PiCycle_cbbi
@@ -19,20 +20,18 @@ active_addresses_blockchain
 btc_atr_14
 btc_bb_high
 btc_bb_width
-btc_close_ema_21_dist_norm
+btc_ema_5
+btc_macd_diff
 btc_sma_14_50_ratio
+btc_sma_5
+btc_sma_50
 btc_trading_volume
 btc_volatility_index
 core_technology_sentiment
 estimated_transaction_volume_usd_blockchain
-long_term_investment_sentiment
+hash_rate_blockchain
 market_narrative_sentiment
 marketcap_sentiment
 miner_revenue_blockchain
-news_events_sentiment
-positive_sentiment
-price_sentiment
 problem_malicious_sentiment
-regulations_sentiment
-risk_uncertainty_sentiment
 volume_sentiment

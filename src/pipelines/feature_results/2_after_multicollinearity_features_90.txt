@@ -1,5 +1,6 @@
-# Total features: 34
+# Total features: 31
 CBOE_Volatility
+Confidence_cbbi
 DJI
 DXY
 EM_ETF
@@ -13,23 +14,19 @@ NYFANG
 Oil_Brent_Price
 Oil_Crude_Price
 Oil_Volatility
-PiCycle_cbbi
 RHODL_cbbi
 ReserveRisk_cbbi
 active_addresses_blockchain
+bearish_sentiment
 btc_atr_14
 btc_bb_low
 btc_bb_width
-btc_rsi_14
+btc_sma_50_slope
 btc_trading_volume
 btc_volatility_index
-community_social_sentiment
-core_technology_sentiment
-development_ecosystem_sentiment
 estimated_transaction_volume_usd_blockchain
-hash_rate_blockchain
+market_narrative_sentiment
+marketcap_sentiment
 miner_revenue_blockchain
-news_events_sentiment
-problem_malicious_sentiment
 regulations_sentiment
 volume_sentiment

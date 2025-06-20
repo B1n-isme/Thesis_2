@@ -71,7 +71,9 @@ def back_transform_log_returns(cv_df: pd.DataFrame, original_prices: pd.DataFram
         # P_hat(t) = P(cutoff) * cumprod(exp(y_hat_log_return) from cutoff+1 to t)
         # We calculate the cumulative product of the exponentiated log-return forecasts within each group.
         group_transform = cv_df_transformed.groupby(['unique_id', 'cutoff'])[model].transform(
-            lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * (np.exp(x).cumprod())
+            # FIX: Clip large log-return predictions to prevent np.exp from overflowing.
+            # An unrealistic daily log-return of 15 (~3.2m times price increase) is used as a safe upper bound.
+            lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * (np.exp(np.clip(x, a_min=-15, a_max=15)).cumprod())
         )
         cv_df_transformed[model] = group_transform
 
