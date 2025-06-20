@@ -1,0 +1,36 @@
+# Total features: 35
+CBOE_Volatility
+Confidence_cbbi
+DJI
+DXY
+EM_ETF
+EURUSD
+Fear Greed
+GSPC
+Gold_Price
+Gold_Share
+IXIC
+MVRV_cbbi
+NYFANG
+Oil_Brent_Price
+Oil_Crude_Price
+Oil_Volatility
+PiCycle_cbbi
+RHODL_cbbi
+ReserveRisk_cbbi
+btc_atr_14
+btc_bb_high
+btc_bb_width
+btc_ema_14_50_diff
+btc_ema_21
+btc_ema_50
+btc_sma_14
+btc_sma_14_50_diff
+btc_sma_14_50_ratio
+btc_sma_21
+btc_sma_50
+btc_sma_50_slope
+btc_trading_volume
+difficulty_blockchain
+miner_revenue_blockchain
+volume_sentiment

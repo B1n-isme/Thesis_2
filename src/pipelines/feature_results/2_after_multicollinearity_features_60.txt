@@ -1,0 +1,17 @@
+# Total features: 16
+EM_ETF
+EURUSD
+Gold_Volatility
+MVRV_cbbi
+Oil_Crude_Price
+Oil_Volatility
+PiCycle_cbbi
+RHODL_cbbi
+Trolololo_cbbi
+active_addresses_blockchain
+btc_atr_14
+btc_macd
+btc_macd_diff
+btc_sma_50_slope
+btc_trading_volume
+difficulty_blockchain

@@ -26,13 +26,63 @@ from src.utils.utils import (
     process_cv_results,
     get_horizon_directories
 )
-from src.dataset.data_preparation import prepare_pipeline_data
+from src.dataset.data_preparation import prepare_pipeline_data, load_and_prepare_data
 
 # Get dynamic directories based on HORIZON
 CV_DIR, _, _ = get_horizon_directories()
 
 
-def perform_cross_validation(stat_models: List, neural_models: List, train_df: pd.DataFrame) -> Tuple[List[pd.DataFrame], Dict]:
+def back_transform_log_returns(cv_df: pd.DataFrame, original_prices: pd.DataFrame, model_names: List[str]):
+    """
+    Back-transforms log return forecasts to price forecasts recursively.
+    """
+    print("Back-transforming log returns to prices...")
+    
+    cv_df_transformed = cv_df.copy()
+    
+    # Prepare original prices dataframe for merging. This contains the actual prices.
+    price_reference = original_prices[['ds', 'y']].rename(columns={'y': 'price_at_cutoff'})
+    
+    # Ensure date columns are in datetime format for a reliable merge
+    cv_df_transformed['cutoff'] = pd.to_datetime(cv_df_transformed['cutoff'])
+    cv_df_transformed['ds'] = pd.to_datetime(cv_df_transformed['ds'])
+    price_reference['ds'] = pd.to_datetime(price_reference['ds'])
+
+    # Merge to get the last known true price (at the cutoff date) for each forecast window.
+    cv_df_transformed = pd.merge(
+        cv_df_transformed,
+        price_reference,
+        how='left',
+        left_on='cutoff',
+        right_on='ds'
+    ).drop(columns='ds_y').rename(columns={'ds_x': 'ds'})
+
+    # Sort to ensure correct order for cumulative calculations
+    cv_df_transformed = cv_df_transformed.sort_values(by=['unique_id', 'cutoff', 'ds']).reset_index(drop=True)
+
+    # Back-transform 'y' (true log returns) to true prices.
+    # P_true(t) = P(cutoff) * exp(cumsum of y_log_returns from cutoff+1 to t)
+    cv_df_transformed['y'] = cv_df_transformed.groupby(['unique_id', 'cutoff'])['y'].transform(
+        lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * np.exp(x.cumsum())
+    )
+
+    # Back-transform model predictions (forecasted log returns) to forecasted prices
+    for model in model_names:
+        # P_hat(t) = P(cutoff) * cumprod(exp(y_hat_log_return) from cutoff+1 to t)
+        # We calculate the cumulative product of the exponentiated log-return forecasts within each group.
+        group_transform = cv_df_transformed.groupby(['unique_id', 'cutoff'])[model].transform(
+            lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * (np.exp(x).cumprod())
+        )
+        cv_df_transformed[model] = group_transform
+
+    # Drop the helper column
+    cv_df_transformed = cv_df_transformed.drop(columns=['price_at_cutoff'])
+    
+    print("✅ Back-transformation complete.")
+    return cv_df_transformed
+
+
+def perform_cross_validation(stat_models: List, neural_models: List, train_df: pd.DataFrame, original_df: pd.DataFrame) -> Tuple[List[pd.DataFrame], Dict]:
     """Perform cross-validation for statistical and neural models and return their CV dataframes and metadata."""
     all_cv_dfs = []
     model_metadata = {}
@@ -60,6 +110,9 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
             auto_model_names = extract_model_names_from_columns(cv_df.columns.tolist())
             if not auto_model_names:
                 raise ValueError("No model columns with 'Auto' prefix found in the CV dataframe.")
+
+            # Back-transform predictions from log-return to price
+            cv_df = back_transform_log_returns(cv_df, original_df, auto_model_names)
 
             fitted_objects['stat'] = sf
             all_cv_dfs.append(cv_df)
@@ -137,7 +190,7 @@ if __name__ == "__main__":
     from src.models.neuralforecast.models import get_neural_models
     
     # This main block now demonstrates only the Stat/Neural CV part
-    train_df, _, hist_exog_list, _ = prepare_pipeline_data()
+    train_df, _, hist_exog_list, _, original_df = prepare_pipeline_data()
     stat_models = get_statistical_models(season_length=7)
     # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
     
@@ -145,7 +198,8 @@ if __name__ == "__main__":
     cv_dfs, metadata = perform_cross_validation(
         stat_models=stat_models, 
         neural_models=[], 
-        train_df=train_df
+        train_df=train_df,
+        original_df=original_df
     )
     
     # To see the results, we can consolidate and process them here

@@ -10,7 +10,7 @@ def main():
     Main function to run the feature selection pipeline.
     """
     # 1. Load data
-    train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(data_path=RAW_DATA_PATH)
+    train_df, test_df, hist_exog_list, data_info, _ = prepare_pipeline_data(data_path=RAW_DATA_PATH)
 
     # 2. Initialize the selector
     selector = FeatureSelector(random_state=42, verbose=True, use_gpu=True)
@@ -24,15 +24,13 @@ def main():
     # Parameters are mainly for Stability Selection and PFI.
     selection_params = {
         'tree_methods': ['xgboost', 'lightgbm', 'random_forest'],
-        'min_consensus_level': 1,
-        'handle_multicollinearity_flag': False,
+        'min_consensus_level': 2,
+        'handle_multicollinearity_flag': True,
         'n_bootstrap': 50,          # For Stability Selection
         'selection_threshold': 0.6 # For Stability Selection
     }
 
     # 4. Run the complete feature selection strategy
-    # The method internally splits data into train/validation sets for robust selection
-    # and ensures that all fitting is done only on the training portion.
     results = selector.run_complete_feature_selection_strategy(
         df=train_df,
         target_col='y',
@@ -69,8 +67,9 @@ def main():
     # Combine them for a final single file output
     final_df = pd.concat([final_train_df, final_test_df])
     
-    # Define output path
-    output_path = f"data/processed/feature_selection_{HORIZON}.parquet"
+    # Define output path with multicollinearity postfix if enabled
+    multicoll_postfix = "_mc" if selection_params['handle_multicollinearity_flag'] else ""
+    output_path = f"data/processed/feature_selection_{HORIZON}{multicoll_postfix}.parquet"
     
     # Save to parquet
     final_df.to_parquet(output_path, index=False)

@@ -2,12 +2,14 @@
 Data preparation module for neural forecasting pipeline.
 """
 import pandas as pd
+import numpy as np
 from typing import Tuple, List, Dict
 from config.base import (
     DATA_PATH, DATE_COLUMN, TARGET_COLUMN, TARGET_RENAMED, 
     DATE_RENAMED, UNIQUE_ID_VALUE, HORIZON, TEST_LENGTH_MULTIPLIER
 )
 from src.utils.utils import get_historical_exogenous_features, print_data_info
+from statsmodels.tsa.stattools import adfuller
 
 
 def load_and_prepare_data(data_path=None):
@@ -31,6 +33,46 @@ def load_and_prepare_data(data_path=None):
     df.reset_index(drop=True, inplace=True)
     
     return df
+
+
+def difference_non_stationary_features(df: pd.DataFrame, exog_list: List[str]) -> pd.DataFrame:
+    """Checks for stationarity in exogenous features and applies differencing if needed."""
+    print("Checking for non-stationary exogenous features...")
+    df_transformed = df.copy()
+    for col in exog_list:
+        # Cannot test stationarity on columns with NaNs, fill them before test
+        if df_transformed[col].isnull().any():
+            # Using forward fill as a simple imputation method
+            df_transformed[col] = df_transformed[col].fillna(method='ffill').fillna(method='bfill')
+            if df_transformed[col].isnull().any():
+                print(f"  - Skipping stationarity test for '{col}' due to persistent NaN values after imputation.")
+                continue
+
+        p_value = adfuller(df_transformed[col].dropna())[1] # dropna just in case
+        if p_value > 0.05:
+            print(f"  - Feature '{col}' is non-stationary (p-value: {p_value:.4f}). Applying differencing.")
+            df_transformed[col] = df_transformed[col].diff()
+    
+    print("✅ Stationarity check complete.")
+    return df_transformed
+
+
+def transform_target_to_log_return(df: pd.DataFrame) -> pd.DataFrame:
+    """Transforms the target column 'y' to its log return."""
+    print("Transforming target 'y' to log returns...")
+    df_transformed = df.copy()
+    
+    # Ensure 'y' is positive before taking the log
+    if (df_transformed['y'] <= 0).any():
+        print("Warning: Non-positive values found in target 'y'. Log transform may fail.")
+        # Replace non-positive values with a small epsilon or handle as per domain knowledge
+        # For now, we will proceed, but this should be reviewed.
+        
+    df_transformed['y'] = np.log(df_transformed['y']).diff()
+    df_transformed = df_transformed.dropna(subset=['y']).reset_index(drop=True)
+    
+    print("✅ Target transformed to log returns.")
+    return df_transformed
 
 
 def split_data(df, horizon, test_length_multiplier):
@@ -68,21 +110,30 @@ def prepare_data(horizon, test_length_multiplier, data_path=None):
     # Load and prepare data
     df = load_and_prepare_data(data_path=data_path)
     
-    # Get historical exogenous features
+    # Store original df for back-transformation reference
+    original_df_for_reference = df.copy()
+
+    # Get historical exogenous features from the original data
     hist_exog_list = get_historical_exogenous_features(df)
     
+    # Handle non-stationarity in exogenous features
+    df_stationary = difference_non_stationary_features(df, hist_exog_list)
+
+    # Transform target to log returns using the stationarized df
+    df_log_transformed = transform_target_to_log_return(df_stationary)
+    
     # Split data
-    train_df, test_df = split_data(df, horizon, test_length_multiplier)
+    train_df, test_df = split_data(df_log_transformed, horizon, test_length_multiplier)
     
-    # Move hist_exog_list to end of df
-    df = df[['unique_id', 'ds', 'y'] + hist_exog_list]
-    train_df = train_df[['unique_id', 'ds', 'y'] + hist_exog_list]
-    test_df = test_df[['unique_id', 'ds', 'y'] + hist_exog_list]
+    # Reorder columns for consistency, using the final list of exogenous features
+    final_exog_list = get_historical_exogenous_features(df_log_transformed)
+    train_df = train_df[['unique_id', 'ds', 'y'] + final_exog_list]
+    test_df = test_df[['unique_id', 'ds', 'y'] + final_exog_list]
     
-    return train_df, test_df, hist_exog_list
+    return train_df, test_df, final_exog_list, original_df_for_reference
 
 
-def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER, data_path: str = DATA_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict]:
+def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = TEST_LENGTH_MULTIPLIER, data_path: str = DATA_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], Dict, pd.DataFrame]:
     """
     Enhanced data preparation for the pipeline with detailed logging and metadata.
     
@@ -92,12 +143,12 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
         data_path (str, optional): Path to data file. Defaults to DATA_PATH.
     
     Returns:
-        Tuple of (train_df, test_df, hist_exog_list, data_info_dict)
+        Tuple of (train_df, test_df, hist_exog_list, data_info_dict, original_df)
     """
     print("\n📊 STEP 1: DATA PREPARATION")
     print("-" * 40)
     
-    train_df, test_df, hist_exog_list = prepare_data(
+    train_df, test_df, hist_exog_list, original_df = prepare_data(
         horizon=horizon,
         test_length_multiplier=test_length_multiplier,
         data_path=data_path
@@ -117,13 +168,23 @@ def prepare_pipeline_data(horizon: int = HORIZON, test_length_multiplier: int = 
     print(f"   • Features: {len(hist_exog_list)} exogenous variables")
     print(f"   • Forecast horizon: {horizon} days")
     
-    return train_df, test_df, hist_exog_list, data_info
+    return train_df, test_df, hist_exog_list, data_info, original_df
+
+
+def main():
+    """Main function to demonstrate prepare_pipeline_data usage."""
+    print("Running data preparation pipeline...")
+    train_df, test_df, hist_exog, data_info, original_df = prepare_pipeline_data()
+    
+    print("\nData Info:")
+    for k, v in data_info.items():
+        print(f"{k}: {v}")
+    
+    print("\nTraining data columns:")
+    print(train_df.columns.tolist())
+    print("\nTest data columns:")
+    print(test_df.columns.tolist())
 
 
 if __name__ == "__main__":
-    # Example usage with sample values
-    df_dev, df_test, hist_exog = prepare_data(horizon=7, test_length_multiplier=2)
-    print(f"\nHistorical exogenous features: {len(hist_exog)} features")
-    print(f"Sample features: {hist_exog[:5] if len(hist_exog) >= 5 else hist_exog}") 
-    print(f"df_dev.head(): {df_dev.head()}")
-    print(f"df_test.head(): {df_test.head()}")
+    main()

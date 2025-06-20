@@ -1,0 +1,17 @@
+# Total features: 16
+CBOE_Volatility
+EURUSD
+Fear Greed
+Gold_Share
+Oil_Crude_Price
+Oil_Volatility
+PiCycle_cbbi
+RHODL_cbbi
+btc_atr_14
+btc_bb_width
+btc_sma_14_50_ratio
+btc_sma_50_slope
+btc_trading_volume
+difficulty_blockchain
+miner_revenue_blockchain
+volume_sentiment

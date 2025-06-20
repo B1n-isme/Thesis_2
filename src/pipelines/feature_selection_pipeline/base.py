@@ -35,7 +35,6 @@ from .robust_selection import RobustSelectionMixin
 
 # Local imports from the project
 from config.base import HORIZON, TEST_LENGTH_MULTIPLIER, SEED
-from src.dataset.data_preparation import prepare_pipeline_data
 from src.utils.utils import seed_everything
 
 warnings.filterwarnings('ignore')
