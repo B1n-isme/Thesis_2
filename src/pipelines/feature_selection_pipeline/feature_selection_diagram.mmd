@@ -1,9 +1,7 @@
 graph TD
     subgraph "Stage 1: Stability Selection (on Stationary Target)"
         A["Start: Input Time Series DataFrame"] --> B["Prepare Data: Create Stationary Target (log-returns)"];
-        B --> C{"For each tree model (XGB, LGBM, RF):
-1. Run Stability Selection on bootstrap samples
-2. Identify features that are consistently important"};
+        B --> C{"For each tree model (XGB, LGBM, RF):<br>1. Run Stability Selection on bootstrap samples<br>2. Identify features that are consistently important"}
         C --> D["Output: Three separate lists of 'stable' features"];
     end
 
@@ -16,9 +14,9 @@ graph TD
 
     H --> I{"Stage 3: Multicollinearity Reduction"};
     subgraph "Filtering Stage"
-        I --> J["1. Cluster highly correlated features.
+        I --> J["<br>1. Cluster highly correlated features.
 Remove less stable feature from each pair."];
-        J --> K["2. Iteratively remove features with high Variance Inflation Factor (VIF)"];
+        J --> K["<br>2. Iteratively remove features with high Variance Inflation Factor (VIF)"];
         K --> L["Output: A filtered, non-redundant set of features"];
     end
 

@@ -1,135 +1,84 @@
-AutoNBEATSx:
-  input_size: 270
-  learning_rate: 0.002
-  scaler_type: robust
-  max_steps: 50
-  batch_size: 16
-  windows_batch_size: 1024
-  val_check_steps: 50
-  random_seed: 14
-  accelerator: gpu
-  logger: false
-  hist_exog_list:
-  - btc_bb_low
-  - hash_rate_blockchain
-  - PiCycle_cbbi
-  - ReserveRisk_cbbi
-  - Fear Greed
-  - development_ecosystem_sentiment
-  - Gold_Price
-  - Gold_Share
-  - Gold_Volatility
-  - Oil_Brent_Price
-  - Oil_Volatility
-  - DJI
-  - NYFANG
-  - CBOE_Volatility
-  - EM_ETF
-  - DXY
-  - EURUSD
-  - problem_malicious_sentiment
-  - core_technology_sentiment
-  - community_social_sentiment
-  - Oil_Crude_Price
-  - btc_rsi_14
-  - btc_atr_14
-  - btc_volatility_index
-  - btc_trading_volume
-  - active_addresses_blockchain
-  - miner_revenue_blockchain
-  - estimated_transaction_volume_usd_blockchain
-  - RHODL_cbbi
-  - MVRV_cbbi
-  - regulations_sentiment
-  - volume_sentiment
-  - btc_bb_width
-  - news_events_sentiment
-AutoTSMixerx:
-  input_size: 360
-  learning_rate: 0.001
-  scaler_type: robust
-  max_steps: 150
-  batch_size: 32
-  windows_batch_size: 512
-  val_check_steps: 50
-  random_seed: 2
-  accelerator: gpu
-  logger: false
-  hist_exog_list:
-  - btc_bb_low
-  - hash_rate_blockchain
-  - PiCycle_cbbi
-  - ReserveRisk_cbbi
-  - Fear Greed
-  - development_ecosystem_sentiment
-  - Gold_Price
-  - Gold_Share
-  - Gold_Volatility
-  - Oil_Brent_Price
-  - Oil_Volatility
-  - DJI
-  - NYFANG
-  - CBOE_Volatility
-  - EM_ETF
-  - DXY
-  - EURUSD
-  - problem_malicious_sentiment
-  - core_technology_sentiment
-  - community_social_sentiment
-  - Oil_Crude_Price
-  - btc_rsi_14
-  - btc_atr_14
-  - btc_volatility_index
-  - btc_trading_volume
-  - active_addresses_blockchain
-  - miner_revenue_blockchain
-  - estimated_transaction_volume_usd_blockchain
-  - RHODL_cbbi
-  - MVRV_cbbi
-  - regulations_sentiment
-  - volume_sentiment
-  - btc_bb_width
-  - news_events_sentiment
-  n_block: 4
-  ff_dim: 32
-  dropout: 0.6235836149768964
-  n_series: 1
-AutoiTransformer:
-  input_size: 540
-  learning_rate: 0.0001
-  scaler_type: robust
-  max_steps: 150
-  batch_size: 16
-  windows_batch_size: 512
-  val_check_steps: 50
-  random_seed: 19
-  accelerator: gpu
-  logger: false
-  hidden_size: 128
-  n_heads: 8
-  n_series: 1
+# AutoTSMixerx:
+#   input_size: 180
+#   learning_rate: 0.001
+#   scaler_type: robust
+#   max_steps: 200
+#   batch_size: 64
+#   windows_batch_size: 256
+#   val_check_steps: 50
+#   random_seed: 17
+#   accelerator: gpu
+#   logger: false
+#   hist_exog_list:
+#   - btc_sma_50_slope
+#   - btc_atr_14
+#   - ReserveRisk_cbbi
+#   - Fear Greed
+#   - bearish_sentiment
+#   - market_narrative_sentiment
+#   - Gold_Share
+#   - Gold_Volatility
+#   - Oil_Volatility
+#   - DJI
+#   - NYFANG
+#   - CBOE_Volatility
+#   - EM_ETF
+#   - DXY
+#   - EURUSD
+#   - btc_volatility_index
+#   - Confidence_cbbi
+#   - regulations_sentiment
+#   - Gold_Price
+#   - Oil_Crude_Price
+#   - Oil_Brent_Price
+#   - btc_bb_low
+#   - btc_trading_volume
+#   - active_addresses_blockchain
+#   - miner_revenue_blockchain
+#   - estimated_transaction_volume_usd_blockchain
+#   - RHODL_cbbi
+#   - MVRV_cbbi
+#   - volume_sentiment
+#   - btc_bb_width
+#   - marketcap_sentiment
+#   n_block: 2
+#   ff_dim: 128
+#   dropout: 0.5973598251776474
+#   n_series: 1
+# AutoiTransformer:
+#   input_size: 270
+#   learning_rate: 0.0005
+#   scaler_type: robust
+#   max_steps: 150
+#   batch_size: 16
+#   windows_batch_size: 512
+#   val_check_steps: 50
+#   random_seed: 19
+#   accelerator: gpu
+#   logger: false
+#   hidden_size: 256
+#   n_heads: 8
+#   n_series: 1
 AutoBiTCN:
-  input_size: 360
+  input_size: 270
   learning_rate: 0.0005
   scaler_type: robust
   max_steps: 200
   batch_size: 16
   windows_batch_size: 1024
   val_check_steps: 50
-  random_seed: 3
+  random_seed: 5
   accelerator: gpu
   logger: false
   hist_exog_list:
-  - btc_bb_low
-  - hash_rate_blockchain
-  - PiCycle_cbbi
+  - btc_sma_50_slope
+  - btc_atr_14
   - ReserveRisk_cbbi
   - Fear Greed
-  - development_ecosystem_sentiment
-  - Gold_Price
+  - bearish_sentiment
+  - market_narrative_sentiment
   - Gold_Share
   - Gold_Volatility
-  - Oil_Brent_Price
   - Oil_Volatility
   - DJI
   - NYFANG
@@ -137,22 +86,66 @@ AutoBiTCN:
   - EM_ETF
   - DXY
   - EURUSD
-  - problem_malicious_sentiment
-  - core_technology_sentiment
-  - community_social_sentiment
-  - Oil_Crude_Price
-  - btc_rsi_14
-  - btc_atr_14
   - btc_volatility_index
+  - Confidence_cbbi
+  - regulations_sentiment
+  - Gold_Price
+  - Oil_Crude_Price
+  - Oil_Brent_Price
+  - btc_bb_low
   - btc_trading_volume
   - active_addresses_blockchain
   - miner_revenue_blockchain
   - estimated_transaction_volume_usd_blockchain
   - RHODL_cbbi
   - MVRV_cbbi
-  - regulations_sentiment
   - volume_sentiment
   - btc_bb_width
-  - news_events_sentiment
+  - marketcap_sentiment
   hidden_size: 16
-  dropout: 0.02922953252633482
+  dropout: 0.21518228453047375
+# AutoTFT:
+#   input_size: 180
+#   learning_rate: 0.0022488316385749995
+#   scaler_type: robust
+#   max_steps: 100
+#   batch_size: 4
+#   windows_batch_size: 128
+#   val_check_steps: 50
+#   random_seed: 2
+#   accelerator: gpu
+#   logger: false
+#   hist_exog_list:
+#   - btc_sma_50_slope
+#   - btc_atr_14
+#   - ReserveRisk_cbbi
+#   - Fear Greed
+#   - bearish_sentiment
+#   - market_narrative_sentiment
+#   - Gold_Share
+#   - Gold_Volatility
+#   - Oil_Volatility
+#   - DJI
+#   - NYFANG
+#   - CBOE_Volatility
+#   - EM_ETF
+#   - DXY
+#   - EURUSD
+#   - btc_volatility_index
+#   - Confidence_cbbi
+#   - regulations_sentiment
+#   - Gold_Price
+#   - Oil_Crude_Price
+#   - Oil_Brent_Price
+#   - btc_bb_low
+#   - btc_trading_volume
+#   - active_addresses_blockchain
+#   - miner_revenue_blockchain
+#   - estimated_transaction_volume_usd_blockchain
+#   - RHODL_cbbi
+#   - MVRV_cbbi
+#   - volume_sentiment
+#   - btc_bb_width
+#   - marketcap_sentiment
+#   hidden_size: 64
+#   n_head: 4

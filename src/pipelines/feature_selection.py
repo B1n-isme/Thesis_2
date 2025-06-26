@@ -15,6 +15,30 @@ def main():
         apply_transformations=True
         )
 
+    # --- Data Cleaning Step ---
+    # Remove constant or all-NaN columns from the training data, as they provide no value.
+    # A column is considered constant if it has one or fewer unique values.
+    print("\nCleaning training data by removing constant columns...")
+    cols_before = train_df.columns.tolist()
+    
+    # A column is constant if it has 1 or 0 unique values.
+    non_constant_mask = train_df.nunique() > 1
+    
+    # Keep columns that are not constant.
+    train_df = train_df.loc[:, non_constant_mask]
+    
+    cols_after = train_df.columns.tolist()
+    removed_cols = sorted(list(set(cols_before) - set(cols_after)))
+
+    if removed_cols:
+        print(f"  - Removed {len(removed_cols)} constant column(s): {removed_cols}")
+        # Ensure test_df and hist_exog_list are also updated to maintain consistency.
+        test_df = test_df[cols_after]
+        hist_exog_list = [col for col in hist_exog_list if col in cols_after]
+    else:
+        print("  - No constant columns found. No columns were removed.")
+
+
     # 2. Initialize the selector
     selector = FeatureSelector(random_state=42, verbose=True, use_gpu=True)
     

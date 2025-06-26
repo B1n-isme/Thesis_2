@@ -68,12 +68,11 @@ def back_transform_log_returns(cv_df: pd.DataFrame, original_prices: pd.DataFram
 
     # Back-transform model predictions (forecasted log returns) to forecasted prices
     for model in model_names:
-        # P_hat(t) = P(cutoff) * cumprod(exp(y_hat_log_return) from cutoff+1 to t)
-        # We calculate the cumulative product of the exponentiated log-return forecasts within each group.
+        # P_hat(t) = P(cutoff) * cumprod(exp(y_hat_log_return)) from cutoff+1 to t
+        # We use a more numerically stable equivalent: P_hat(t) = P(cutoff) * exp(cumsum(y_hat_log_return))
+        # This avoids underflow from multiplying many small numbers from exp(large_negative_log_return).
         group_transform = cv_df_transformed.groupby(['unique_id', 'cutoff'])[model].transform(
-            # FIX: Clip large log-return predictions to prevent np.exp from overflowing.
-            # An unrealistic daily log-return of 15 (~3.2m times price increase) is used as a safe upper bound.
-            lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * (np.exp(np.clip(x, a_min=-15, a_max=15)).cumprod())
+            lambda x: cv_df_transformed.loc[x.index, 'price_at_cutoff'] * np.exp(np.clip(x, -15, 15).cumsum())
         )
         cv_df_transformed[model] = group_transform
 
@@ -82,6 +81,63 @@ def back_transform_log_returns(cv_df: pd.DataFrame, original_prices: pd.DataFram
     
     print("✅ Back-transformation complete.")
     return cv_df_transformed
+
+
+def back_transform_forecasts_from_log_returns(
+    forecast_df: pd.DataFrame, 
+    original_df: pd.DataFrame, 
+    model_names: List[str]
+) -> pd.DataFrame:
+    """
+    Back-transforms final forecasted log returns to prices for a hold-out test set.
+
+    This function is designed for a final evaluation scenario, where predictions
+    are made for a contiguous block of future time steps. It uses the last known
+    price from before the forecast period to recursively calculate predicted prices.
+
+    Args:
+        forecast_df (pd.DataFrame): DataFrame containing model predictions in log returns.
+                                    It must have a 'ds' column and columns for each model.
+                                    The 'y' column should contain the actual prices for the forecast period.
+        original_df (pd.DataFrame): The complete original DataFrame with untransformed prices.
+                                    Used to find the last price before the forecast starts.
+        model_names (List[str]): A list of model names corresponding to columns in `forecast_df`.
+
+    Returns:
+        pd.DataFrame: The forecast DataFrame with model predictions transformed to price scale.
+                      The 'y' column remains unchanged.
+    """
+    print("Back-transforming final forecasts from log returns to prices...")
+    transformed_df = forecast_df.copy()
+
+    # Find the last date in the training data from the original dataframe, which should be
+    # one day before the first prediction date.
+    first_forecast_date = transformed_df['ds'].min()
+    last_train_date = first_forecast_date - pd.Timedelta(days=1)
+    
+    # Get the last actual price from the training period.
+    last_price_row = original_df.loc[original_df['ds'] == last_train_date]
+    
+    if last_price_row.empty:
+        raise ValueError(f"Could not find the last price at {last_train_date.date()} in the original dataframe to start back-transformation.")
+        
+    last_price = last_price_row['y'].iloc[0]
+    print(f"  Starting back-transformation with last known price: {last_price:.2f} at {last_train_date.date()}")
+
+    # Back-transform each model's predicted log returns to prices.
+    for model in model_names:
+        # P_hat(t) = P_last * exp(cumsum(y_hat_log_return))
+        log_returns = transformed_df[model].values
+        # Clip to prevent overflow from extreme predicted values
+        clipped_log_returns = np.clip(log_returns, a_min=-15, a_max=15)
+        # Calculate prices recursively from the last known price
+        transformed_df[model] = last_price * np.exp(np.cumsum(clipped_log_returns))
+    
+    # The 'y' column in the input forecast_df already contains the true prices,
+    # so no transformation is needed for it.
+    
+    print("✅ Final forecast back-transformation complete.")
+    return transformed_df
 
 
 def perform_cross_validation(stat_models: List, neural_models: List, train_df: pd.DataFrame, original_df: pd.DataFrame) -> Tuple[List[pd.DataFrame], Dict]:
@@ -210,7 +266,7 @@ if __name__ == "__main__":
     # To see the results, we can consolidate and process them here
     if cv_dfs:
         consolidated_df = pd.concat(cv_dfs, ignore_index=True)
-        cv_results_df = process_cv_results(consolidated_df, metadata)
+        cv_results_df = process_cv_results(consolidated_df, original_df)
         print("\n--- CV Results (Stat/Neural) ---")
         print(cv_results_df.head())
     else:

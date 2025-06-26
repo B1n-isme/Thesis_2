@@ -1,5 +1,0 @@
-data_preparation.py
-model_evaluation.py: 
-# Back-transform predictions from log-return to price
-cv_df = back_transform_log_returns(cv_df, original_df, auto_model_names)
-

@@ -92,8 +92,13 @@ def difference_non_stationary_features(df: pd.DataFrame, exog_list: List[str]) -
             else:
                 # Check for variance stability with Box-Cox to decide on log transform
                 try:
+                    series_clean = series_to_transform.dropna()
+                    # Box-Cox requires at least a few data points to work reliably.
+                    if len(series_clean) < 4:
+                        raise ValueError("Not enough data points for a reliable Box-Cox analysis.")
+
                     # Find optimal lambda for Box-Cox.
-                    lambda_ = boxcox_normmax(series_to_transform.dropna())
+                    lambda_ = boxcox_normmax(series_clean)
                     
                     if abs(lambda_) < 0.5:  # Threshold for being "close to log"
                         print(f"    - Box-Cox lambda ({lambda_:.2f}) suggests log transform. Applying log returns.")
@@ -102,8 +107,16 @@ def difference_non_stationary_features(df: pd.DataFrame, exog_list: List[str]) -
                         print(f"    - Box-Cox lambda ({lambda_:.2f}) suggests non-log transform. Applying simple differencing.")
                         df_transformed[col] = series_to_transform.diff()
                 except Exception as e:
-                    print(f"    - Box-Cox calculation failed for '{col}': {e}. Applying simple differencing.")
-                    df_transformed[col] = series_to_transform.diff()
+                    print(f"    - Box-Cox calculation failed for '{col}': {e}. Applying heuristic fallback.")
+                    # Heuristic: For all-positive series where Box-Cox fails, log-return is a robust choice
+                    # to stabilize variance, which is common for price-like series.
+                    series_clean = series_to_transform.dropna()
+                    if (series_clean > 0).all():
+                        print(f"    - Applying log returns as a robust fallback for the positive series.")
+                        df_transformed[col] = np.log(series_to_transform).diff()
+                    else:
+                        print(f"    - Applying simple differencing as a fallback.")
+                        df_transformed[col] = series_to_transform.diff()
         else:
             print(f"  - Feature '{col}' is stationary (p-value: {p_value:.4f}). No transformation needed.")
 
@@ -241,21 +254,21 @@ def prepare_pipeline_data(
 
 def main():
     """Main function to demonstrate prepare_pipeline_data usage."""
-    print("--- Running data preparation with transformations (default) ---")
-    train_df, test_df, _, _, _ = prepare_pipeline_data(
-        data_path=RAW_DATA_PATH, 
-        apply_transformations=True)
-    print("\nTransformed training data head:")
-    print(train_df.head())
+    # print("--- Running raw data preparation with transformations (default) ---")
+    # train_df, test_df, _, _, _ = prepare_pipeline_data(
+    #     data_path=RAW_DATA_PATH, 
+    #     apply_transformations=True)
+    # print("\nTransformed training data head:")
+    # print(train_df.head())
     
     print("\n" + "="*50 + "\n")
 
-    # print("--- Running data preparation without transformations ---")
-    # train_df_no_transform, _, _, _, _ = prepare_pipeline_data(
-    #     data_path=DATA_PATH, 
-    #     apply_transformations=False)
-    # print("\nUntransformed training data head:")
-    # print(train_df_no_transform.head())
+    print("--- Running transformed data preparation ---")
+    train_df_no_transform, _, _, _, _ = prepare_pipeline_data(
+        data_path=DATA_PATH, 
+        apply_transformations=True)
+    print("\nTransformed training data head:")
+    print(train_df_no_transform.head())
 
 
 if __name__ == "__main__":

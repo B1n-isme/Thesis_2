@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 import glob
+import time
 
 # Configuration and local imports
 from config.base import HORIZON
@@ -116,8 +117,9 @@ def create_unified_forecast_plot(
             info_text += f"Rolling Forecast: {len(rolling_models)} models"
         ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8))
     
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
     plt.tight_layout()
-    plot_path = plot_dir / f'unified_{horizon}d.png'
+    plot_path = plot_dir / f'unified_{horizon}d_{timestamp}.png'
     plt.savefig(plot_path, dpi=400, bbox_inches='tight', facecolor='white')
     plt.show()
     print(f"   • Forecast plot saved: {plot_path}")

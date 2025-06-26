@@ -28,8 +28,41 @@ from src.utils.utils import (
     get_horizon_directories
 )
 
+from src.pipelines.model_evaluation import back_transform_forecasts_from_log_returns
+
 # Get dynamic directories based on HORIZON
 CV_DIR, FINAL_DIR, _ = get_horizon_directories()
+
+def generate_naive_forecast(train_df: pd.DataFrame, test_df: pd.DataFrame, original_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generates a price-based naive forecast for the test set.
+    The forecast for day T is the actual price from day T-1.
+    """
+    print("  Generating price-based naive forecast...")
+    # Create the forecast dataframe from the test set
+    naive_forecast_df = test_df[['unique_id', 'ds']].copy()
+
+    # Get the last price from the training set as the first prediction
+    first_forecast_date = test_df['ds'].min()
+    last_train_date = first_forecast_date - pd.Timedelta(days=1)
+    last_train_price_row = original_df[original_df['ds'] == last_train_date]
+    if last_train_price_row.empty:
+        # Fallback to last known price in train_df if original_df is missing the date
+        last_train_price = train_df.loc[train_df['ds'].idxmax()]['y']
+    else:
+        last_train_price = last_train_price_row['y'].iloc[0]
+
+    # The actual prices for the test period are in the original test_df 'y' column
+    # Shift these prices by one to create the naive forecast
+    # P_hat(t) = P_actual(t-1)
+    shifted_prices = test_df['y'].shift(1).values
+    # The first forecasted value is the last known price from the training period
+    shifted_prices[0] = last_train_price
+
+    naive_forecast_df['Naive'] = shifted_prices
+    
+    print(f"  ✓ Naive forecast generated with shape {naive_forecast_df.shape}.")
+    return naive_forecast_df
 
 def perform_final_fit_predict(
     stats_models: List,
@@ -37,6 +70,7 @@ def perform_final_fit_predict(
     neural_models: List,
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
+    original_df: pd.DataFrame,
     final_model_config_dir: Path,
     final_plot_results_dict: Dict,
 ) -> Tuple[pd.DataFrame, Dict, pd.DataFrame]:
@@ -87,8 +121,8 @@ def perform_final_fit_predict(
                 h=h,
                 df=train_df,
                 X_df=X_df_stats,
-                level=LEVELS,
-                prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+                # level=LEVELS,
+                # prediction_intervals=ConformalIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
             )
             total_stats_forecast_time = time.time() - forecast_start_time_stats
             print(f"  ✓ Forecasts for all statistical models generated in {total_stats_forecast_time:.2f}s.")
@@ -134,7 +168,7 @@ def perform_final_fit_predict(
                 refit=True,
                 optimize_kwargs={'timeout': 60},
                 loss=custom_mae_loss,
-                prediction_intervals=MLPredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL, h=HORIZON)
+                # prediction_intervals=MLPredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL, h=HORIZON)
             )
 
 
@@ -143,7 +177,8 @@ def perform_final_fit_predict(
 
             # === Process In-sample CV predictions for ML models ===
             print("  ✓ Generating and processing in-sample (CV) predictions for ML models...")
-            ml_cv_df = ml.forecast_fitted_values(level=LEVELS)
+            ml_cv_df = ml.forecast_fitted_values(# level=LEVELS
+            )
 
             print(ml_cv_df)
             
@@ -156,7 +191,18 @@ def perform_final_fit_predict(
                     ml_model_metadata[model_name] = {'training_time': time_per_model, 'status': 'success'}
                 
                 # Process the CV results for ML models
-                ml_cv_results_df = process_cv_results(ml_cv_df, ml_model_metadata)
+                cv_metrics_df = process_cv_results(ml_cv_df, original_df)
+                
+                # Add training times to the results
+                if not cv_metrics_df.empty:
+                    training_times_df = pd.DataFrame(
+                        [{'model_name': name, 'training_time': data.get('training_time', 0)} 
+                         for name, data in ml_model_metadata.items()]
+                    )
+                    ml_cv_results_df = cv_metrics_df.merge(training_times_df, on='model_name', how='left')
+                else:
+                    ml_cv_results_df = pd.DataFrame()
+
                 print(f"  ✓ CV results processed for {len(auto_model_names)} ML models.")
 
             # --- Predict on Test Set---
@@ -168,7 +214,7 @@ def perform_final_fit_predict(
             ml_forecasts_df = ml.predict(
                 h=HORIZON,
                 X_df=X_df,
-                level=LEVELS
+                # level=LEVELS
             )
             print(ml_forecasts_df)
             total_ml_predict_time = time.time() - predict_start_time_ml
@@ -203,51 +249,36 @@ def perform_final_fit_predict(
             fit_start_time = time.time()
             nf.fit(
                 train_df, 
-                # val_size=HORIZON if HORIZON > 0 else None, 
-                prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
+                # prediction_intervals=PredictionIntervals(n_windows=PI_N_WINDOWS_FOR_CONFORMAL)
             )
             total_neural_fit_time = time.time() - fit_start_time
             print(f"    ✓ All {len(neural_models)} neural models fitted in {total_neural_fit_time:.2f}s.")
 
-            # === Phase 2: Collective Predict (Direct OR Rolling) ===
-            if use_rolling:
-                print(f"  Performing rolling forecast for all {len(neural_models)} neural models...")
-                rolling_predict_start_time = time.time()
-                
-                neural_forecasts_df = rolling_forecast_neural_all_models(
-                    nf_model=nf,
-                    train_df=train_df.copy(),
-                    test_df=test_df.copy(),
-                    horizon_length=HORIZON,
-                    predict_level=LEVELS,
-                    refit_frequency=ROLLING_REFIT_FREQUENCY
-                )
-                total_neural_predict_time = time.time() - rolling_predict_start_time
-                if neural_forecasts_df is not None and not neural_forecasts_df.empty:
-                    print(f"    ✓ Rolling forecasts for all neural models generated in {total_neural_predict_time:.2f}s.")
-                else:
-                    print(f"    ! Rolling forecasts generated an empty or None result in {total_neural_predict_time:.2f}s.")
-                    if neural_forecasts_df is None: 
-                        neural_forecasts_df = pd.DataFrame()
-            else:
-                print(f"  Predicting with all {len(neural_models)} fitted neural models (direct multi-step forecast)...")
-                predict_start_time = time.time()
-                exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
-                futr_df = test_df[['unique_id', 'ds'] + exog_cols].copy() if not test_df.empty else None
+            # === Phase 2: Collective Predict (Direct Multi-Step Forecast) ===
+            print(f"  Predicting with all {len(neural_models)} fitted neural models (direct multi-step forecast)...")
+            predict_start_time = time.time()
+            exog_cols = [col for col in test_df.columns if col not in ['unique_id', 'ds', 'y']]
+            futr_df = test_df[['unique_id', 'ds'] + exog_cols].copy() if not test_df.empty else None
 
-                if futr_df is not None and not futr_df.empty:
-                    neural_forecasts_df = nf.predict(futr_df=futr_df, level=LEVELS)
-                elif HORIZON > 0:
-                    neural_forecasts_df = nf.predict(h=HORIZON, level=LEVELS)
-                else:
-                    neural_forecasts_df = pd.DataFrame() 
-                    print("    ! Cannot perform direct predict: test_df is empty and HORIZON is not positive.")
-                
-                total_neural_predict_time = time.time() - predict_start_time
-                if not neural_forecasts_df.empty:
-                    print(f"    ✓ Direct predictions for all neural models generated in {total_neural_predict_time:.2f}s.")
-                else:
-                    print(f"    ! Direct predictions generated an empty result in {total_neural_predict_time:.2f}s.")
+            if futr_df is not None and not futr_df.empty:
+                neural_forecasts_df = nf.predict(
+                    futr_df=futr_df, 
+                    # level=LEVELS
+                )
+            elif HORIZON > 0:
+                neural_forecasts_df = nf.predict(
+                    h=HORIZON, 
+                    # level=LEVELS
+                )
+            else:
+                neural_forecasts_df = pd.DataFrame() 
+                print("    ! Cannot perform direct predict: test_df is empty and HORIZON is not positive.")
+            
+            total_neural_predict_time = time.time() - predict_start_time
+            if not neural_forecasts_df.empty:
+                print(f"    ✓ Direct predictions for all neural models generated in {total_neural_predict_time:.2f}s.")
+            else:
+                print(f"    ! Direct predictions generated an empty result in {total_neural_predict_time:.2f}s.")
 
             # Store neural object for configuration saving
             fitted_objects['neural'] = nf
@@ -266,10 +297,17 @@ def perform_final_fit_predict(
     # === CONSOLIDATED PROCESSING: Merge all forecasts and process together ===
     print("Consolidating and processing all forecasts...")
     
+    # --- Generate Naive Forecast ---
+    naive_forecast_df = generate_naive_forecast(train_df, test_df, original_df)
+
     # Start with test data as base (preserve original test_df with actuals)
     consolidated_forecasts_df = test_df[['unique_id', 'ds', 'y']].copy()
     
     # Merge forecasts from all frameworks
+    if naive_forecast_df is not None and not naive_forecast_df.empty:
+        print(f"  Merging Naive forecast results ({len(naive_forecast_df)} rows)")
+        consolidated_forecasts_df = consolidated_forecasts_df.merge(naive_forecast_df, how='left', on=['unique_id', 'ds'])
+
     if stat_forecasts_df is not None and not stat_forecasts_df.empty:
         print(f"  Merging StatsForecast results ({len(stat_forecasts_df)} rows)")
         consolidated_forecasts_df = consolidated_forecasts_df.merge(stat_forecasts_df, how='left', on=['unique_id', 'ds'])
@@ -282,8 +320,23 @@ def perform_final_fit_predict(
         print(f"  Merging NeuralForecast results ({len(neural_forecasts_df)} rows)")
         consolidated_forecasts_df = consolidated_forecasts_df.merge(neural_forecasts_df, how='left', on=['unique_id', 'ds'])
 
-    print(consolidated_forecasts_df)
+    
     print(f"  Consolidated forecast dataframe shape: {consolidated_forecasts_df.shape}")
+    
+    # --- Back-transformation to Price Scale ---
+    # Extract all model names before transformation
+    model_names_for_transform = extract_model_names_from_columns(consolidated_forecasts_df.columns.tolist())
+    
+    # The 'Naive' model is already in price scale, so we exclude it from transformation.
+    if 'Naive' in model_names_for_transform:
+        model_names_for_transform.remove('Naive')
+
+    # Perform the back-transformation from log-returns to prices using the correct function
+    consolidated_forecasts_df = back_transform_forecasts_from_log_returns(
+        forecast_df=consolidated_forecasts_df,
+        original_df=original_df,
+        model_names=model_names_for_transform
+    )
     
     # Store consolidated forecasts for visualization
     final_plot_results_dict['common'] = {
@@ -293,7 +346,7 @@ def perform_final_fit_predict(
     final_plot_results_dict['models'] = {}
 
     # Process all models at once
-    evaluation_method = "rolling_forecast" if use_rolling else "direct_forecast"
+    evaluation_method = "direct_forecast"
     
     # Extract Auto model names directly from consolidated dataframe (all models have Auto prefix)
     auto_model_names = extract_model_names_from_columns(consolidated_forecasts_df.columns.tolist())
@@ -309,30 +362,30 @@ def perform_final_fit_predict(
                 print(f"    ! Model '{model_name}' prediction column not found, skipping")
                 continue
             
-            # Extract prediction intervals
-            lo_preds = {}
-            hi_preds = {}
-            for level in LEVELS:
-                lo_col = f"{model_name}-lo-{level}"
-                hi_col = f"{model_name}-hi-{level}"
-                if lo_col in consolidated_forecasts_df.columns:
-                    lo_preds[str(level)] = consolidated_forecasts_df[lo_col].values
-                if hi_col in consolidated_forecasts_df.columns:
-                    hi_preds[str(level)] = consolidated_forecasts_df[hi_col].values
+            # # Extract prediction intervals
+            # lo_preds = {}
+            # hi_preds = {}
+            # for level in LEVELS:
+            #     lo_col = f"{model_name}-lo-{level}"
+            #     hi_col = f"{model_name}-hi-{level}"
+            #     if lo_col in consolidated_forecasts_df.columns:
+            #         lo_preds[str(level)] = consolidated_forecasts_df[lo_col].values
+            #     if hi_col in consolidated_forecasts_df.columns:
+            #         hi_preds[str(level)] = consolidated_forecasts_df[hi_col].values
             
             
             # Store in final_plot_results_dict
             final_plot_results_dict['models'][model_name] = {
                 'predictions': {
                     'mean': consolidated_forecasts_df[model_name].values,
-                    'lo': lo_preds,
-                    'hi': hi_preds
+                    # 'lo': lo_preds,
+                    # 'hi': hi_preds
                 },
                 'forecast_method': evaluation_method
             }
             
             # Calculate metrics
-            metrics = calculate_metrics(consolidated_forecasts_df, [model_name])
+            metrics = calculate_metrics(consolidated_forecasts_df, [model_name], original_df)
             # Extract metrics for this specific model
             model_metrics = metrics.get(model_name, {})
             processing_time = time.time() - start_time
@@ -385,22 +438,28 @@ if __name__ == "__main__":
     from src.models.mlforecast.models import get_ml_models
     from src.models.neuralforecast.models import get_neural_models, get_normal_neural_models
     
-    from src.pipelines.model_evaluation import prepare_pipeline_data
+    from src.dataset.data_preparation import prepare_pipeline_data
 
     # Get data and models
-    train_df, test_df, hist_exog_list, data_info = prepare_pipeline_data(horizon=HORIZON, test_length_multiplier=TEST_LENGTH_MULTIPLIER)
-    stat_models = get_statistical_models(season_length=7)
+    train_df, test_df, hist_exog_list, data_info, original_df = prepare_pipeline_data(
+        horizon=HORIZON, 
+        test_length_multiplier=TEST_LENGTH_MULTIPLIER,
+        apply_transformations=True
+    )
+    # stat_models = get_statistical_models(season_length=7)
     # ml_models = get_ml_models()
     # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
     # neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf.yaml", hist_exog_list=hist_exog_list)
     
+    # print(test_df.head())
     # Perform final fit and predict
     final_results_df, final_plot_results_dict, ml_cv_results_df = perform_final_fit_predict(
-        stats_models= stat_models,
+        stats_models= [],
         ml_models=[],
         neural_models= [],
         train_df=train_df,
         test_df=test_df,
+        original_df=original_df,
         final_model_config_dir=FINAL_DIR,
         final_plot_results_dict={}
     )

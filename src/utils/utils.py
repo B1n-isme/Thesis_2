@@ -17,7 +17,7 @@ from typing import List, Dict, Tuple, Any, Optional, TYPE_CHECKING
 from mlforecast.lag_transforms import ExpandingMean, ExponentiallyWeightedMean, RollingMean
 from mlforecast.target_transforms import AutoDifferences, LocalStandardScaler
 from utilsforecast.evaluation import evaluate
-from utilsforecast.losses import mse, mae, rmse
+from utilsforecast.losses import mae, rmse, mase
 from utilsforecast.compat import DataFrame
 import optuna
 import time
@@ -25,6 +25,7 @@ import pickle
 from config.base import PI_N_WINDOWS_FOR_CONFORMAL, RESULTS_DIR, HORIZON
 from neuralforecast import NeuralForecast
 from statsforecast import StatsForecast
+from functools import partial
 
 if TYPE_CHECKING:
     from neuralforecast import NeuralForecast
@@ -133,129 +134,154 @@ def calculate_metrics_1(df: pd.DataFrame) -> Dict:
 # Evaluates the largest peak-to-trough loss in a simulated portfolio based on point forecast-driven trades or allocations.
 # Heteroskedasticity-Adjusted MSE (HMSE)
 # This is a variant of MSE that weights errors by realized volatility, but still requires only the point forecast and actual value for each period, plus a volatility estimate.
-def calculate_metrics(cv_df: pd.DataFrame, model_names: List[str]) -> Dict[str, Dict]:
-    """Calculate metrics from cross-validation results using utilsforecast's evaluate method for multiple models."""
+def _calculate_financial_metrics(
+    y_true: np.ndarray, y_pred: np.ndarray, y_lag1: np.ndarray
+) -> Dict[str, float]:
+    """
+    Calculates financial-specific time series metrics.
+
+    Args:
+        y_true (np.ndarray): Ground truth (correct) target values.
+        y_pred (np.ndarray): Estimated target values.
+        y_lag1 (np.ndarray): Lagged (t-1) ground truth values for calculating changes.
+
+    Returns:
+        Dict[str, float]: A dictionary containing:
+            - 'da': Directional Accuracy in percentage.
+            - 'theil_u': Theil's U statistic.
+    """
+    # Create a mask to handle any potential NaNs in the inputs
+    mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isnan(y_lag1))
+    y_true, y_pred, y_lag1 = y_true[mask], y_pred[mask], y_lag1[mask]
+
+    if y_true.size == 0:
+        return {'da': np.nan, 'theil_u': np.nan}
+
+    # Directional Accuracy (DA)
+    true_direction = np.sign(y_true - y_lag1)
+    pred_direction = np.sign(y_pred - y_lag1)
+    da = np.mean(true_direction == pred_direction) * 100
+
+    # Theil's U statistic (U1)
+    # Ensures a fair comparison by calculating model and naive RMSE on the same data.
+    rmse_model = np.sqrt(np.mean((y_true - y_pred) ** 2))
+    rmse_naive = np.sqrt(np.mean((y_true - y_lag1) ** 2))
+    theil_u = rmse_model / rmse_naive if rmse_naive > 0 else np.nan
+
+    return {'da': da, 'theil_u': theil_u}
+
+
+def _get_model_names_from_df(df: pd.DataFrame) -> List[str]:
+    """Extracts model names from a forecast DataFrame, ignoring PI columns."""
+    standard_cols = {'unique_id', 'ds', 'cutoff', 'y', 'y_lag1'}
+    # Assumes PI columns are formatted like 'Model-lo-95' or 'Model-hi-95'
+    return [
+        col
+        for col in df.columns
+        if col not in standard_cols and not col.endswith(tuple(f'-{p}' for p in ['lo-95', 'hi-95', 'lo-80', 'hi-80']))
+    ]
+
+def calculate_metrics(
+    cv_df: pd.DataFrame, model_names: List[str], historical_df: pd.DataFrame
+) -> Dict[str, Dict]:
+    """
+    Calculate evaluation metrics from cross-validation results.
+
+    This function uses `utilsforecast.evaluate` for standard metrics (MAE, RMSE, MASE)
+    and includes custom calculations for financial-specific metrics like
+    Directional Accuracy (DA) and Theil's U statistic.
+
+    Args:
+        cv_df (pd.DataFrame): DataFrame with cross-validation results.
+                               Must contain 'unique_id', 'ds', 'y', and model forecast columns.
+        model_names (List[str]): A list of model names corresponding to columns in `cv_df`.
+        historical_df (pd.DataFrame): The training dataframe with original prices,
+                                 Required for MASE calculation.
+
+    Returns:
+        Dict[str, Dict]: A dictionary where keys are model names and values are
+                         dictionaries of their calculated metrics.
+    """
     try:
-        # If a single model name is passed as string, convert to list for backward compatibility
         if isinstance(model_names, str):
             model_names = [model_names]
-        
-        # Clean column names (remove suffixes like '-median' if present)
+
         cv_df_clean = cv_df.copy()
         cv_df_clean.columns = cv_df_clean.columns.str.replace('-median', '')
-        
-        # Prepare dataframe for utilsforecast evaluate (drop 'cutoff' if it exists)
-        eval_df = cv_df_clean.drop(columns=['cutoff']) if 'cutoff' in cv_df_clean.columns else cv_df_clean
-        
-        # Use utilsforecast evaluate method
-        evaluation_df = evaluate(eval_df, metrics=[mae, rmse, mse])
-        
-        # Filter results for the specific metrics and aggregate across unique_ids
-        model_metrics = evaluation_df[evaluation_df['metric'].isin(['mae', 'rmse', 'mse'])].copy()
-        
+
+        eval_df = cv_df_clean.drop(columns=['cutoff'], errors='ignore')
+
+        # Use utilsforecast for standard metrics
+        evaluation_df = evaluate(eval_df, metrics=[mae, rmse, partial(mase, seasonality=7)], train_df=historical_df)
+        aggregated_metrics_df = evaluation_df.groupby('metric').mean(
+            numeric_only=True
+        )
+
+        # Prepare for financial metrics
+        if 'y_lag1' not in cv_df_clean.columns:
+            cv_df_clean['y_lag1'] = cv_df_clean.sort_values(
+                by=['unique_id', 'ds']
+            ).groupby('unique_id')['y'].shift(1)
+
         results = {}
-        
         for model_name in model_names:
             if model_name not in cv_df_clean.columns:
-                results[model_name] = {'error': f'Model {model_name} not found in CV results'}
+                results[model_name] = {'error': f'Model {model_name} not found'}
                 continue
-            
-            # Aggregate metrics across all unique_ids (mean)
-            aggregated_metrics = {}
-            for metric_name in ['mae', 'rmse', 'mse']:
-                metric_data = model_metrics[model_metrics['metric'] == metric_name]
-                if model_name in metric_data.columns:
-                    aggregated_metrics[metric_name] = metric_data[model_name].mean()
-                else:
-                    aggregated_metrics[metric_name] = np.nan
-            
-            # Calculate MAPE and SMAPE manually since utilsforecast doesn't have them
-            y_true, y_pred = cv_df_clean['y'].values, cv_df_clean[model_name].values
-            mask = ~(np.isnan(y_true) | np.isnan(y_pred))
-            y_true_clean, y_pred_clean = y_true[mask], y_pred[mask]
-            
-            if len(y_true_clean) > 0:
-                aggregated_metrics['mape'] = np.mean(np.abs((y_true_clean - y_pred_clean) / y_true_clean)) * 100
-                aggregated_metrics['smape'] = np.mean(2 * np.abs(y_true_clean - y_pred_clean) / (np.abs(y_true_clean) + np.abs(y_pred_clean))) * 100
-            else:
-                aggregated_metrics['mape'] = np.nan
-                aggregated_metrics['smape'] = np.nan
-            
-            # --- New Metrics for Financial Time Series ---
-            # Directional Accuracy and Theil's U
-            if 'y_lag1' not in cv_df_clean.columns:
-                cv_df_clean['y_lag1'] = cv_df_clean.sort_values(by=['unique_id', 'ds']).groupby('unique_id')['y'].shift(1)
 
+            # Get standard metrics from the aggregated results
+            metrics = aggregated_metrics_df.get(model_name, pd.Series(dtype=float)).to_dict()
+
+            # Calculate financial metrics
+            y_true = cv_df_clean['y'].values
+            y_pred = cv_df_clean[model_name].values
             y_lag1 = cv_df_clean['y_lag1'].values
-            
-            # Create a mask to handle NaNs from shifting and in predictions
-            da_mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isnan(y_lag1))
-            y_true_da, y_pred_da, y_lag1_da = y_true[da_mask], y_pred[da_mask], y_lag1[da_mask]
+            financial_metrics = _calculate_financial_metrics(y_true, y_pred, y_lag1)
+            metrics.update(financial_metrics)
 
-            if len(y_true_da) > 0:
-                # Directional Accuracy (DA)
-                true_direction = np.sign(y_true_da - y_lag1_da)
-                pred_direction = np.sign(y_pred_da - y_lag1_da)
-                aggregated_metrics['da'] = np.mean(true_direction == pred_direction) * 100
+            results[model_name] = metrics
 
-                # Theil's U statistic
-                rmse_model = aggregated_metrics.get('rmse')
-                if rmse_model is not None and not np.isnan(rmse_model):
-                    rmse_naive = np.sqrt(np.mean((y_true_da - y_lag1_da)**2))
-                    if rmse_naive > 0:
-                        aggregated_metrics['theil_u'] = rmse_model / rmse_naive
-                    else:
-                        aggregated_metrics['theil_u'] = np.nan
-                else:
-                    aggregated_metrics['theil_u'] = np.nan
-            else:
-                aggregated_metrics['da'] = np.nan
-                aggregated_metrics['theil_u'] = np.nan
-
-            results[model_name] = {
-                'mae': aggregated_metrics['mae'],
-                'rmse': aggregated_metrics['rmse'], 
-                'mape': aggregated_metrics['mape'],
-                'smape': aggregated_metrics['smape'],
-                'da': aggregated_metrics.get('da'),
-                'theil_u': aggregated_metrics.get('theil_u')
-            }
-        
         return results
-        
-    except Exception as e:
-        # Return error for all models if calculation fails
-        return {model_name: {'error': f'Error calculating metrics: {str(e)}'} for model_name in model_names}
 
-def process_cv_results(consolidated_cv_df: pd.DataFrame) -> pd.DataFrame:
+    except Exception as e:
+        error_msg = f'Error calculating metrics: {e}'
+        return {model: {'error': error_msg} for model in model_names}
+
+def process_cv_results(
+    consolidated_cv_df: pd.DataFrame, historical_df: pd.DataFrame
+) -> pd.DataFrame:
     """
     Calculates metrics on a consolidated CV dataframe and returns a final results dataframe.
+
+    Args:
+        consolidated_cv_df (pd.DataFrame): The consolidated cross-validation results.
+        historical_df (pd.DataFrame): The training dataframe, passed to `calculate_metrics`
+                                 for MASE calculation.
     """
     if consolidated_cv_df is None or consolidated_cv_df.empty:
         return pd.DataFrame()
 
     print("Processing consolidated CV results for metric calculation...")
-    
-    # Get model names from columns (excluding standard columns)
-    standard_cols = {'unique_id', 'ds', 'cutoff', 'y'}
-    model_names = [col for col in consolidated_cv_df.columns if col not in standard_cols]
-    
-    metrics_results = calculate_metrics(consolidated_cv_df, model_names)
-    
-    cv_results = []
-    for model_name, metrics in metrics_results.items():
-        result_entry = {
-            'model_name': model_name,
-            'mae': metrics.get('mae', np.nan),
-            'rmse': metrics.get('rmse', np.nan),
-            'mape': metrics.get('mape', np.nan),
-            'smape': metrics.get('smape', np.nan),
-            'da': metrics.get('da', np.nan),
-            'theil_u': metrics.get('theil_u', np.nan)
-        }
-        cv_results.append(result_entry)
-    
-    return pd.DataFrame(cv_results)
+
+    # Get model names from columns (excluding standard and PI columns)
+    model_names = _get_model_names_from_df(consolidated_cv_df)
+
+    metrics_results = calculate_metrics(consolidated_cv_df, model_names, historical_df)
+
+    # Convert the results dictionary to a DataFrame
+    results_df = pd.DataFrame.from_dict(metrics_results, orient='index')
+    results_df = results_df.reset_index().rename(columns={'index': 'model_name'})
+
+    # Ensure a consistent column order for the final report
+    metric_cols = ['mae', 'rmse', 'mase', 'da', 'theil_u']
+    ordered_cols = [
+        'model_name'
+    ] + [col for col in metric_cols if col in results_df.columns]
+
+    # Append any other columns (like 'error') that might exist
+    other_cols = [col for col in results_df.columns if col not in ordered_cols]
+
+    return results_df[ordered_cols + other_cols]
 
 def save_best_configurations(fitted_objects: Dict, save_dir: str = None) -> Dict[str, List]:
     """
@@ -394,8 +420,7 @@ def extract_model_names_from_columns(columns: List[str]) -> List[str]:
         else:
             base_name = col
             
-        # Only add if it's either Auto or non-ignored normal model
-        if base_name.startswith('Auto') or (not base_name.startswith('Auto') and base_name not in ignore_cols):
+        if base_name not in ignore_cols:
             model_names.add(base_name)
     
     return sorted(list(model_names))
