@@ -79,21 +79,6 @@ def get_neural_models(
         'logger': False,
     }
 
-    # base_auto_config = {
-    #     "input_size": tune.choice([horizon * 2]),
-    #     "learning_rate": tune.choice([5e-3]),
-    #     "scaler_type": 'robust',
-    #     "max_steps": tune.choice([30]),
-    #     "batch_size": tune.choice([32]),
-    #     # "windows_batch_size": tune.choice([128]),
-    #     "val_check_steps": 20, 
-    #     "random_seed": tune.randint(1, 20),
-    #     "early_stop_patience_steps": 2,
-    #     # trainer_kwargs values
-    #     'accelerator': 'gpu',
-    #     'logger': False,
-    # }
-
     transformer_config = configs["transformer"].copy()
     transformer_config = {**base_auto_config, **transformer_config}
 
@@ -106,7 +91,7 @@ def get_neural_models(
     models = [
         AutoTFT(**init_config, config=configs["tft"]),
         AutoiTransformer(**init_config, n_series=1, config=transformer_config),
-        AutoNBEATSx(**init_config, config=configs["nbeats"]),
+        # AutoNBEATSx(**init_config, config=configs["nbeats"]),
         AutoTSMixerx(**init_config, n_series=1, config=configs["tsmixer"]),
         AutoBiTCN(**init_config, config=configs["bitcn"]),
         # AutoKAN(**init_config, config=configs["kan"]),

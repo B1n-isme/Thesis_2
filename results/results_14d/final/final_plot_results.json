@@ -34,7 +34,7 @@
         ]
     },
     "models": {
-        "AutoETS": {
+        "ETS": {
             "predictions": {
                 "mean": [
                     106311.08806902563,
@@ -55,7 +55,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "BiTCN": {
+        "TCN": {
             "predictions": {
                 "mean": [
                     106342.3515625,

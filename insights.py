@@ -2,6 +2,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import numpy as np
+from scipy.integrate import trapezoid
 
 def load_metrics_data():
     """Load and combine metrics data from all horizon files."""
@@ -26,7 +28,7 @@ def load_metrics_data():
 def plot_metrics_vs_horizon(combined_df):
     """Create line plots for each metric vs. horizon."""
     metrics_to_plot = ['mae', 'rmse', 'mase', 'da', 'theil_u', 'training_time']
-    output_dir = 'results/horizon_comparison'
+    output_dir = 'results/insights'
     os.makedirs(output_dir, exist_ok=True)
     
     for metric in metrics_to_plot:
@@ -47,34 +49,74 @@ def plot_metrics_vs_horizon(combined_df):
         plt.close()
         print(f"Saved plot: {plot_path}")
 
+    print(f"\nSaved all horizon comparison plots to: {output_dir}")
+
 def calculate_degradation_rates(combined_df):
-    """Calculate and rank models based on metric degradation across horizons."""
+    """
+    Calculate and rank models using regression slope to measure
+    the rate of performance degradation across horizons.
+    """
     metrics_to_analyze = ['mase', 'da']
-    results = {}
+    models = combined_df['model_name'].unique()
+    horizons = sorted(combined_df['horizon'].unique())
+    
+    analysis_results = []
 
-    for metric in metrics_to_analyze:
-        pivot_df = combined_df.pivot(index='model_name', columns='horizon', values=metric)
-        pct_change_df = pivot_df.pct_change(axis='columns')
-        results[f'avg_{metric}_degradation_pct'] = pct_change_df.mean(axis='columns') * 100
+    for model in models:
+        model_df = combined_df[combined_df['model_name'] == model].sort_values('horizon')
+        
+        if list(model_df['horizon']) != horizons:
+            continue
 
-    result_df = pd.DataFrame(results)
-    result_df['mase_rank'] = result_df['avg_mase_degradation_pct'].rank(ascending=True)
-    result_df['da_rank'] = result_df['avg_da_degradation_pct'].rank(ascending=False)
-    result_df['combined_rank'] = result_df[['mase_rank', 'da_rank']].mean(axis=1).rank()
+        result = {'model_name': model}
+        for metric in metrics_to_analyze:
+            y = model_df[metric].values
+            x = model_df['horizon'].values
+            
+            # Regression Slope: Measures the rate of degradation
+            slope = np.polyfit(x, y, 1)[0]
+            result[f'{metric}_slope'] = slope
+            
+        analysis_results.append(result)
 
-    print("Model Performance Degradation Analysis")
-    print("-" * 60)
+    result_df = pd.DataFrame(analysis_results)
+
+    # Rank models based on the slope
+    # For MASE, a lower (less steep) slope is better
+    result_df['mase_slope_rank'] = result_df['mase_slope'].rank(ascending=True)
+    
+    # For DA, a slope closer to zero is better (more stable)
+    result_df['da_slope_rank'] = result_df['da_slope'].abs().rank(ascending=True)
+    
+    # Create a final combined rank by averaging the two slope ranks
+    rank_cols = ['mase_slope_rank', 'da_slope_rank']
+    result_df['combined_rank'] = result_df[rank_cols].mean(axis=1).rank()
+    
+    result_df = result_df.set_index('model_name')
+
+    output_dir = 'results/insights'
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, 'degradation_rate_analysis.csv')
+    result_df.to_csv(output_path)
+    
+    print("Model Stability Analysis (Degradation Rate)")
+    print("-" * 70)
     print(result_df.sort_values('combined_rank'))
-    print("\nNotes:")
-    print(" - Lower 'avg_mase_degradation_pct' is better.")
-    print(" - Higher 'avg_da_degradation_pct' is better (less degradation).")
-    print(" - 'combined_rank' provides an overall stability ranking.")
+    print("\nRanking Notes:")
+    print(" - mase_slope: Rate of MASE increase per day (lower is better).")
+    print(" - da_slope: Rate of DA change (closer to zero is more stable).")
+    print(" - combined_rank: Overall stability rank based on degradation rates.")
+    # print(f"\nSaved stability analysis to: {output_path}")
 
-if __name__ == '__main__':
+def main():
+    """Main function to run the analysis."""
     df = load_metrics_data()
     if df is not None:
         # plot_metrics_vs_horizon(df)
         calculate_degradation_rates(df)
+
+if __name__ == '__main__':
+    main()
 
 # Of course. Based on the detailed metrics in the analysis report, here is a list of specific research questions you could explore, categorized by theme.
 
@@ -135,3 +177,4 @@ if __name__ == '__main__':
 # Conclusion: The source you found gives excellent, practical advice. Running your top models on the holdout set is not "wrong." It provides richer context and a final competitive benchmark. Your goal is to find the best model, and by having two scores (CV and Holdout), you can have a much more intelligent discussion about what "best" truly means: is it the most robust on average (CV winner) or the best on the single most recent test (Holdout winner)?
 
 # As anticipated, the performance on the final holdout set (MASE = 0.85) represents a slight degradation compared to the average performance observed during cross-validation (Average MASE = 0.78). This is an expected and well-documented phenomenon in time series forecasting for two primary reasons. Firstly, it reflects the 'winner's curse' inherent in any model selection process, where the holdout score provides a less biased estimate of performance than the score that led to the model's selection. Secondly, it highlights the non-stationary nature of financial data, where the holdout period inevitably contains market dynamics not fully represented in the historical training data. Therefore, the CV score should be interpreted as the basis for our model selection, while the holdout score serves as the most realistic estimate of future real-world performance.
+

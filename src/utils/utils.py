@@ -148,14 +148,13 @@ def _calculate_financial_metrics(
     Returns:
         Dict[str, float]: A dictionary containing:
             - 'da': Directional Accuracy in percentage.
-            - 'theil_u': Theil's U statistic.
     """
     # Create a mask to handle any potential NaNs in the inputs
     mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isnan(y_lag1))
     y_true, y_pred, y_lag1 = y_true[mask], y_pred[mask], y_lag1[mask]
 
     if y_true.size == 0:
-        return {'da': np.nan, 'theil_u': np.nan}
+        return {'da': np.nan}
 
     # Directional Accuracy (DA)
     true_direction = np.sign(y_true - y_lag1)
@@ -164,11 +163,12 @@ def _calculate_financial_metrics(
 
     # Theil's U statistic (U1)
     # Ensures a fair comparison by calculating model and naive RMSE on the same data.
-    rmse_model = np.sqrt(np.mean((y_true - y_pred) ** 2))
-    rmse_naive = np.sqrt(np.mean((y_true - y_lag1) ** 2))
-    theil_u = rmse_model / rmse_naive if rmse_naive > 0 else np.nan
+    # rmse_model = np.sqrt(np.mean((y_true - y_pred) ** 2))
+    # rmse_naive = np.sqrt(np.mean((y_true - y_lag1) ** 2))
+    # theil_u = rmse_model / rmse_naive if rmse_naive > 0 else np.nan
 
-    return {'da': da, 'theil_u': theil_u}
+    # return {'da': da, 'theil_u': theil_u}
+    return {'da': da}
 
 
 def _get_model_names_from_df(df: pd.DataFrame) -> List[str]:
@@ -217,11 +217,26 @@ def calculate_metrics(
             numeric_only=True
         )
 
-        # Prepare for financial metrics
+        # Prepare for financial metrics: calculate y_lag1 once
         if 'y_lag1' not in cv_df_clean.columns:
             cv_df_clean['y_lag1'] = cv_df_clean.sort_values(
                 by=['unique_id', 'ds']
             ).groupby('unique_id')['y'].shift(1)
+
+        all_models_financial_metrics_per_cutoff = {model_name: [] for model_name in model_names}
+
+        # Group by unique_id and cutoff to process each fold/cutoff independently
+        for (unique_id, cutoff_time), group_df in cv_df_clean.groupby(['unique_id', 'cutoff']):
+            y_true_group = group_df['y'].values
+            y_lag1_group = group_df['y_lag1'].values
+
+            for model_name in model_names:
+                if model_name not in group_df.columns:
+                    # This should ideally not happen if model_names are correctly extracted, but good for robustness
+                    continue
+                y_pred_group = group_df[model_name].values
+                financial_metrics_group = _calculate_financial_metrics(y_true_group, y_pred_group, y_lag1_group)
+                all_models_financial_metrics_per_cutoff[model_name].append(financial_metrics_group)
 
         results = {}
         for model_name in model_names:
@@ -232,12 +247,23 @@ def calculate_metrics(
             # Get standard metrics from the aggregated results
             metrics = aggregated_metrics_df.get(model_name, pd.Series(dtype=float)).to_dict()
 
-            # Calculate financial metrics
-            y_true = cv_df_clean['y'].values
-            y_pred = cv_df_clean[model_name].values
-            y_lag1 = cv_df_clean['y_lag1'].values
-            financial_metrics = _calculate_financial_metrics(y_true, y_pred, y_lag1)
-            metrics.update(financial_metrics)
+            # Calculate RMSE/MAE ratio
+            if 'rmse' in metrics and 'mae' in metrics and metrics['mae'] != 0:
+                metrics['rmse_mae_ratio'] = metrics['rmse'] / metrics['mae']
+            else:
+                metrics['rmse_mae_ratio'] = np.nan
+
+            # Average the financial metrics across cutoffs
+            if all_models_financial_metrics_per_cutoff[model_name]:
+                # Convert list of dicts to dict of lists, then average
+                averaged_financial_metrics = {
+                    metric_name: np.nanmean([d[metric_name] for d in all_models_financial_metrics_per_cutoff[model_name]])
+                    for metric_name in all_models_financial_metrics_per_cutoff[model_name][0]
+                }
+                metrics.update(averaged_financial_metrics)
+            else:
+                # If no financial metrics were calculated for a model, assign NaN or appropriate default
+                metrics.update({'da': np.nan})
 
             results[model_name] = metrics
 
@@ -273,7 +299,7 @@ def process_cv_results(
     results_df = results_df.reset_index().rename(columns={'index': 'model_name'})
 
     # Ensure a consistent column order for the final report
-    metric_cols = ['mae', 'rmse', 'mase', 'da', 'theil_u']
+    metric_cols = ['mae', 'rmse', 'rmse_mae_ratio', 'mase', 'da']
     ordered_cols = [
         'model_name'
     ] + [col for col in metric_cols if col in results_df.columns]

@@ -126,7 +126,7 @@
         ]
     },
     "models": {
-        "AutoETS": {
+        "ETS": {
             "predictions": {
                 "mean": [
                     69585.45389096593,

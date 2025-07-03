@@ -124,14 +124,14 @@ def create_unified_forecast_plot(
     plt.show()
     print(f"   • Forecast plot saved: {plot_path}")
 
-def create_separate_probabilistic_forecast_plots(
+def create_separate_forecast_plots(
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
     all_forecasts_data: Dict,
     horizon: int,
     plot_dir: Path
 ):
-    """Create separate probabilistic forecast plots for each model.
+    """Create separate forecast plots for each model showing only mean predictions.
     
     Args:
         all_forecasts_data: Dict[str, Dict] 
@@ -143,9 +143,7 @@ def create_separate_probabilistic_forecast_plots(
                 "models": {
                     "ModelName": {
                         "predictions": {
-                            "mean": np.ndarray,
-                            "lo": {"level": np.ndarray},
-                            "hi": {"level": np.ndarray}
+                            "mean": np.ndarray
                         },
                         "forecast_method": str
                     },
@@ -163,61 +161,21 @@ def create_separate_probabilistic_forecast_plots(
         test_df = test_df.copy()
         test_df['ds'] = pd.to_datetime(test_df['ds'])
 
-    # Historical actual values for all plots
     common_data = all_forecasts_data.get('common', {})
     actual_dates = pd.to_datetime(common_data.get('ds'))
-    actual_values = common_data.get('actual')
 
     for model_name, forecast_data in all_forecasts_data['models'].items():
-        if 'predictions' in forecast_data and 'mean' in forecast_data['predictions'] and \
-           'lo' in forecast_data['predictions'] and forecast_data['predictions']['lo'] and \
-           'hi' in forecast_data['predictions'] and forecast_data['predictions']['hi']:
+        if 'predictions' in forecast_data and 'mean' in forecast_data['predictions']:
             fig, ax = plt.subplots(figsize=(16, 8))
-            ds_values = actual_dates # Use common ds for all models
+            ds_values = actual_dates
             mean_predictions = forecast_data['predictions']['mean']
-            # Assuming the first key in 'lo' and 'hi' is the confidence level to use
-            lo_key = list(forecast_data['predictions']['lo'].keys())[0]
-            hi_key = list(forecast_data['predictions']['hi'].keys())[0]
-            lo_predictions = forecast_data['predictions']['lo'][lo_key]
-            hi_predictions = forecast_data['predictions']['hi'][hi_key]
             forecast_method = forecast_data.get('forecast_method', 'unknown')
 
-            # Combine train_tail and test_df for a single continuous actuals line
             combined_actuals = pd.concat([train_tail[['ds', 'y']], test_df[['ds', 'y']]], ignore_index=True)
             ax.plot(combined_actuals['ds'], combined_actuals['y'], color='black', linewidth=2, label='Actual Values', alpha=0.7)
 
-            # Plot mean prediction
-            color = plt.cm.Set1(np.random.rand()) # Assign a random color for each model
-            ax.plot(ds_values, mean_predictions, color=color, linewidth=2, linestyle='-', label=f'{model_name} (Mean)', alpha=0.8)
-
-            # Plot prediction intervals
-            ax.fill_between(
-                x=ds_values,
-                y1=lo_predictions,
-                y2=hi_predictions,
-                color=color,
-                alpha=0.3,
-                label=f'Prediction Interval ({lo_key}%)'
-            )
-
-            # Adjust Y-axis to focus on the mean and actuals if intervals are too wide
-            all_y_values = np.concatenate([
-                combined_actuals['y'].values,
-                np.array(mean_predictions)
-            ])
-            np_lo_predictions = np.array(lo_predictions)
-            np_hi_predictions = np.array(hi_predictions)
-
-            interval_range = np_hi_predictions.max() - np_lo_predictions.min()
-            main_range = all_y_values.max() - all_y_values.min()
-
-            # Heuristic: if interval is > 20x larger than main data range, adjust axis
-            if main_range > 0 and (interval_range / main_range) > 20:
-                y_min = all_y_values.min()
-                y_max = all_y_values.max()
-                padding = (y_max - y_min) * 0.2  # 20% padding
-                ax.set_ylim(y_min - padding, y_max + padding)
-                print(f"   • Note: Y-axis for {model_name} was clipped to show detail due to wide prediction intervals.")
+            color = plt.cm.Set1(np.random.rand())
+            ax.plot(ds_values, mean_predictions, color=color, linewidth=2, linestyle='-', label=f'{model_name}', alpha=0.8)
 
             ax.set_title(f'{model_name} Forecast ({forecast_method})\nHorizon: {horizon} days | Test Period: {len(test_df)} days', fontsize=14, fontweight='bold')
             ax.set_xlabel('Date', fontsize=12)
@@ -236,10 +194,10 @@ def create_separate_probabilistic_forecast_plots(
             plt.tight_layout()
             plot_path = plot_dir / f'{model_name}_{horizon}d.png'
             plt.savefig(plot_path, dpi=400, bbox_inches='tight', facecolor='white')
-            plt.close(fig) # Close the figure to free up memory
-            print(f"   • Probabilistic forecast plot for {model_name} saved: {plot_path}")
+            plt.close(fig)
+            print(f"   • Forecast plot for {model_name} saved: {plot_path}")
         else:
-            print(f"Warning: Probabilistic forecast data (mean, lo, hi) not found for model: {model_name}. Skipping probabilistic plot.")
+            print(f"Warning: Mean forecast data not found for model: {model_name}. Skipping plot.")
 
 def create_visualizations_step(train_df: pd.DataFrame, test_df: pd.DataFrame, all_forecasts_data: Dict, horizon: int, plot_dir: Path):
     """Step 3: Create forecast visualizations wrapper."""

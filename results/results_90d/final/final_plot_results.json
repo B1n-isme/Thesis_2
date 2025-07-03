@@ -283,7 +283,7 @@
             },
             "forecast_method": "direct_forecast"
         },
-        "BiTCN": {
+        "TCN": {
             "predictions": {
                 "mean": [
                     60648.5625,

@@ -13,7 +13,7 @@ from ray.tune.search.optuna import OptunaSearch
 from typing import Any
 
 # === Forecasting Configuration ===
-HORIZON = 90
+HORIZON = 7
 LEVELS = [95]
 TEST_LENGTH_MULTIPLIER = 1
 SEED = 42
