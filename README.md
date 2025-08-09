@@ -6,8 +6,9 @@ A streamlined, production-ready pipeline for Bitcoin price forecasting using the
 
 This pipeline implements a comprehensive workflow for Bitcoin daily close price forecasting:
 
-1. **Data Preparation** - Load and preprocess Bitcoin price data with exogenous features
-2. **Hyperparameter Optimization** - Use Auto Models with cross-validation to find optimal parameters
+1. **Data Collection & Preprocessing** - Load and preprocess Bitcoin price data with exogenous features.
+2. **Feature Selection** - Perform stability selection to derived new set of features for each horizon.
+2. **Cross Validation** - Perform expanding window CV with Hyperparameter Tuning
 3. **Model Comparison** - Compare models from all three frameworks using best parameters
 4. **Final Evaluation** - Generate comprehensive reports and recommendations
 

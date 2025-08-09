@@ -1,7 +1,7 @@
-Why ETS models generate smooth straight line?
+Why ETS models generate **smooth long trend line**?
 - ETS decompose time series into 3 components (Error, Trend, Seasonality)
 - In Bitcoin context:
-    - Trend: straight line -> additive trend
+    - Trend: **straight line** determined by exponential smoothing (more weight on recent points) -> additive trend
     - Seasonality: bitcoin don't have seasonality -> None
 
 
@@ -16,8 +16,8 @@ Part 3: Exogenous X
 
 Theta:
 - Decompose series into 2 components:
-    - Long-term linear trend
-    - Curvature and short-term patterns
+    - Long-term linear trend determined by **simple linear regression line**
+    - Curvature and **short-term patterns**: mix of volatility & random noise
 
 1. ETS: Nhà vô địch của sự Ổn định và Khiêm tốn (MASE thấp và ổn định)
 

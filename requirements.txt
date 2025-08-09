@@ -17,3 +17,5 @@ utilsforecast
 statsforecast
 mlforecast
 neuralforecast
+pytrends
+pytorch-lightning
