@@ -247,18 +247,18 @@ def perform_cross_validation(stat_models: List, neural_models: List, train_df: p
 
 if __name__ == "__main__":
     from src.models.statsforecast.models import get_statistical_models
-    from src.models.mlforecast.models import get_ml_models
+    # from src.models.mlforecast.models import get_ml_models
     from src.models.neuralforecast.models import get_neural_models
     
     # This main block now demonstrates only the Stat/Neural CV part
     train_df, _, hist_exog_list, _, original_df = prepare_pipeline_data(apply_transformations=True)
     stat_models = get_statistical_models(season_length=7)
-    # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
+    neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
     
     print("\n--- Running Standalone Stat/Neural Cross-Validation ---")
     cv_dfs, metadata = perform_cross_validation(
         stat_models=stat_models, 
-        neural_models=[], 
+        neural_models=neural_models, 
         train_df=train_df,
         original_df=original_df
     )

@@ -446,17 +446,17 @@ if __name__ == "__main__":
         test_length_multiplier=TEST_LENGTH_MULTIPLIER,
         apply_transformations=True
     )
-    # stat_models = get_statistical_models(season_length=7)
+    stat_models = get_statistical_models(season_length=7)
     # ml_models = get_ml_models()
     # neural_models = get_neural_models(horizon=HORIZON, num_samples=NUM_SAMPLES_PER_MODEL, hist_exog_list=hist_exog_list)
-    # neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf.yaml", hist_exog_list=hist_exog_list)
+    neural_models = get_normal_neural_models(horizon=HORIZON, config_path=CV_DIR / "best_configurations_comparison_nf.yaml", hist_exog_list=hist_exog_list)
     
     # print(test_df.head())
     # Perform final fit and predict
     final_results_df, final_plot_results_dict, ml_cv_results_df = perform_final_fit_predict(
-        stats_models= [],
+        stats_models= stat_models,
         ml_models=[],
-        neural_models= [],
+        neural_models= neural_models,
         train_df=train_df,
         test_df=test_df,
         original_df=original_df,

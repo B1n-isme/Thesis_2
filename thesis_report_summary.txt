@@ -1,0 +1,48 @@
+Thesis Overview
+
+Your thesis, "Forecasting of Bitcoin Price: An analysis from time horizon perspective," is a robust empirical study that challenges the common practice of using a single model for all forecasting horizons in financial markets. The core problem addressed is the phenomenon of performance degradation in time series models as the forecast horizon extends. You systematically investigate this by comparing classical statistical models against modern deep learning architectures to determine which model class is most suitable for different timeframes—specifically, short (7/14-day), medium (30/60-day), and long-term (90-day) horizons.
+
+Methodology & Technical Approach
+
+The research was built on a rigorous, two-stage evaluation framework designed to ensure unbiased results.
+
+Data & Preprocessing: You assembled a rich, multivariate dataset covering 2017-2024, including Bitcoin OHLCV data, on-chain metrics, sentiment indicators, and cross-market features (e.g., S&P 500, Gold). The data was preprocessed by transforming the target variable into a stationary log-return and normalizing features using a robust scaler to handle outliers.
+
+Feature Selection: A three-stage, horizon-specific feature selection pipeline was implemented to curate the optimal input set for each forecasting task. This process, using ensemble-based stability selection and multicollinearity reduction, ensured that only the most robust and non-redundant features were used.
+
+Models: The study benchmarked a diverse set of models:
+
+Statistical Models: ETS, Theta, and SARIMAX.
+
+Deep Learning Models: TCN, TFT, iTransformer, and TSMixerX.
+
+Evaluation Protocol: The evaluation followed a two-stage process:
+
+Stage 1 - Cross-Validation: An expanding-window cross-validation was used to select the best-performing model and hyperparameters for each horizon based on the lowest Mean Absolute Scaled Error (MASE).
+
+Stage 2 - Holdout Test: The final selected models were retrained on the full historical data and tested on a completely unseen holdout set to simulate real-world performance and assess generalization.
+
+Key Findings & Conclusion
+
+Your research delivered a clear, data-backed conclusion: the optimal forecasting model is highly dependent on the forecast horizon.
+
+A U-Shaped Relationship: The study identified a "U-shaped" relationship between model complexity and performance, where simplicity is not always a virtue.
+
+Short-Term (7 & 14 days): Deep learning models, specifically the TCN, demonstrated a superior ability to capture complex, high-frequency patterns, making them the top performers.
+
+Mid-Term (30 & 60 days): The simpler statistical ETS model proved most effective and robust. Its ability to capture stable, underlying trends without overfitting to noise made it the most reliable choice for these horizons.
+
+Long-Term (90 days): The advanced, attention-based TFT model was the definitive winner, confirming that complex architectures designed to capture long-range dependencies are necessary for successful long-range forecasting.
+
+Impact of Concept Drift: The transition from the cross-validation stage to the final holdout test revealed the presence of "concept drift" in the market. All models saw a performance decline, but their reactions to this new market regime were distinct, highlighting the superior adaptability of deep learning models in the short-term and the remarkable stability of the ETS model in the mid-term.
+
+Implications and Future Work
+
+Your findings have significant practical and methodological implications.
+
+Practical Implications: The research provides a practical framework for building a portfolio of forecasting models, rather than relying on a single, suboptimal solution.
+
+Methodological Implications: It underscores the critical importance of horizon-aware model selection and the necessity of a rigorous evaluation protocol, like the one you designed, to avoid over-reliance on a single test set.
+
+For future research, you recommend exploring other model architectures, such as GARCH or state-space models, and investigating dynamic feature selection methods to further improve model resilience to concept drift. You also suggest using more advanced hyperparameter optimization algorithms to achieve even better performance.
+

@@ -3,61 +3,62 @@ from src.dataset.data_preparation import prepare_pipeline_data, load_and_prepare
 import pandas as pd
 from config.base import RAW_DATA_PATH, HORIZON
 from pathlib import Path
+import argparse
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Feature Selection Pipeline')
+    parser.add_argument('--tree_methods', nargs='+', default=['xgboost', 'lightgbm', 'random_forest'],
+                       help='Tree-based methods to use for feature selection')
+    parser.add_argument('--min_consensus_level', type=int, default=2,
+                       help='Minimum consensus level for feature selection')
+    parser.add_argument('--handle_multicollinearity', action='store_true',
+                       help='Enable multicollinearity handling')
+    parser.add_argument('--n_bootstrap', type=int, default=50,
+                       help='Number of bootstrap samples for stability selection')
+    parser.add_argument('--selection_threshold', type=float, default=0.6,
+                       help='Threshold for feature selection')
+    return parser.parse_args()
 
 def main():
-    """
-    Main function to run the feature selection pipeline.
-    """
+    args = parse_args()
+    
     # 1. Load data
     train_df, test_df, hist_exog_list, data_info, _ = prepare_pipeline_data(
         data_path=RAW_DATA_PATH,
         apply_transformations=True
-        )
+    )
 
-    # --- Data Cleaning Step ---
-    # Remove constant or all-NaN columns from the training data, as they provide no value.
-    # A column is considered constant if it has one or fewer unique values.
+    # Data cleaning
     print("\nCleaning training data by removing constant columns...")
     cols_before = train_df.columns.tolist()
-    
-    # A column is constant if it has 1 or 0 unique values.
     non_constant_mask = train_df.nunique() > 1
-    
-    # Keep columns that are not constant.
     train_df = train_df.loc[:, non_constant_mask]
-    
     cols_after = train_df.columns.tolist()
     removed_cols = sorted(list(set(cols_before) - set(cols_after)))
 
     if removed_cols:
         print(f"  - Removed {len(removed_cols)} constant column(s): {removed_cols}")
-        # Ensure test_df and hist_exog_list are also updated to maintain consistency.
         test_df = test_df[cols_after]
         hist_exog_list = [col for col in hist_exog_list if col in cols_after]
     else:
-        print("  - No constant columns found. No columns were removed.")
+        print("  - No constant columns found.")
 
-
-    # 2. Initialize the selector
+    # 2. Initialize selector
     selector = FeatureSelector(random_state=42, verbose=True, use_gpu=True)
-    
-    # Define the directory for saving intermediate results
     results_dir = "src/pipelines/feature_results"
     Path(results_dir).mkdir(parents=True, exist_ok=True)
-    print(f"Intermediate feature selection results will be saved to: {results_dir}")
+    print(f"Intermediate results will be saved to: {results_dir}")
 
-    # 3. Define parameters for the new workflow
-    # Parameters are mainly for Stability Selection and PFI.
+    # 3. Set selection params from args
     selection_params = {
-        'tree_methods': ['xgboost', 'lightgbm', 'random_forest'],
-        'min_consensus_level': 2,
-        'handle_multicollinearity_flag': True,
-        'n_bootstrap': 50,          # For Stability Selection
-        'selection_threshold': 0.6 # For Stability Selection
+        'tree_methods': args.tree_methods,
+        'min_consensus_level': args.min_consensus_level,
+        'handle_multicollinearity_flag': args.handle_multicollinearity,
+        'n_bootstrap': args.n_bootstrap,
+        'selection_threshold': args.selection_threshold
     }
 
-    # 4. Run the complete feature selection strategy
+    # 4. Run feature selection
     results = selector.run_complete_feature_selection_strategy(
         df=train_df,
         target_col='y',
@@ -65,13 +66,11 @@ def main():
         results_dir=results_dir
     )
 
-    # 5. Print and review the results
+    # 5. Print results
     print("\n--- Feature Selection Results ---")
-    print("Top consensus features recommended by the pipeline:")
     consensus_features = results.get('final_recommendations', {}).get('consensus_features', [])
-    
-    # Detailed feature counts
     recommendation_df = results.get('final_recommendations', {}).get('feature_counts')
+    
     if recommendation_df is not None:
         print("\n--- Feature Selection Counts ---")
         print(recommendation_df.to_string())
@@ -81,27 +80,19 @@ def main():
     else:
         for i, feature in enumerate(consensus_features):
             print(f"{i+1}. {feature}")
-        
-    print(f"\nTotal features selected: {len(consensus_features)}")
-    
-    # 6. Export the final dataframes with selected features
+        print(f"\nTotal features selected: {len(consensus_features)}")
+
+    # 6. Export results
     print("\nExporting data with selected features...")
-    
-    # Load the original, untransformed data to ensure the final output is clean
     full_original_df = load_and_prepare_data(data_path=RAW_DATA_PATH)
-    
-    # Filter the original dataframe to include only the selected features
     final_df = full_original_df[['unique_id', 'ds', 'y'] + consensus_features]
     
-    # Define output path with multicollinearity postfix if enabled
     multicoll_postfix = "_mc" if selection_params['handle_multicollinearity_flag'] else ""
     output_path = f"data/processed/feature_selection_{HORIZON}{multicoll_postfix}.parquet"
-    
-    # Save to parquet
     final_df.to_parquet(output_path, index=False)
     
     print(f"✅ Successfully saved final dataframe to '{output_path}'")
-    print(f"   • Shape of the saved data: {final_df.shape}")
+    print(f"   • Shape: {final_df.shape}")
     print(f"   • Columns: {final_df.columns.tolist()}")
 
 if __name__ == "__main__":

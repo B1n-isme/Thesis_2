@@ -1,0 +1,269 @@
+.
+├── __pycache__
+│   └── parquet2csv.cpython-310.pyc
+├── .cursor
+│   └── rules
+│       ├── ai-engineer.mdc
+│       └── data-scientist.mdc
+├── .DS_Store
+├── .gitignore
+├── .repomixignore
+├── conclusion.md
+├── config
+│   └── base.py
+├── data
+│   ├── final
+│   │   ├── dataset.csv
+│   │   ├── feature_selection_14.csv
+│   │   ├── feature_selection_30.csv
+│   │   ├── feature_selection_60.csv
+│   │   ├── feature_selection_7.csv
+│   │   ├── feature_selection_90.csv
+│   │   └── raw_dataset.parquet
+│   ├── processed
+│   │   ├── Bitcoin Bull Run Index (CBBI).csv
+│   │   ├── bitcoin_sentiment.csv
+│   │   ├── cscsi20_CompassSESAMmCryptoSentimentIndex.csv
+│   │   ├── dataset.csv
+│   │   ├── fear_greed_index.csv
+│   │   └── sentiment_grouped.csv
+│   └── raw
+│       ├── augmento_btc.csv
+│       ├── Bitcoin Bull Run Index (CBBI).json
+│       ├── cscsi20_20250512_043631.csv
+│       ├── dataset_excel.csv
+│       ├── dataset.csv
+│       └── final_dataset_with_technical_indicators.csv
+├── insights.py
+├── main.py
+├── note.md
+├── notebooks
+│   ├── 01_preprocessing.ipynb
+│   ├── 02_combine.ipynb
+│   ├── 03_processing.ipynb
+│   ├── 04_EDA_sentiment.ipynb
+│   ├── 04_EDA.ipynb
+│   └── 05_EDA_log.ipynb
+├── parquet2csv.py
+├── pipeline.py
+├── README.md
+├── repomix-output.md
+├── repomix.txt
+├── requirements.txt
+├── results
+│   ├── .DS_Store
+│   ├── final_metrics_summary_corrected.csv
+│   ├── insights
+│   │   ├── da_vs_horizon.png
+│   │   ├── degradation_analysis.csv
+│   │   ├── degradation_rate_analysis.csv
+│   │   ├── mae_vs_horizon.png
+│   │   ├── mase_vs_horizon.png
+│   │   ├── plot_cv_grid.png
+│   │   ├── rmse_vs_horizon.png
+│   │   ├── theil_u_vs_horizon.png
+│   │   └── training_time_vs_horizon.png
+│   ├── results_14d
+│   │   ├── cv
+│   │   │   ├── best_configurations_comparison_nf.yaml
+│   │   │   ├── cv_df_stats.csv
+│   │   │   ├── cv_df.csv
+│   │   │   ├── cv_metrics_2.csv
+│   │   │   ├── cv_metrics_nf.csv
+│   │   │   ├── cv_metrics_stats.csv
+│   │   │   ├── cv_metrics.csv
+│   │   │   └── plot
+│   │   │       ├── ETS_cv_14d.png
+│   │   │       ├── iTransformer_cv_14d.png
+│   │   │       ├── SARIMAX_cv_14d.png
+│   │   │       ├── TCN_cv_14d.png
+│   │   │       ├── TFT_cv_14d.png
+│   │   │       ├── Theta_cv_14d.png
+│   │   │       └── TSMixerx_cv_14d.png
+│   │   └── final
+│   │       ├── final_plot_results.json
+│   │       ├── metrics_results.csv
+│   │       └── plots
+│   │           ├── ETS_14d.png
+│   │           ├── Naive_14d.png
+│   │           ├── TCN_14d.png
+│   │           └── unified_14d_20250625_114958.png
+│   ├── results_30d
+│   │   ├── cv
+│   │   │   ├── best_configurations_comparison_nf.yaml
+│   │   │   ├── cv_df_stats.csv
+│   │   │   ├── cv_df.csv
+│   │   │   ├── cv_metrics_2.csv
+│   │   │   ├── cv_metrics_nf.csv
+│   │   │   ├── cv_metrics_stats.csv
+│   │   │   ├── cv_metrics.csv
+│   │   │   └── plot
+│   │   │       ├── ETS_cv_30d.png
+│   │   │       ├── iTransformer_cv_30d.png
+│   │   │       ├── SARIMAX_cv_30d.png
+│   │   │       ├── TCN_cv_30d.png
+│   │   │       ├── TFT_cv_30d.png
+│   │   │       ├── Theta_cv_30d.png
+│   │   │       └── TSMixerx_cv_30d.png
+│   │   └── final
+│   │       ├── final_plot_results.json
+│   │       ├── metrics_results.csv
+│   │       └── plots
+│   │           ├── ETS_30d.png
+│   │           ├── Naive_30d.png
+│   │           ├── TCN_30d.png
+│   │           └── unified_30d_20250625_115008.png
+│   ├── results_60d
+│   │   ├── cv
+│   │   │   ├── best_configurations_comparison_nf.yaml
+│   │   │   ├── cv_df_stats.csv
+│   │   │   ├── cv_df.csv
+│   │   │   ├── cv_metrics_2.csv
+│   │   │   ├── cv_metrics_nf.csv
+│   │   │   ├── cv_metrics_stats.csv
+│   │   │   ├── cv_metrics.csv
+│   │   │   └── plot
+│   │   │       ├── ETS_cv_60d.png
+│   │   │       ├── iTransformer_cv_60d.png
+│   │   │       ├── SARIMAX_cv_60d.png
+│   │   │       ├── TCN_cv_60d.png
+│   │   │       ├── TFT_cv_60d.png
+│   │   │       ├── Theta_cv_60d.png
+│   │   │       └── TSMixerx_cv_60d.png
+│   │   └── final
+│   │       ├── final_plot_results.json
+│   │       ├── metrics_results.csv
+│   │       └── plots
+│   │           ├── ETS_60d.png
+│   │           ├── iTransformer_60d.png
+│   │           ├── Naive_60d.png
+│   │           └── unified_60d_20250625_115018.png
+│   ├── results_7d
+│   │   ├── cv
+│   │   │   ├── best_configurations_comparison_nf.yaml
+│   │   │   ├── cv_df_stats.csv
+│   │   │   ├── cv_df.csv
+│   │   │   ├── cv_metrics_2.csv
+│   │   │   ├── cv_metrics_nf.csv
+│   │   │   ├── cv_metrics_stats.csv
+│   │   │   ├── cv_metrics.csv
+│   │   │   └── plot
+│   │   │       ├── ETS_cv_7d.png
+│   │   │       ├── iTransformer_cv_7d.png
+│   │   │       ├── SARIMAX_cv_7d.png
+│   │   │       ├── TCN_cv_7d.png
+│   │   │       ├── TFT_cv_7d.png
+│   │   │       ├── Theta_cv_7d.png
+│   │   │       └── TSMixerx_cv_7d.png
+│   │   └── final
+│   │       ├── final_plot_results.json
+│   │       ├── metrics_results.csv
+│   │       └── plots
+│   │           ├── ETS_7d.png
+│   │           ├── Naive_7d.png
+│   │           └── TCN_7d.png
+│   ├── results_90d
+│   │   ├── cv
+│   │   │   ├── best_configurations_comparison_nf.yaml
+│   │   │   ├── cv_df_stats.csv
+│   │   │   ├── cv_df.csv
+│   │   │   ├── cv_metrics_2.csv
+│   │   │   ├── cv_metrics_nf.csv
+│   │   │   ├── cv_metrics_stats.csv
+│   │   │   ├── cv_metrics.csv
+│   │   │   └── plot
+│   │   │       ├── ETS_cv_90d.png
+│   │   │       ├── iTransformer_cv_90d.png
+│   │   │       ├── SARIMAX_cv_90d.png
+│   │   │       ├── TCN_cv_90d.png
+│   │   │       ├── TFT_cv_90d.png
+│   │   │       ├── Theta_cv_90d.png
+│   │   │       └── TSMixerx_cv_90d.png
+│   │   └── final
+│   │       ├── final_plot_results.json
+│   │       ├── metrics_results.csv
+│   │       └── plots
+│   │           ├── Naive_90d.png
+│   │           ├── TCN_90d.png
+│   │           ├── TFT_90d.png
+│   │           └── unified_90d_20250625_115027.png
+│   ├── temp
+│   │   ├── cv_df_0_20250621_184017.csv
+│   │   ├── cv_df_0_20250622_045508.csv
+│   │   ├── raw_cv_df_20250621_184017.csv
+│   │   └── raw_cv_df_20250622_045508.csv
+│   └── y_series.png
+├── src
+│   ├── .DS_Store
+│   ├── dataset
+│   │   └── data_preparation.py
+│   ├── metrics_calculation
+│   │   ├── add_training_times.py
+│   │   ├── evaluate_final_forecast.py
+│   │   ├── merge_cv_df_metrics.py
+│   │   ├── metric.md
+│   │   └── metric.py
+│   ├── models
+│   │   ├── mlforecast
+│   │   │   ├── auto_cfg.py
+│   │   │   └── models.py
+│   │   ├── neuralforecast
+│   │   │   ├── auto_cfg.py
+│   │   │   └── models.py
+│   │   └── statsforecast
+│   │       └── models.py
+│   ├── pipelines
+│   │   ├── feature_results
+│   │   │   ├── 1_initial_stable_features_14.txt
+│   │   │   ├── 1_initial_stable_features_30.txt
+│   │   │   ├── 1_initial_stable_features_60.txt
+│   │   │   ├── 1_initial_stable_features_7.txt
+│   │   │   ├── 1_initial_stable_features_90.txt
+│   │   │   ├── 1_lightgbm_stability_features_14.txt
+│   │   │   ├── 1_lightgbm_stability_features_30.txt
+│   │   │   ├── 1_lightgbm_stability_features_60.txt
+│   │   │   ├── 1_lightgbm_stability_features_7.txt
+│   │   │   ├── 1_lightgbm_stability_features_90.txt
+│   │   │   ├── 1_random_forest_stability_features_14.txt
+│   │   │   ├── 1_random_forest_stability_features_30.txt
+│   │   │   ├── 1_random_forest_stability_features_60.txt
+│   │   │   ├── 1_random_forest_stability_features_7.txt
+│   │   │   ├── 1_random_forest_stability_features_90.txt
+│   │   │   ├── 1_xgboost_stability_features_14.txt
+│   │   │   ├── 1_xgboost_stability_features_30.txt
+│   │   │   ├── 1_xgboost_stability_features_60.txt
+│   │   │   ├── 1_xgboost_stability_features_7.txt
+│   │   │   ├── 1_xgboost_stability_features_90.txt
+│   │   │   ├── 2_after_multicollinearity_features_14.txt
+│   │   │   ├── 2_after_multicollinearity_features_30.txt
+│   │   │   ├── 2_after_multicollinearity_features_60.txt
+│   │   │   ├── 2_after_multicollinearity_features_7.txt
+│   │   │   └── 2_after_multicollinearity_features_90.txt
+│   │   ├── feature_selection_pipeline
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── feature_selection_diagram.mmd
+│   │   │   ├── feature_selection_workflow.md
+│   │   │   └── robust_selection.py
+│   │   ├── feature_selection.py
+│   │   ├── feature_transform_group.md
+│   │   ├── model_evaluation.py
+│   │   ├── model_forecasting.py
+│   │   ├── results_processing.py
+│   │   └── visualization.py
+│   ├── scraping
+│   │   ├── engineer.py
+│   │   ├── fngindex.py
+│   │   └── scraper.py
+│   ├── utils
+│   │   └── utils.py
+│   └── visualization
+│       ├── final_visualization.py
+│       └── merge_cv_visualization.py
+├── structure.txt
+├── test.ipynb
+├── test2.ipynb
+├── thesis_report_summary.txt
+└── tmux.txt
+
+51 directories, 216 files
