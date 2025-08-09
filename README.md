@@ -32,9 +32,8 @@ graph TD;
   - Stability selection across tree models (XGBoost, LightGBM, RandomForest)
   - Consensus-based selection + VIF/correlation pruning
 - Modeling
-  - Statistical: `AutoETS` (plus others available)
-  - Neural: iTransformer, BiTCN, TFT (via NeuralForecast)
-  - Optional MLForecast models wired but not primary focus
+  - Statistical: `AutoARIMA`, `AutoTheta`, `AutoETS`
+  - Neural: `AutoiTransformer`, `AutoBiTCN`, `AUtoTFT`, `AutoTSMixerx`
 - Evaluation & metrics
   - Expanding-window CV, horizon = `HORIZON`, step = `CV_STEP_SIZE`
   - Metrics: MAE, RMSE, MASE, Directional Accuracy (DA), training time
