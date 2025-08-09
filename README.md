@@ -18,12 +18,12 @@ Robust, reproducible Bitcoin daily close-price forecasting across multiple horiz
 ### High-level workflow
 
 ```mermaid
-graph TD
-  A[Load data + features] --> B[Feature selection (stability + multicollinearity)]
-  B --> C[Cross-validation (expanding windows)]
-  C --> D[Pick best models per horizon]
-  D --> E[Final fit on full train + holdout evaluation]
-  E --> F[Plots, metrics, insights]
+graph TD;
+  A["Load data and features"] --> B["Feature selection: stability + multicollinearity"];
+  B --> C["Cross-validation (expanding windows)"];
+  C --> D["Pick best models per horizon"];
+  D --> E["Final fit on full train + holdout evaluation"];
+  E --> F["Plots, metrics, insights"];
 ```
 
 ### Key capabilities
